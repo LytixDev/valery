@@ -1,5 +1,5 @@
 /*
- *  <one line to give the program's name and a brief idea of what it does.>
+ *  Reads .valeryrc and sets environmental variables  
  *   
  *  Copyright (C) 2022 Nicolai Brand 
  *

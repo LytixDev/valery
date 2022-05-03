@@ -1,5 +1,5 @@
 /*
- *  <one line to give the program's name and a brief idea of what it does.>
+ *  Experimental interactive UNIX-like shell
  *   
  *  Copyright (C) 2022 Nicolai Brand 
  *
@@ -56,7 +56,7 @@ int main()
     if (rc == 1) {
         /* TODO: improve error handling */
         fprintf(stderr, "error parsing .valeryrc");
-        free(env);
+        free_env(env);
         return 1;
     }
 
@@ -65,6 +65,6 @@ int main()
     printf("PS1: %s\n", env->PS1);
     printf("PATH: %s\n", env->PATH);
 
-    free(env);
+    free_env(env);
     return 0;
 }

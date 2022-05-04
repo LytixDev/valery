@@ -29,7 +29,7 @@
 #include "valery.h"
 
 
-int _get_config_path(char config_path[255])
+int _get_config_path(char config_path[STR_LEN])
 {
     /* get home dir */
     struct passwd *pw = getpwuid(getuid());
@@ -38,9 +38,7 @@ int _get_config_path(char config_path[255])
     if (homedir == NULL)
         return 1;
 
-    strcpy(config_path, homedir);
-    strcat(config_path, "/");
-    strcat(config_path, CONFIG_NAME);
+    snprintf(config_path, STR_LEN, "%s/%s", homedir, CONFIG_NAME);
 
     return 0;
 }
@@ -66,8 +64,8 @@ int parse_config(struct ENV *env)
      */
 
     FILE *fp;
-    char config_path[255];
-    size_t buf_len = 255;
+    char config_path[STR_LEN];
+    size_t buf_len = STR_LEN;
     char buf[buf_len];
     char key[buf_len];
     char val[buf_len];
@@ -95,13 +93,11 @@ int parse_config(struct ENV *env)
             key[found_pos] = '\0';
             val[str_len - found_pos - 2] = '\0';
 
-            if (strcmp(key, "PS1") == 0) {
+            if (strcmp(key, "PS1") == 0)
                 strcpy(env->PS1, val);
-            }
 
-            if (strcmp(key, "PATH") == 0) {
+            if (strcmp(key, "PATH") == 0)
                 strcpy(env->PATH, val);
-            }
         }
 
     }
@@ -109,21 +105,3 @@ int parse_config(struct ENV *env)
     return 0;
 
 }
-
-/*
-int main()
-{
-    struct ENV *env = (ENV *) malloc(sizeof(ENV));
-    env->PS1 = (char *) malloc(sizeof(char));
-    env->PATH = (char *) malloc(sizeof(char));
-    int rc = parse_config(env);
-    if (rc == 1) {
-        free(env);
-        return 1;
-    }
-    
-    printf("%s\n", env->PS1);
-    printf("%s\n", env->PATH);
-    free(env);
-}
-*/

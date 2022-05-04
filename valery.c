@@ -19,6 +19,8 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "valery.h"
 #include "load_config.c"
@@ -28,7 +30,6 @@ void disp(uint8_t *ps1, char *ret)
 {
     printf("%s ", ps1);
     fgets(ret, COMMAND_LEN, stdin);
-    printf("input was: %s\n", ret);
 }
 
 struct ENV *new_env()
@@ -60,11 +61,15 @@ int main()
         return 1;
     }
 
-    /* testing purposes */
-    printf("Environment variables found from .valeryrc:\n");
-    printf("PS1: %s\n", env->PS1);
-    printf("PATH: %s\n", env->PATH);
-
+    /* main loop */
+    char buf[1024];
+    while (strcmp(buf, "exit") != 0) {
+        disp(env->PS1, buf);
+        /* check if program typed in exists */
+        rc = execl("bin/which", buf, env->PATH);
+    }
+    
+    printf("Exiting ...\n");
     free_env(env);
-    return 0;
+    return rc;
 }

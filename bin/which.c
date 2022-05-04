@@ -46,11 +46,8 @@ int which(char *program_name, char *path)
         /* check for name equality */
         if (strcmp(program_name, dir->d_name) == 0) {
 
-            /* build new string with path given */
             char final[1024];
-            strcpy(final, path);
-            strcat(final, "/");
-            strcat(final, program_name);
+            snprintf(final, 1024, "%s/%s", path, program_name);
 
             /* check if executable bit is on */
             if (stat(final, &sb) == 0 && sb.st_mode & S_IXUSR) {

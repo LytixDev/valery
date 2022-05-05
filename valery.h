@@ -28,6 +28,7 @@
 
 /* types */
 typedef struct ENV {
+    uint8_t exit_code;
     char *PS1;
     char *PATH;
 } ENV;

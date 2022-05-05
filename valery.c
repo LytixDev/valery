@@ -18,6 +18,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
@@ -35,6 +36,7 @@ void disp(uint8_t *ps1, char *ret)
 struct ENV *new_env()
 {
     struct ENV *env = (ENV *) malloc(sizeof(ENV));
+    env->exit_code = 0;
     env->PS1 = (char *) malloc(sizeof(char) * MAX_ENV_LEN);
     env->PATH = (char *) malloc(sizeof(char) * MAX_ENV_LEN);
     return env;
@@ -65,8 +67,13 @@ int main()
     char buf[1024];
     while (strcmp(buf, "exit") != 0) {
         disp(env->PS1, buf);
-        /* check if program typed in exists */
-        rc = execl("bin/which", buf, env->PATH);
+
+        /* TODO: create function/file to evalute and execute a command */
+        char tmp[1024];
+        snprintf(tmp, 1024, "%s/%s", env->PATH, buf);
+
+        int rc = system(tmp);
+        env->exit_code = rc;
     }
     
     printf("Exiting ...\n");

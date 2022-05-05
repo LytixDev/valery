@@ -35,8 +35,8 @@ void disp(uint8_t *ps1, char *ret)
 struct ENV *new_env()
 {
     struct ENV *env = (ENV *) malloc(sizeof(ENV));
-    env->PS1 = (char *) malloc(sizeof(char));
-    env->PATH = (char *) malloc(sizeof(char));
+    env->PS1 = (char *) malloc(sizeof(char) * MAX_ENV_LEN);
+    env->PATH = (char *) malloc(sizeof(char) * MAX_ENV_LEN);
     return env;
 }
 

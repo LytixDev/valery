@@ -20,14 +20,17 @@
 #ifndef VALERY
 #define VALERY
 
+
+/* variables */
+#define COMMAND_LEN 1024
+#define MAX_ENV_LEN 1024
+#define CONFIG_NAME ".valeryrc"
+
 /* types */
 typedef struct ENV {
     char *PS1;
     char *PATH;
 } ENV;
-
-/* variables */
-#define COMMAND_LEN 255
 
 /* functions */
 void disp(uint8_t *ps1, char *ret);

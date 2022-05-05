@@ -22,9 +22,6 @@
 #ifndef LOAD_CONFIG
 #define LOAD_CONFIG
 
-/* variables */
-#define CONFIG_NAME ".valeryrc"
-#define STR_LEN 255
 
 int parse_config(struct ENV *env);
 

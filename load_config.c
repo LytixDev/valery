@@ -29,7 +29,7 @@
 #include "valery.h"
 
 
-int _get_config_path(char config_path[STR_LEN])
+int _get_config_path(char config_path[MAX_ENV_LEN])
 {
     /* get home dir */
     struct passwd *pw = getpwuid(getuid());
@@ -38,7 +38,7 @@ int _get_config_path(char config_path[STR_LEN])
     if (homedir == NULL)
         return 1;
 
-    snprintf(config_path, STR_LEN, "%s/%s", homedir, CONFIG_NAME);
+    snprintf(config_path, MAX_ENV_LEN, "%s/%s", homedir, CONFIG_NAME);
 
     return 0;
 }
@@ -64,8 +64,8 @@ int parse_config(struct ENV *env)
      */
 
     FILE *fp;
-    char config_path[STR_LEN];
-    size_t buf_len = STR_LEN;
+    char config_path[MAX_ENV_LEN];
+    size_t buf_len = MAX_ENV_LEN;
     char buf[buf_len];
     char key[buf_len];
     char val[buf_len];

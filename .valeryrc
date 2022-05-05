@@ -1,4 +1,4 @@
 # example valeryc
 
 PS1=[nic]$
-PATH=bin
+PATH=/home/nic/.local/share/valery/bin

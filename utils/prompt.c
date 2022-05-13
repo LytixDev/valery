@@ -1,4 +1,6 @@
 /*
+ *  Displays the PS1 along with a prompt for the user to type in commands.
+ * 
  *  Copyright (C) 2022 Nicolai Brand 
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -15,26 +17,35 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#ifndef VALERY
-#define VALERY
+#include "prompt.h"
 
 
-/* variables */
-#define COMMAND_LEN 1024
-#define MAX_ENV_LEN 1024
-#define CONFIG_NAME ".valeryrc"
+void prompt(char *ps1, char *buf)
+{
+    printf("%s", ps1);
+    buf = read_input();
+}
 
-/* types */
-typedef struct ENV {
-    uint8_t exit_code;
-    char *PS1;
-    char *PATH;
-} ENV;
+char *read_input()
+{
+    char *str;
+    int ch;
+    size_t cur_len = 0;
+    size_t max_len = CHUNK;
 
-/* functions */
-struct ENV *new_env();
-void free_env(struct ENV *env);
+    str = realloc(NULL, sizeof(*str) * max_len);
 
-#endif
+    while (EOF != (ch = fgetc(stdin)) && ch != '\n') {
+        str[cur_len++] = ch;
+
+        if (cur_len == max_len)
+            str = realloc(str, sizeof(*str) * (max_len += CHUNK));
+    }
+    /* add null byte to terminate string */
+    str[cur_len++] = '\0';
+    
+    return realloc(str, sizeof(*str) * cur_len);
+}

@@ -1,4 +1,7 @@
 /*
+ *  Humble lexer for shell commands.
+ *  Splits an input string into program name and arguments
+ *   
  *  Copyright (C) 2022 Nicolai Brand 
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -15,26 +18,4 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
 
-#ifndef VALERY
-#define VALERY
-
-
-/* variables */
-#define COMMAND_LEN 1024
-#define MAX_ENV_LEN 1024
-#define CONFIG_NAME ".valeryrc"
-
-/* types */
-typedef struct ENV {
-    uint8_t exit_code;
-    char *PS1;
-    char *PATH;
-} ENV;
-
-/* functions */
-struct ENV *new_env();
-void free_env(struct ENV *env);
-
-#endif

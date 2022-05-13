@@ -1,4 +1,6 @@
 /*
+ *  Displays the PS1 along with a prompt for the user to type in commands.
+ * 
  *  Copyright (C) 2022 Nicolai Brand 
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -15,26 +17,13 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
+#ifndef PROMPT
+#define PROMPT
 
-#ifndef VALERY
-#define VALERY
+#define CHUNK 4096
 
+void prompt(char *ps1, char *buf);
 
-/* variables */
-#define COMMAND_LEN 1024
-#define MAX_ENV_LEN 1024
-#define CONFIG_NAME ".valeryrc"
-
-/* types */
-typedef struct ENV {
-    uint8_t exit_code;
-    char *PS1;
-    char *PATH;
-} ENV;
-
-/* functions */
-struct ENV *new_env();
-void free_env(struct ENV *env);
+char *read_input();
 
 #endif

@@ -25,13 +25,8 @@
 
 #include "valery.h"
 #include "load_config.c"
+#include "utils/prompt.h"
 
-
-void disp(uint8_t *ps1, char *ret)
-{
-    printf("%s ", ps1);
-    fgets(ret, COMMAND_LEN, stdin);
-}
 
 struct ENV *new_env()
 {
@@ -64,19 +59,21 @@ int main()
     }
 
     /* main loop */
-    char buf[1024];
-    while (strcmp(buf, "exit") != 0) {
-        disp(env->PS1, buf);
+    char *buf = "";
 
-        /* TODO: create function/file to evalute and execute a command */
-        char tmp[1024];
-        snprintf(tmp, 1024, "%s/%s", env->PATH, buf);
+    while (strcmp(buf, "exit") != 0) {
+        prompt(env->PS1, buf);
+
+        char tmp[4096];
+        snprintf(tmp, 4096, "%s/%s", env->PATH, buf);
 
         int rc = system(tmp);
         env->exit_code = rc;
     }
+
+    free(buf);
+    free_env(env);
     
     printf("Exiting ...\n");
-    free_env(env);
     return rc;
 }

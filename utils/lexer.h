@@ -1,6 +1,6 @@
 /*
- *  Displays the PS1 along with a prompt for the user to type in commands.
- * 
+ *  Humble lexer for shell commands.
+ *   
  *  Copyright (C) 2022 Nicolai Brand 
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -17,11 +17,9 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PROMPT
-#define PROMPT
+#ifndef LEXER
+#define LEXER
 
-#define CHUNK 4096
-
-char *prompt(char *ps1);
+void split_buffer(char *buffer, char *cmd, char *args);
 
 #endif

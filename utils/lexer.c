@@ -1,6 +1,5 @@
 /*
  *  Humble lexer for shell commands.
- *  Splits an input string into program name and arguments
  *   
  *  Copyright (C) 2022 Nicolai Brand 
  *
@@ -18,4 +17,20 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <stdio.h>
+#include <string.h>
 
+
+void split_buffer(char *buffer, char *cmd, char *args)
+{
+    const char delim[] = " ";
+
+    char *cmd_tmp = strtok(buffer, delim);
+    char *args_tmp = strtok(NULL, delim);
+
+    if (cmd_tmp != NULL)
+        strcpy(cmd, cmd_tmp);
+
+    if (args_tmp != NULL)
+        strcpy(args, args_tmp);
+}

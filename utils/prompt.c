@@ -23,14 +23,9 @@
 #include "prompt.h"
 
 
-void prompt(char *ps1, char *buf)
+char *prompt(char *ps1)
 {
-    printf("%s", ps1);
-    buf = read_input();
-}
-
-char *read_input()
-{
+    printf("%s ", ps1);
     char *str;
     int ch;
     size_t cur_len = 0;

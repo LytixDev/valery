@@ -26,6 +26,7 @@
 #include "valery.h"
 #include "load_config.c"
 #include "utils/prompt.h"
+#include "utils/lexer.h"
 
 
 struct ENV *new_env()
@@ -60,14 +61,17 @@ int main()
 
     /* main loop */
     char *buf = "";
+    char full_cmd[4096];
+    char cmd[4096];
+    char args[4096];
 
     while (strcmp(buf, "exit") != 0) {
-        prompt(env->PS1, buf);
+        buf = prompt(env->PS1);
+        split_buffer(buf, cmd, args);
 
-        char tmp[4096];
-        snprintf(tmp, 4096, "%s/%s", env->PATH, buf);
+        snprintf(full_cmd, 4096, "%s/%s %s", env->PATH, cmd, args);
 
-        int rc = system(tmp);
+        int rc = system(full_cmd);
         env->exit_code = rc;
     }
 

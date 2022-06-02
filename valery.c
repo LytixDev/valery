@@ -24,7 +24,7 @@
 #include <unistd.h>
 
 #include "valery.h"
-#include "load_config.c"
+#include "utils/load_config.h"
 #include "utils/prompt.h"
 #include "utils/lexer.h"
 

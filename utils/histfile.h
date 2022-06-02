@@ -15,27 +15,27 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
+#include <stdio.h>
 
-#ifndef VALERY
-#define VALERY
+#include "../valery.h"
 
+#ifndef HISTFILE
+#define HISTFILE
 
-/* variables */
-#define COMMAND_LEN 1024
-#define MAX_ENV_LEN 1024
-#define CONFIG_NAME ".valeryrc"
-#define HISTFILE_NAME ".valery_history"
+#define _GNU_SOURCE
 
 /* types */
-typedef struct ENV {
-    uint8_t exit_code;
-    char *PS1;
-    char *PATH;
-} ENV;
+typedef struct HIST_FILE {
+    FILE *fp;
+    size_t current_line;
+    size_t len;
+} HIST_FILE;
 
 /* functions */
-struct ENV *new_env();
-void free_env(struct ENV *env);
+struct HIST_FILE *new_hist_file();
+void free_hist_file(struct HIST_FILE *hf);
+int get_len(FILE *fp);
+int open_hist_file(struct HIST_FILE *hf, char *full_path);
+int read_current_line(struct HIST_FILE *hf, char *buf[COMMAND_LEN]);
 
 #endif

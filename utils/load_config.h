@@ -17,7 +17,7 @@
 
 #include <stdint.h>
 
-#include "valery.h"
+#include "../valery.h"
 
 #ifndef LOAD_CONFIG
 #define LOAD_CONFIG

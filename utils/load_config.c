@@ -26,7 +26,7 @@
 #include <stdlib.h>
 
 #include "load_config.h"
-#include "valery.h"
+#include "../valery.h"
 
 
 int _get_config_path(char config_path[MAX_ENV_LEN])

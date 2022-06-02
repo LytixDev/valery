@@ -15,14 +15,17 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
+#include <stdio.h>
 
-#include "valery.h"
+#ifndef HISTFILE
+#define HISTFILE
 
-#ifndef LOAD_CONFIG
-#define LOAD_CONFIG
+/* types */
+typedef struct HIST_FILE {
+    FILE *fp;
+    size_t current_line;
+    size_t len;
+} HIST_FILE;
 
-
-int parse_config(struct ENV *env);
 
 #endif

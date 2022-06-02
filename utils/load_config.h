@@ -17,25 +17,12 @@
 
 #include <stdint.h>
 
-#ifndef VALERY
-#define VALERY
+#include "../valery.h"
+
+#ifndef LOAD_CONFIG
+#define LOAD_CONFIG
 
 
-/* variables */
-#define COMMAND_LEN 1024
-#define MAX_ENV_LEN 1024
-#define CONFIG_NAME ".valeryrc"
-#define HISTFILE_NAME ".valery_history"
-
-/* types */
-typedef struct ENV {
-    uint8_t exit_code;
-    char *PS1;
-    char *PATH;
-} ENV;
-
-/* functions */
-struct ENV *new_env();
-void free_env(struct ENV *env);
+int parse_config(struct ENV *env);
 
 #endif

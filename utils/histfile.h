@@ -17,8 +17,12 @@
 
 #include <stdio.h>
 
+#include "../valery.h"
+
 #ifndef HISTFILE
 #define HISTFILE
+
+#define _GNU_SOURCE
 
 /* types */
 typedef struct HIST_FILE {
@@ -27,5 +31,11 @@ typedef struct HIST_FILE {
     size_t len;
 } HIST_FILE;
 
+/* functions */
+struct HIST_FILE *new_hist_file();
+void free_hist_file(struct HIST_FILE *hf);
+int get_len(FILE *fp);
+int open_hist_file(struct HIST_FILE *hf, char *full_path);
+int read_current_line(struct HIST_FILE *hf, char *buf[COMMAND_LEN]);
 
 #endif

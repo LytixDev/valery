@@ -56,7 +56,7 @@ int get_len(FILE *fp)
     return len;
 }
 
-/* returns 1 if it can open hist file, else 0 */
+/* returns 0 if it can open hist file, else 1 */
 int open_hist_file(struct HIST_FILE *hf, char *full_path)
 {
     hf->fp = fopen(full_path, "r+");
@@ -64,44 +64,56 @@ int open_hist_file(struct HIST_FILE *hf, char *full_path)
         /* set current line to read from to last line of file (0 indexed) */
         hf->len = get_len(hf->fp);
         hf->current_line = hf->len - 1;
-        return 1;
-
+        return 0;
     }
 
-    return 0;
+    return 1;
 }
 
 int read_current_line(struct HIST_FILE *hf, char *buf[COMMAND_LEN])
 {
-    size_t len = 0;
-    ssize_t read;
+    /*
+     * Move file pointer to previous new line.
+     * Increment by one to get next line.
+     * Store next line in buffer.
+     */
 
-    while ((read = getline(buf, &len, hf->fp)) != -1) {
-        printf("Retrieved line of length %zu:\n", read);
-    }
+    /* TODO: handle changing lines with arrow keys */
+
+    if (hf->current_line == 0)
+        return 1;
+
+    size_t len = 0;
+    long offset = ftell(hf->fp);
+    offset--;
+
+    while (fgetc(hf->fp) != '\n')
+        fseek(hf->fp, --offset, SEEK_SET);
+
+    getline(buf, &len, hf->fp);
     return 0;
 }
-
+/*
 int main()
 {
     struct HIST_FILE *hf = new_hist_file();
 
-    if (!open_hist_file(hf, "/home/nic/.valery_hist")) {
+    if (open_hist_file(hf, "/home/nic/.valery_hist")) {
         printf("Could not open\n");
         return 1;
     }
 
-    printf("Succesfully opened hist file\n");
-    printf("pos: %ld", ftell(hf->fp));
+    printf("Succesfully opened hist file\n\n");
+    printf("pos before seek: %ld\n", ftell(hf->fp));
 
     char *buf[COMMAND_LEN];
     read_current_line(hf, buf);
+    printf("pos after seek: %ld\n", ftell(hf->fp));
     printf("%s\n", *buf);
 
-    /*
-        Plan:
-        Move file pointer to previous \n.
-        Increment by one to get next line.
-        Store next line in buffer.
-    */
+
+    TODO: keep track of all commands typed in, and write to
+          hist file when program is closed.
+
 }
+*/

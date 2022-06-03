@@ -23,6 +23,8 @@
 #define HISTFILE
 
 #define _GNU_SOURCE
+#define HIST_UP 0
+#define HIST_DOWN 1
 
 /* types */
 typedef struct HIST_FILE {
@@ -36,6 +38,7 @@ struct HIST_FILE *new_hist_file();
 void free_hist_file(struct HIST_FILE *hf);
 int get_len(FILE *fp);
 int open_hist_file(struct HIST_FILE *hf, char *full_path);
-int read_current_line(struct HIST_FILE *hf, char *buf[COMMAND_LEN]);
+int read_line_and_move_fp_back(FILE *fp, long offset, char *buf[COMMAND_LEN]);
+int read_hist_line(struct HIST_FILE *hf, char *buf[COMMAND_LEN], int action);
 
 #endif

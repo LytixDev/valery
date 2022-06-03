@@ -40,7 +40,6 @@ void free_hist_file(struct HIST_FILE *hf)
 {
     if (hf != NULL) {
         fclose(hf->fp);
-        free(hf->fp);
         free(hf);
     }
 }
@@ -48,7 +47,6 @@ void free_hist_file(struct HIST_FILE *hf)
 struct HIST_FILE_WRITER *new_hist_file_writer()
 {
     struct HIST_FILE_WRITER *hfw = (HIST_FILE_WRITER *) malloc(sizeof(HIST_FILE_WRITER));
-    hfw->fp = (FILE *) malloc(sizeof(FILE));
     hfw->commands = malloc(MAX_COMMANDS_BEFORE_WRITE * sizeof(char *));
     /* allocate space for all strings */
     for (int i = 0; i < MAX_COMMANDS_BEFORE_WRITE; i++)
@@ -63,8 +61,6 @@ void free_hist_file_writer(struct HIST_FILE_WRITER *hfw)
     if (hfw == NULL)
         return;
 
-    free(hfw->fp);
-
     for (int i = 0; i < MAX_COMMANDS_BEFORE_WRITE; i++)
         free(hfw->commands[i]);
 
@@ -72,23 +68,21 @@ void free_hist_file_writer(struct HIST_FILE_WRITER *hfw)
     free(hfw);
 }
 
-void save_command(struct HIST_FILE_WRITER *hfw, char buf[COMMAND_LEN])
+void save_command(struct HIST_FILE_WRITER *hfw, struct HIST_FILE *hf, char buf[COMMAND_LEN])
 {
     if (hfw->total_commands == MAX_COMMANDS_BEFORE_WRITE) {
-        write_commands_to_hist_file();
+        write_commands_to_hist_file(hf->fp, hfw->commands, hfw->total_commands);
         hfw->total_commands = 0;
     }
     strncpy(hfw->commands[hfw->total_commands++], buf, COMMAND_LEN);
-
-    /* debug */
-    for (int i = 0; i < hfw->total_commands; i++)
-        printf("DEBUG: cmd %d: %s\n", i, hfw->commands[i]);
 }
 
-void write_commands_to_hist_file()
+void write_commands_to_hist_file(FILE *fp, char **commands, int total_commands)
 {
-    // write to file
-    // free string buffers?
+    for (int i = 0; i < total_commands; i++) {
+        fputs(commands[i], fp);
+        fputs("\n", fp);
+    }
 }
 
 int get_len(FILE *fp)
@@ -106,7 +100,7 @@ int get_len(FILE *fp)
 /* returns 0 if it can open hist file, else 1 */
 int open_hist_file(struct HIST_FILE *hf, char *full_path)
 {
-    hf->fp = fopen(full_path, "r+");
+    hf->fp = fopen(full_path, "a+");
     if (hf->fp != NULL) {
         /* set current line to read from to last line of file (0 indexed) */
         hf->len = get_len(hf->fp);

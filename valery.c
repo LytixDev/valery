@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "valery.h"
 #include "utils/load_config.h"
@@ -29,6 +30,14 @@
 #include "utils/lexer.h"
 #include "utils/histfile.h"
 
+
+static volatile int is_running = 1;
+
+
+void catch_exit_signal(int signal)
+{
+    is_running = 0;
+}
 
 struct ENV *new_env()
 {
@@ -53,10 +62,17 @@ int main()
     struct ENV *env = new_env();
     struct HIST_FILE *hf = new_hist_file();
     struct HIST_FILE_WRITER *hfw = new_hist_file_writer();
+    char *buf = "";
+    char full_cmd[4096];
+    char cmd[4096];
+    char args[4096];
+
+    /* trap ctrl+c */
+    /* TODO: have ctrl+c only clear current prompt */
+    signal(SIGINT, catch_exit_signal);
 
     int rc = parse_config(env);
     if (rc == 1) {
-        /* TODO: improve error handling */
         fprintf(stderr, "error parsing .valeryrc");
         free_env(env);
         return 1;
@@ -65,27 +81,26 @@ int main()
     open_hist_file(hf, "/home/nic/.valery_hist");
 
     /* main loop */
-    char *buf = "";
-    char full_cmd[4096];
-    char cmd[4096];
-    char args[4096];
-
-    while (strcmp(buf, "exit") != 0) {
+    while (strcmp(buf, "exit") != 0 && is_running != 0) {
         buf = prompt(env->PS1);
         split_buffer(buf, cmd, args);
 
         snprintf(full_cmd, 4096, "%s/%s %s", env->PATH, cmd, args);
 
         /* save command to memory. Write to hist file on max saved or on exit. */
-        save_command(hfw, full_cmd);
+        save_command(hfw, hf, full_cmd);
 
-        int rc = system(full_cmd);
+        rc = system(full_cmd);
         env->exit_code = rc;
     }
 
+    /* free and write to file before exiting */
     free(buf);
+    write_commands_to_hist_file(hf->fp, hfw->commands, hfw->total_commands);
     free_env(env);
-    
+    free_hist_file(hf);
+    free_hist_file_writer(hfw);
     printf("Exiting ...\n");
-    return rc;
+
+    return 0;
 }

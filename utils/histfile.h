@@ -25,7 +25,7 @@
 #define _GNU_SOURCE
 #define HIST_UP 0
 #define HIST_DOWN 1
-#define MAX_COMMANDS_BEFORE_WRITE 50
+#define MAX_COMMANDS_BEFORE_WRITE 3
 
 /* types */
 typedef struct HIST_FILE {
@@ -35,7 +35,6 @@ typedef struct HIST_FILE {
 } HIST_FILE;
 
 typedef struct HIST_FILE_WRITER {
-    FILE *fp;
     char **commands;
     int total_commands;
 } HIST_FILE_WRITER;
@@ -45,8 +44,8 @@ struct HIST_FILE *new_hist_file();
 void free_hist_file(struct HIST_FILE *hf);
 struct HIST_FILE_WRITER *new_hist_file_writer();
 void free_hist_file_writer(struct HIST_FILE_WRITER *hfw);
-void save_command(struct HIST_FILE_WRITER *hfw, char buf[COMMAND_LEN]);
-void write_commands_to_hist_file();
+void save_command(struct HIST_FILE_WRITER *hfw, struct HIST_FILE *hf, char buf[COMMAND_LEN]);
+void write_commands_to_hist_file(FILE *fp, char **commands, int total_commands);
 int get_len(FILE *fp);
 int open_hist_file(struct HIST_FILE *hf, char *full_path);
 int read_line_and_move_fp_back(FILE *fp, long offset, char *buf[COMMAND_LEN]);

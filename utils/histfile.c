@@ -19,6 +19,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
 
@@ -39,8 +40,48 @@ void free_hist_file(struct HIST_FILE *hf)
 {
     if (hf != NULL) {
         fclose(hf->fp);
-        free(hf->fp);
         free(hf);
+    }
+}
+
+struct HIST_FILE_WRITER *new_hist_file_writer()
+{
+    struct HIST_FILE_WRITER *hfw = (HIST_FILE_WRITER *) malloc(sizeof(HIST_FILE_WRITER));
+    hfw->commands = malloc(MAX_COMMANDS_BEFORE_WRITE * sizeof(char *));
+    /* allocate space for all strings */
+    for (int i = 0; i < MAX_COMMANDS_BEFORE_WRITE; i++)
+        hfw->commands[i] = malloc(COMMAND_LEN * sizeof(char));
+
+    hfw->total_commands = 0;
+    return hfw;
+}
+
+void free_hist_file_writer(struct HIST_FILE_WRITER *hfw)
+{
+    if (hfw == NULL)
+        return;
+
+    for (int i = 0; i < MAX_COMMANDS_BEFORE_WRITE; i++)
+        free(hfw->commands[i]);
+
+    free(hfw->commands);
+    free(hfw);
+}
+
+void save_command(struct HIST_FILE_WRITER *hfw, struct HIST_FILE *hf, char buf[COMMAND_LEN])
+{
+    if (hfw->total_commands == MAX_COMMANDS_BEFORE_WRITE) {
+        write_commands_to_hist_file(hf->fp, hfw->commands, hfw->total_commands);
+        hfw->total_commands = 0;
+    }
+    strncpy(hfw->commands[hfw->total_commands++], buf, COMMAND_LEN);
+}
+
+void write_commands_to_hist_file(FILE *fp, char **commands, int total_commands)
+{
+    for (int i = 0; i < total_commands; i++) {
+        fputs(commands[i], fp);
+        fputs("\n", fp);
     }
 }
 
@@ -59,7 +100,7 @@ int get_len(FILE *fp)
 /* returns 0 if it can open hist file, else 1 */
 int open_hist_file(struct HIST_FILE *hf, char *full_path)
 {
-    hf->fp = fopen(full_path, "r+");
+    hf->fp = fopen(full_path, "a+");
     if (hf->fp != NULL) {
         /* set current line to read from to last line of file (0 indexed) */
         hf->len = get_len(hf->fp);
@@ -70,7 +111,16 @@ int open_hist_file(struct HIST_FILE *hf, char *full_path)
     return 1;
 }
 
-int read_current_line(struct HIST_FILE *hf, char *buf[COMMAND_LEN])
+int read_line_and_move_fp_back(FILE *fp, long offset, char *buf[COMMAND_LEN])
+{
+    size_t len = 0;
+    getline(buf, &len, fp);
+    fseek(fp, ++offset, SEEK_SET);
+    return len;
+}
+
+
+int read_hist_line(struct HIST_FILE *hf, char *buf[COMMAND_LEN], int action)
 {
     /*
      * Move file pointer to previous new line.
@@ -78,19 +128,32 @@ int read_current_line(struct HIST_FILE *hf, char *buf[COMMAND_LEN])
      * Store next line in buffer.
      */
 
-    /* TODO: handle changing lines with arrow keys */
-
-    if (hf->current_line == 0)
-        return 1;
-
-    size_t len = 0;
     long offset = ftell(hf->fp);
     offset--;
 
-    while (fgetc(hf->fp) != '\n')
-        fseek(hf->fp, --offset, SEEK_SET);
+    /* TODO: wrap on boundaries */
+    if (action == HIST_UP) {
+        if (hf->current_line == 0) {
+            read_line_and_move_fp_back(hf->fp, offset, buf);
+            return 0;
+        }
 
-    getline(buf, &len, hf->fp);
+        while (fgetc(hf->fp) != '\n')
+            fseek(hf->fp, --offset, SEEK_SET);
+        hf->current_line--;
+
+    } else if (action == HIST_DOWN) {
+        if (hf->current_line == hf->len - 1) {
+            read_line_and_move_fp_back(hf->fp, offset, buf);
+            return 0;
+        }
+
+        while (fgetc(hf->fp) != '\n')
+            fseek(hf->fp, ++offset, SEEK_SET);
+        hf->current_line++;
+    }
+
+    read_line_and_move_fp_back(hf->fp, offset, buf);
     return 0;
 }
 /*
@@ -100,20 +163,35 @@ int main()
 
     if (open_hist_file(hf, "/home/nic/.valery_hist")) {
         printf("Could not open\n");
+        free_hist_file(hf);
         return 1;
     }
 
-    printf("Succesfully opened hist file\n\n");
-    printf("pos before seek: %ld\n", ftell(hf->fp));
 
     char *buf[COMMAND_LEN];
-    read_current_line(hf, buf);
-    printf("pos after seek: %ld\n", ftell(hf->fp));
-    printf("%s\n", *buf);
+    read_hist_line(hf, buf, HIST_UP);
+    printf("last: %s\n", *buf);
 
+    hf->current_line--;
+    read_hist_line(hf, buf, HIST_UP);
+    printf("up: %s\n", *buf);
 
-    TODO: keep track of all commands typed in, and write to
-          hist file when program is closed.
+    hf->current_line--;
+    read_hist_line(hf, buf, HIST_UP);
+    printf("up: %s\n", *buf);
 
+    hf->current_line++;
+    read_hist_line(hf, buf, HIST_DOWN);
+    printf("down: %s\n", *buf);
+
+    hf->current_line = hf->len - 1;
+    read_hist_line(hf, buf, HIST_DOWN);
+    printf("last: %s\n", *buf);
+
+    //TODO: keep track of all commands typed in, and write to
+    //      hist file when program is closed.
+    
+    free_hist_file(hf);
+    return 0;
 }
 */

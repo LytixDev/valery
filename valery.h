@@ -35,6 +35,7 @@ typedef struct ENV {
 } ENV;
 
 /* functions */
+void catch_exit_signal(int signal);
 struct ENV *new_env();
 void free_env(struct ENV *env);
 

@@ -27,6 +27,7 @@
 #include "utils/load_config.h"
 #include "utils/prompt.h"
 #include "utils/lexer.h"
+#include "utils/histfile.h"
 
 
 struct ENV *new_env()
@@ -50,14 +51,18 @@ void free_env(struct ENV *env)
 int main()
 {
     struct ENV *env = new_env();
-    int rc = parse_config(env);
+    struct HIST_FILE *hf = new_hist_file();
+    struct HIST_FILE_WRITER *hfw = new_hist_file_writer();
 
+    int rc = parse_config(env);
     if (rc == 1) {
         /* TODO: improve error handling */
         fprintf(stderr, "error parsing .valeryrc");
         free_env(env);
         return 1;
     }
+
+    open_hist_file(hf, "/home/nic/.valery_hist");
 
     /* main loop */
     char *buf = "";
@@ -70,6 +75,9 @@ int main()
         split_buffer(buf, cmd, args);
 
         snprintf(full_cmd, 4096, "%s/%s %s", env->PATH, cmd, args);
+
+        /* save command to memory. Write to hist file on max saved or on exit. */
+        save_command(hfw, full_cmd);
 
         int rc = system(full_cmd);
         env->exit_code = rc;

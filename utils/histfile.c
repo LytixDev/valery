@@ -19,6 +19,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
 
@@ -42,6 +43,52 @@ void free_hist_file(struct HIST_FILE *hf)
         free(hf->fp);
         free(hf);
     }
+}
+
+struct HIST_FILE_WRITER *new_hist_file_writer()
+{
+    struct HIST_FILE_WRITER *hfw = (HIST_FILE_WRITER *) malloc(sizeof(HIST_FILE_WRITER));
+    hfw->fp = (FILE *) malloc(sizeof(FILE));
+    hfw->commands = malloc(MAX_COMMANDS_BEFORE_WRITE * sizeof(char *));
+    /* allocate space for all strings */
+    for (int i = 0; i < MAX_COMMANDS_BEFORE_WRITE; i++)
+        hfw->commands[i] = malloc(COMMAND_LEN * sizeof(char));
+
+    hfw->total_commands = 0;
+    return hfw;
+}
+
+void free_hist_file_writer(struct HIST_FILE_WRITER *hfw)
+{
+    if (hfw == NULL)
+        return;
+
+    free(hfw->fp);
+
+    for (int i = 0; i < MAX_COMMANDS_BEFORE_WRITE; i++)
+        free(hfw->commands[i]);
+
+    free(hfw->commands);
+    free(hfw);
+}
+
+void save_command(struct HIST_FILE_WRITER *hfw, char buf[COMMAND_LEN])
+{
+    if (hfw->total_commands == MAX_COMMANDS_BEFORE_WRITE) {
+        write_commands_to_hist_file();
+        hfw->total_commands = 0;
+    }
+    strncpy(hfw->commands[hfw->total_commands++], buf, COMMAND_LEN);
+
+    /* debug */
+    for (int i = 0; i < hfw->total_commands; i++)
+        printf("DEBUG: cmd %d: %s\n", i, hfw->commands[i]);
+}
+
+void write_commands_to_hist_file()
+{
+    // write to file
+    // free string buffers?
 }
 
 int get_len(FILE *fp)

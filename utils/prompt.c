@@ -1,5 +1,6 @@
 /*
- *  Displays the PS1 along with a prompt for the user to type in commands.
+ *  Displays a prompt for the user to type in commands. Operates on the
+ *  buffer inputet by the user.
  * 
  *  Copyright (C) 2022 Nicolai Brand 
  *
@@ -18,29 +19,90 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 
 #include "prompt.h"
+#include "../valery.h"
 
 
-char *prompt(char *ps1)
+void split_buffer(char *buf, char *cmd, char *args)
 {
-    printf("%s ", ps1);
-    char *str;
+    const char delim[] = " ";
+
+    char *cmd_tmp = strtok(buf, delim);
+    char *args_tmp = strtok(NULL, delim);
+
+    if (cmd_tmp != NULL)
+        strcpy(cmd, cmd_tmp);
+
+    if (args_tmp != NULL)
+        strcpy(args, args_tmp);
+}
+
+void clear_buffer(char *buf)
+{
+    buf[0] = '\0';
+}
+
+void print_buffer_with_ps1(char *ps1, char *buf)
+{
+    printf("\n%s %s ", ps1, buf);
+}
+
+int consume_arrow_key()
+{
+    /*
+       Arrow keys takes up three chars in the buffer.
+       Only last char codes for up or down, so consume
+       second char value.
+     */
+    if (getchar() == ARROW_KEY_2)
+        return getchar();
+   
+    getchar();
+    return 0;
+}
+
+/*
+ * Returns 0 when a normal command is typed in.
+ * Returns an arrow key code (see prompt.h) when an arrow key is
+ * pressed.
+ */
+int prompt(char *ps1, char buf[COMMAND_LEN])
+{
     int ch;
-    size_t cur_len = 0;
-    size_t max_len = CHUNK;
+    size_t cur_pos = 0;
+    size_t max_len = COMMAND_LEN;
 
-    str = realloc(NULL, sizeof(*str) * max_len);
+    printf("%s ", ps1);
 
-    while (EOF != (ch = fgetc(stdin)) && ch != '\n') {
-        str[cur_len++] = ch;
-
-        if (cur_len == max_len)
-            str = realloc(str, sizeof(*str) * (max_len += CHUNK));
+    while (EOF != (ch = getchar()) && ch != '\n') {
+        if (ch == ARROW_KEY) {
+            ch = consume_arrow_key();
+            switch (ch) {
+                case ARROW_UP:
+                    return ARROW_UP;
+                case ARROW_DOWN:
+                    return ARROW_DOWN;
+                case ARROW_RIGHT:
+                    return ARROW_RIGHT;
+                case ARROW_LEFT:
+                    return ARROW_LEFT;
+                /* if key not valid arrow directional code, ignore and continue */
+            }
+        } else {
+            if (cur_pos == max_len) {
+                buf[cur_pos] = '\0';
+                return 1;
+            }
+                
+            putchar(ch);
+            buf[cur_pos++] = ch;
+        }
     }
-    /* add null byte to terminate string */
-    str[cur_len++] = '\0';
-    
-    return realloc(str, sizeof(*str) * cur_len);
+
+    /* terminate string */
+    buf[cur_pos] = '\0';
+    return 0;
 }

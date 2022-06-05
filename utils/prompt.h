@@ -17,11 +17,29 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "../valery.h"
+
 #ifndef PROMPT
 #define PROMPT
 
-#define CHUNK 4096
+#define ARROW_KEY 27
+#define ARROW_KEY_2 91
+#define ARROW_UP 65
+#define ARROW_DOWN 66
+#define ARROW_RIGHT 67
+#define ARROW_LEFT 68
 
-char *prompt(char *ps1);
+#define up(x) printf("\033[xA");
+#define down(x) printf("\033[xB");
+#define right(x) printf("\033[xC");
+#define left(x) printf("\033[2D");
+#define clear() printf("\033[2J");
+#define erase_line() printf("\33[2K\r");
+
+void split_buffer(char *buf, char *cmd, char *args);
+void clear_buffer(char *buf);
+void print_buffer_with_ps1(char *ps1, char *buf);
+int consume_arrow_key();
+int prompt(char *ps1, char buf[COMMAND_LEN]);
 
 #endif

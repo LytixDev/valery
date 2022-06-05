@@ -23,16 +23,35 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
+#include <termios.h>
 
 #include "valery.h"
 #include "utils/load_config.h"
 #include "utils/prompt.h"
-#include "utils/lexer.h"
 #include "utils/histfile.h"
 
 
 static volatile int is_running = 1;
+static struct termios originalt, newt;
 
+void disable_term_flags()
+{
+    tcgetattr(STDIN_FILENO, &originalt);
+    newt = originalt;
+    /* change so buffer don't require new line or similar to return */
+    newt.c_lflag &= ~ICANON;          
+    newt.c_cc[VTIME] = 0;
+    newt.c_cc[VMIN] = 1;
+    /* turn of echo */
+    newt.c_lflag &= ~ECHO;
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+}
+
+void enable_term_flags()
+{
+    tcsetattr(STDIN_FILENO, TCSANOW, &originalt);
+}
 
 void catch_exit_signal(int signal)
 {
@@ -62,14 +81,13 @@ int main()
     struct ENV *env = new_env();
     struct HIST_FILE *hf = new_hist_file();
     struct HIST_FILE_WRITER *hfw = new_hist_file_writer();
-    char *buf = "";
-    char full_cmd[4096];
-    char cmd[4096];
-    char args[4096];
+    char buf[COMMAND_LEN] = {0};
+    char cmd[COMMAND_LEN];
+    char args[COMMAND_LEN];
+    char full_cmd[8192];
 
-    /* trap ctrl+c */
-    /* TODO: have ctrl+c only clear current prompt */
     signal(SIGINT, catch_exit_signal);
+    disable_term_flags();
 
     int rc = parse_config(env);
     if (rc == 1) {
@@ -81,26 +99,35 @@ int main()
     open_hist_file(hf, "/home/nic/.valery_hist");
 
     /* main loop */
-    while (strcmp(buf, "exit") != 0 && is_running != 0) {
-        buf = prompt(env->PS1);
+    while (strcmp(cmd, "exit") != 0 && is_running != 0) {
+        rc = prompt(env->PS1, buf);
+
+        if (rc == ARROW_UP) {
+            // get last line from hist file
+            continue;
+        } else if (rc == ARROW_DOWN) {
+            // get prevvious index of line from hist file minus 1
+            continue;
+        }
+
         split_buffer(buf, cmd, args);
-
-        snprintf(full_cmd, 4096, "%s/%s %s", env->PATH, cmd, args);
-
+        snprintf(full_cmd, 8192, "%s/%s %s", env->PATH, cmd, args);
         /* save command to memory. Write to hist file on max saved or on exit. */
-        save_command(hfw, hf, full_cmd);
-
-        rc = system(full_cmd);
+        save_command(hfw, hf, buf);
+        //rc = system(full_cmd);
         env->exit_code = rc;
+        clear_buffer(buf);
+        putchar('\n');
     }
 
     /* free and write to file before exiting */
-    free(buf);
     write_commands_to_hist_file(hf->fp, hfw->commands, hfw->total_commands);
     free_env(env);
     free_hist_file(hf);
     free_hist_file_writer(hfw);
+
     printf("Exiting ...\n");
+    enable_term_flags();
 
     return 0;
 }

@@ -99,22 +99,30 @@ int main()
     open_hist_file(hf, "/home/nic/.valery_hist");
 
     /* main loop */
-    while (strcmp(cmd, "exit") != 0 && is_running != 0) {
+    while (strcmp(cmd, "exit") != 0) {
         rc = prompt(env->PS1, buf);
 
+        /* check for special cases before parsing command */
         if (rc == ARROW_UP) {
-            // get last line from hist file
+            read_hist_line(hf, buf, HIST_UP);
+            printf("%s", buf);
             continue;
         } else if (rc == ARROW_DOWN) {
-            // get prevvious index of line from hist file minus 1
+            read_hist_line(hf, buf, HIST_DOWN);
+            printf("%s", buf);
+            continue;
+        } else if (is_running == 0) {
+            putchar('\n');
+            is_running = 1;
             continue;
         }
 
+        /* loope enters here means ordinary command was typed in */
         split_buffer(buf, cmd, args);
         snprintf(full_cmd, 8192, "%s/%s %s", env->PATH, cmd, args);
         /* save command to memory. Write to hist file on max saved or on exit. */
         save_command(hfw, hf, buf);
-        //rc = system(full_cmd);
+        rc = system(full_cmd);
         env->exit_code = rc;
         clear_buffer(buf);
         putchar('\n');

@@ -48,7 +48,7 @@ void save_command(struct HIST_FILE_WRITER *hfw, struct HIST_FILE *hf, char buf[C
 void write_commands_to_hist_file(FILE *fp, char **commands, int total_commands);
 int get_len(FILE *fp);
 int open_hist_file(struct HIST_FILE *hf, char *full_path);
-int read_line_and_move_fp_back(FILE *fp, long offset, char *buf[COMMAND_LEN]);
-int read_hist_line(struct HIST_FILE *hf, char *buf[COMMAND_LEN], int action);
+int read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN]);
+int read_hist_line(struct HIST_FILE *hf, char buf[COMMAND_LEN], int action);
 
 #endif

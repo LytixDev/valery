@@ -80,8 +80,10 @@ void save_command(struct HIST_FILE_WRITER *hfw, struct HIST_FILE *hf, char buf[C
 void write_commands_to_hist_file(FILE *fp, char **commands, int total_commands)
 {
     for (int i = 0; i < total_commands; i++) {
-        fputs(commands[i], fp);
-        fputs("\n", fp);
+        if (strcmp(commands[i], "") != 0) {
+            fputs(commands[i], fp);
+            fputs("\n", fp);
+        }
     }
 }
 
@@ -111,16 +113,19 @@ int open_hist_file(struct HIST_FILE *hf, char *full_path)
     return 1;
 }
 
-int read_line_and_move_fp_back(FILE *fp, long offset, char *buf[COMMAND_LEN])
+int read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN])
 {
     size_t len = 0;
-    getline(buf, &len, fp);
+    char *tmp = (char *) malloc(sizeof(char) * COMMAND_LEN);;
+    getline(&tmp, &len, fp);
+    strncpy(buf, tmp, COMMAND_LEN);
+    free(tmp);
     fseek(fp, ++offset, SEEK_SET);
     return len;
 }
 
 
-int read_hist_line(struct HIST_FILE *hf, char *buf[COMMAND_LEN], int action)
+int read_hist_line(struct HIST_FILE *hf, char buf[COMMAND_LEN], int action)
 {
     /*
      * Move file pointer to previous new line.
@@ -131,7 +136,6 @@ int read_hist_line(struct HIST_FILE *hf, char *buf[COMMAND_LEN], int action)
     long offset = ftell(hf->fp);
     offset--;
 
-    /* TODO: wrap on boundaries */
     if (action == HIST_UP) {
         if (hf->current_line == 0) {
             read_line_and_move_fp_back(hf->fp, offset, buf);
@@ -144,7 +148,8 @@ int read_hist_line(struct HIST_FILE *hf, char *buf[COMMAND_LEN], int action)
 
     } else if (action == HIST_DOWN) {
         if (hf->current_line == hf->len - 1) {
-            read_line_and_move_fp_back(hf->fp, offset, buf);
+            //read_line_and_move_fp_back(hf->fp, offset, buf);
+            buf[0] = '\0';
             return 0;
         }
 
@@ -156,42 +161,3 @@ int read_hist_line(struct HIST_FILE *hf, char *buf[COMMAND_LEN], int action)
     read_line_and_move_fp_back(hf->fp, offset, buf);
     return 0;
 }
-/*
-int main()
-{
-    struct HIST_FILE *hf = new_hist_file();
-
-    if (open_hist_file(hf, "/home/nic/.valery_hist")) {
-        printf("Could not open\n");
-        free_hist_file(hf);
-        return 1;
-    }
-
-
-    char *buf[COMMAND_LEN];
-    read_hist_line(hf, buf, HIST_UP);
-    printf("last: %s\n", *buf);
-
-    hf->current_line--;
-    read_hist_line(hf, buf, HIST_UP);
-    printf("up: %s\n", *buf);
-
-    hf->current_line--;
-    read_hist_line(hf, buf, HIST_UP);
-    printf("up: %s\n", *buf);
-
-    hf->current_line++;
-    read_hist_line(hf, buf, HIST_DOWN);
-    printf("down: %s\n", *buf);
-
-    hf->current_line = hf->len - 1;
-    read_hist_line(hf, buf, HIST_DOWN);
-    printf("last: %s\n", *buf);
-
-    //TODO: keep track of all commands typed in, and write to
-    //      hist file when program is closed.
-    
-    free_hist_file(hf);
-    return 0;
-}
-*/

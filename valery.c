@@ -45,7 +45,6 @@ void disable_term_flags()
     /* turn of echo */
     newt.c_lflag &= ~ECHO;
     tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-
 }
 
 void enable_term_flags()
@@ -99,37 +98,40 @@ int main()
     open_hist_file(hf, "/home/nic/.valery_hist");
 
     /* main loop */
-    while (strcmp(cmd, "exit") != 0) {
+    while (1) {
         rc = prompt(env->PS1, buf);
 
         /* check for special cases before parsing command */
-        if (rc == ARROW_UP) {
-            read_hist_line(hf, buf, HIST_UP);
-            printf("%s", buf);
-            continue;
-        } else if (rc == ARROW_DOWN) {
-            read_hist_line(hf, buf, HIST_DOWN);
+        if (rc == ARROW_UP || rc == ARROW_DOWN) {
+            if (hfw->total_commands_stored != 0)
+                write_commands_to_hist_file(hf, hfw);
+           
+            read_hist_line(hf, buf, (rc == ARROW_UP) ? HIST_UP : HIST_DOWN);
             printf("%s", buf);
             continue;
         } else if (is_running == 0) {
             putchar('\n');
-            is_running = 1;
+            is_running = ~is_running;
             continue;
+        } else {
+            putchar('\n');
         }
 
-        /* loope enters here means ordinary command was typed in */
+        /* loop enters here means ordinary command was typed in */
         split_buffer(buf, cmd, args);
         snprintf(full_cmd, 8192, "%s/%s %s", env->PATH, cmd, args);
-        /* save command to memory. Write to hist file on max saved or on exit. */
-        save_command(hfw, hf, buf);
+        
+        if (strcmp(cmd, "exit") == 0)
+            break;
+
         rc = system(full_cmd);
         env->exit_code = rc;
+        save_command(hfw, hf, buf);
         clear_buffer(buf);
-        putchar('\n');
     }
 
     /* free and write to file before exiting */
-    write_commands_to_hist_file(hf->fp, hfw->commands, hfw->total_commands);
+    write_commands_to_hist_file(hf, hfw);
     free_env(env);
     free_hist_file(hf);
     free_hist_file_writer(hfw);

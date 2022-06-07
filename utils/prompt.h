@@ -29,6 +29,8 @@
 #define ARROW_RIGHT 67
 #define ARROW_LEFT 68
 
+#define BACKSPACE 127
+
 #define up(x) printf("\033[xA");
 #define down(x) printf("\033[xB");
 #define right(x) printf("\033[xC");

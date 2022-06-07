@@ -52,7 +52,7 @@ struct HIST_FILE_WRITER *new_hist_file_writer()
     for (int i = 0; i < MAX_COMMANDS_BEFORE_WRITE; i++)
         hfw->commands[i] = malloc(COMMAND_LEN * sizeof(char));
 
-    hfw->total_commands = 0;
+    hfw->total_commands_stored = 0;
     return hfw;
 }
 
@@ -70,21 +70,25 @@ void free_hist_file_writer(struct HIST_FILE_WRITER *hfw)
 
 void save_command(struct HIST_FILE_WRITER *hfw, struct HIST_FILE *hf, char buf[COMMAND_LEN])
 {
-    if (hfw->total_commands == MAX_COMMANDS_BEFORE_WRITE) {
-        write_commands_to_hist_file(hf->fp, hfw->commands, hfw->total_commands);
-        hfw->total_commands = 0;
-    }
-    strncpy(hfw->commands[hfw->total_commands++], buf, COMMAND_LEN);
+    if (hfw->total_commands_stored == MAX_COMMANDS_BEFORE_WRITE)
+        write_commands_to_hist_file(hf, hfw);
+    strncpy(hfw->commands[hfw->total_commands_stored++], buf, COMMAND_LEN);
 }
 
-void write_commands_to_hist_file(FILE *fp, char **commands, int total_commands)
+void write_commands_to_hist_file(struct HIST_FILE *hf, struct HIST_FILE_WRITER *hfw)
 {
-    for (int i = 0; i < total_commands; i++) {
-        if (strcmp(commands[i], "") != 0) {
-            fputs(commands[i], fp);
-            fputs("\n", fp);
+    for (int i = 0; i < hfw->total_commands_stored; i++) {
+        if (strcmp(hfw->commands[i], "") != 0) {
+            fputs(hfw->commands[i], hf->fp);
+            fputs("\n", hf->fp);
+            hf->len++;
         }
     }
+    /* reset total_commands_stored counter */
+    hfw->total_commands_stored = 0;
+    hf->current_line = hf->len - 1;
+    /* move file pointer back to end of file */
+    fseek(hf->fp, 0, SEEK_END);
 }
 
 int get_len(FILE *fp)
@@ -138,6 +142,7 @@ int read_hist_line(struct HIST_FILE *hf, char buf[COMMAND_LEN], int action)
 
     if (action == HIST_UP) {
         if (hf->current_line == 0) {
+            fseek(hf->fp, 0, SEEK_SET);
             read_line_and_move_fp_back(hf->fp, offset, buf);
             return 0;
         }
@@ -147,14 +152,17 @@ int read_hist_line(struct HIST_FILE *hf, char buf[COMMAND_LEN], int action)
         hf->current_line--;
 
     } else if (action == HIST_DOWN) {
+        /* if at the end of file, do not read any lines */
         if (hf->current_line == hf->len - 1) {
-            //read_line_and_move_fp_back(hf->fp, offset, buf);
             buf[0] = '\0';
             return 0;
         }
 
-        while (fgetc(hf->fp) != '\n')
-            fseek(hf->fp, ++offset, SEEK_SET);
+        /* edge case. if current_line == 0, go straight to read line */
+        if (hf->current_line != 0) {
+            while (fgetc(hf->fp) != '\n')
+                fseek(hf->fp, ++offset, SEEK_SET);
+        }
         hf->current_line++;
     }
 

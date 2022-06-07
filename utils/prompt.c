@@ -78,6 +78,9 @@ int prompt(char *ps1, char buf[COMMAND_LEN])
     printf("%s ", ps1);
 
     while (EOF != (ch = getchar()) && ch != '\n') {
+        if (ch == BACKSPACE)
+            return BACKSPACE;
+
         if (ch == ARROW_KEY) {
             ch = consume_arrow_key();
             switch (ch) {

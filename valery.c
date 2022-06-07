@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <termios.h>
+#include <memory.h>
 
 #include "valery.h"
 #include "utils/load_config.h"
@@ -45,7 +46,6 @@ void disable_term_flags()
     /* turn of echo */
     newt.c_lflag &= ~ECHO;
     tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-
 }
 
 void enable_term_flags()
@@ -81,7 +81,7 @@ int main()
     struct ENV *env = new_env();
     struct HIST_FILE *hf = new_hist_file();
     struct HIST_FILE_WRITER *hfw = new_hist_file_writer();
-    char buf[COMMAND_LEN] = {0};
+    char input_buffer[COMMAND_LEN] = {0};
     char cmd[COMMAND_LEN];
     char args[COMMAND_LEN];
     char full_cmd[8192];
@@ -99,42 +99,33 @@ int main()
     open_hist_file(hf, "/home/nic/.valery_hist");
 
     /* main loop */
-    while (strcmp(cmd, "exit") != 0) {
-        rc = prompt(env->PS1, buf);
+    while (1) {
+        rc = prompt(hf, env->PS1, input_buffer);
 
-        /* check for special cases before parsing command */
-        if (rc == ARROW_UP) {
-            read_hist_line(hf, buf, HIST_UP);
-            printf("%s", buf);
-            continue;
-        } else if (rc == ARROW_DOWN) {
-            read_hist_line(hf, buf, HIST_DOWN);
-            printf("%s", buf);
-            continue;
-        } else if (is_running == 0) {
-            putchar('\n');
-            is_running = 1;
-            continue;
-        }
-
-        /* loope enters here means ordinary command was typed in */
-        split_buffer(buf, cmd, args);
+        /* loop enters here means ordinary command was typed in */
+        split_buffer(input_buffer, cmd, args);
         snprintf(full_cmd, 8192, "%s/%s %s", env->PATH, cmd, args);
-        /* save command to memory. Write to hist file on max saved or on exit. */
-        save_command(hfw, hf, buf);
+        
+        if (strcmp(input_buffer, "exit") == 0)
+            break;
+
+        putchar('\n');
         rc = system(full_cmd);
         env->exit_code = rc;
-        clear_buffer(buf);
-        putchar('\n');
+        save_command(hfw, hf, input_buffer);
+        /* clear all buffers */
+        memset(input_buffer, 0, COMMAND_LEN);
+        cmd[0] = 0;
+        args[0] = 0;
     }
 
     /* free and write to file before exiting */
-    write_commands_to_hist_file(hf->fp, hfw->commands, hfw->total_commands);
+    write_commands_to_hist_file(hf, hfw);
     free_env(env);
     free_hist_file(hf);
     free_hist_file_writer(hfw);
 
-    printf("Exiting ...\n");
+    printf("\nExiting ...\n");
     enable_term_flags();
 
     return 0;

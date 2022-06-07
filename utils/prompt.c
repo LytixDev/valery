@@ -23,6 +23,7 @@
 #include <stdlib.h>
 
 #include "prompt.h"
+#include "histfile.h"
 #include "../valery.h"
 
 
@@ -40,17 +41,7 @@ void split_buffer(char *buf, char *cmd, char *args)
         strcpy(args, args_tmp);
 }
 
-void clear_buffer(char *buf)
-{
-    buf[0] = '\0';
-}
-
-void print_buffer_with_ps1(char *ps1, char *buf)
-{
-    printf("\n%s %s ", ps1, buf);
-}
-
-int consume_arrow_key()
+int get_arrow_type()
 {
     /*
        Arrow keys takes up three chars in the buffer.
@@ -64,48 +55,63 @@ int consume_arrow_key()
     return 0;
 }
 
-/*
- * Returns 0 when a normal command is typed in.
- * Returns an arrow key code (see prompt.h) when an arrow key is
- * pressed.
- */
-int prompt(char *ps1, char buf[COMMAND_LEN])
+void clear_buffer(char buf[COMMAND_LEN])
+{
+    memset(buf, 0, COMMAND_LEN);
+}
+
+void init_prompt(char *ps1, char *buf)
+{
+    printf("%s %s", ps1, buf);
+}
+
+void update_prompt(char *ps1, char *buf, int cur_pos)
+{
+    flush_line();
+    printf("%s %s", ps1, buf);
+    int cursor_position = cur_pos + strlen(ps1) + 1;
+    // TODO: need to split buffer / shift all chars to the right of newly typed in char
+    //cursor_goto(cursor_position);
+}
+
+int prompt(struct HIST_FILE *hf, char *ps1, char buf[COMMAND_LEN])
 {
     int ch;
+    int arrow_type;
+    size_t new_buf_len;
     size_t cur_pos = 0;
     size_t max_len = COMMAND_LEN;
 
-    printf("%s ", ps1);
-
+    init_prompt(ps1, buf);
     while (EOF != (ch = getchar()) && ch != '\n') {
-        if (ch == BACKSPACE)
-            return BACKSPACE;
+        if (cur_pos == max_len) {
+            buf[cur_pos] = 0;
+            return 1;
+        }
 
-        if (ch == ARROW_KEY) {
-            ch = consume_arrow_key();
-            switch (ch) {
-                case ARROW_UP:
-                    return ARROW_UP;
-                case ARROW_DOWN:
-                    return ARROW_DOWN;
-                case ARROW_RIGHT:
-                    return ARROW_RIGHT;
-                case ARROW_LEFT:
-                    return ARROW_LEFT;
-                /* if key not valid arrow directional code, ignore and continue */
+        if (ch == BACKSPACE && cur_pos > 0) {
+            buf[--cur_pos] = 0;
+        } else if (ch == ARROW_KEY) {
+            arrow_type = get_arrow_type();
+            if (arrow_type == ARROW_LEFT) {
+                cursor_left(1);
+                cur_pos--;
+                continue;
             }
+
+            /* store hist line inside buf */
+            read_hist_line(hf, buf, (arrow_type == ARROW_UP) ? HIST_UP : HIST_DOWN);
+            new_buf_len = strlen(buf);
+            /* chop off newline character and decrement length */
+            buf[--new_buf_len] = 0;
+            cur_pos = new_buf_len;
+            
         } else {
-            if (cur_pos == max_len) {
-                buf[cur_pos] = '\0';
-                return 1;
-            }
-                
-            putchar(ch);
             buf[cur_pos++] = ch;
         }
+
+        update_prompt(ps1, buf, cur_pos);
     }
 
-    /* terminate string */
-    buf[cur_pos] = '\0';
     return 0;
 }

@@ -117,7 +117,7 @@ int open_hist_file(struct HIST_FILE *hf, char *full_path)
     return 1;
 }
 
-int read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN])
+size_t read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN])
 {
     size_t len = 0;
     char *tmp = (char *) malloc(sizeof(char) * COMMAND_LEN);;
@@ -129,7 +129,7 @@ int read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN])
 }
 
 
-int read_hist_line(struct HIST_FILE *hf, char buf[COMMAND_LEN], int action)
+size_t read_hist_line(struct HIST_FILE *hf, char buf[COMMAND_LEN], int action)
 {
     /*
      * Move file pointer to previous new line.
@@ -143,8 +143,7 @@ int read_hist_line(struct HIST_FILE *hf, char buf[COMMAND_LEN], int action)
     if (action == HIST_UP) {
         if (hf->current_line == 0) {
             fseek(hf->fp, 0, SEEK_SET);
-            read_line_and_move_fp_back(hf->fp, offset, buf);
-            return 0;
+            return read_line_and_move_fp_back(hf->fp, offset, buf);
         }
 
         while (fgetc(hf->fp) != '\n')
@@ -154,7 +153,7 @@ int read_hist_line(struct HIST_FILE *hf, char buf[COMMAND_LEN], int action)
     } else if (action == HIST_DOWN) {
         /* if at the end of file, do not read any lines */
         if (hf->current_line == hf->len - 1) {
-            buf[0] = '\0';
+            buf[0] = 0;
             return 0;
         }
 
@@ -166,6 +165,5 @@ int read_hist_line(struct HIST_FILE *hf, char buf[COMMAND_LEN], int action)
         hf->current_line++;
     }
 
-    read_line_and_move_fp_back(hf->fp, offset, buf);
-    return 0;
+    return read_line_and_move_fp_back(hf->fp, offset, buf);
 }

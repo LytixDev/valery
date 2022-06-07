@@ -17,6 +17,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "histfile.h"
 #include "../valery.h"
 
 #ifndef PROMPT
@@ -31,17 +32,16 @@
 
 #define BACKSPACE 127
 
-#define up(x) printf("\033[xA");
-#define down(x) printf("\033[xB");
-#define right(x) printf("\033[xC");
-#define left(x) printf("\033[2D");
-#define clear() printf("\033[2J");
-#define erase_line() printf("\33[2K\r");
+#define cursor_right(n) printf("\033[%dC", (n));
+#define cursor_left(n) printf("\033[%dD", (n));
+#define cursor_goto(x) printf("\033[%d", (x));
+#define flush_line() printf("\33[2K\r");
 
 void split_buffer(char *buf, char *cmd, char *args);
-void clear_buffer(char *buf);
-void print_buffer_with_ps1(char *ps1, char *buf);
-int consume_arrow_key();
-int prompt(char *ps1, char buf[COMMAND_LEN]);
+void clear_buffer(char buf[COMMAND_LEN]);
+int get_arrow_type();
+void init_prompt(char *ps1, char *buf);
+void update_prompt(char *ps1, char *buf, int cursor_pos);
+int prompt(struct HIST_FILE *hf, char *ps1, char buf[COMMAND_LEN]);
 
 #endif

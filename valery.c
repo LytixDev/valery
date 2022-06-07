@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <termios.h>
+#include <memory.h>
 
 #include "valery.h"
 #include "utils/load_config.h"
@@ -80,7 +81,7 @@ int main()
     struct ENV *env = new_env();
     struct HIST_FILE *hf = new_hist_file();
     struct HIST_FILE_WRITER *hfw = new_hist_file_writer();
-    char buf[COMMAND_LEN] = {0};
+    char input_buffer[COMMAND_LEN] = {0};
     char cmd[COMMAND_LEN];
     char args[COMMAND_LEN];
     char full_cmd[8192];
@@ -99,35 +100,23 @@ int main()
 
     /* main loop */
     while (1) {
-        rc = prompt(env->PS1, buf);
-
-        /* check for special cases before parsing command */
-        if (rc == ARROW_UP || rc == ARROW_DOWN) {
-            if (hfw->total_commands_stored != 0)
-                write_commands_to_hist_file(hf, hfw);
-           
-            read_hist_line(hf, buf, (rc == ARROW_UP) ? HIST_UP : HIST_DOWN);
-            printf("%s", buf);
-            continue;
-        } else if (is_running == 0) {
-            putchar('\n');
-            is_running = ~is_running;
-            continue;
-        } else {
-            putchar('\n');
-        }
+        rc = prompt(hf, env->PS1, input_buffer);
 
         /* loop enters here means ordinary command was typed in */
-        split_buffer(buf, cmd, args);
+        split_buffer(input_buffer, cmd, args);
         snprintf(full_cmd, 8192, "%s/%s %s", env->PATH, cmd, args);
         
-        if (strcmp(cmd, "exit") == 0)
+        if (strcmp(input_buffer, "exit") == 0)
             break;
 
+        putchar('\n');
         rc = system(full_cmd);
         env->exit_code = rc;
-        save_command(hfw, hf, buf);
-        clear_buffer(buf);
+        save_command(hfw, hf, input_buffer);
+        /* clear all buffers */
+        memset(input_buffer, 0, COMMAND_LEN);
+        cmd[0] = 0;
+        args[0] = 0;
     }
 
     /* free and write to file before exiting */
@@ -136,7 +125,7 @@ int main()
     free_hist_file(hf);
     free_hist_file_writer(hfw);
 
-    printf("Exiting ...\n");
+    printf("\nExiting ...\n");
     enable_term_flags();
 
     return 0;

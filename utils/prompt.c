@@ -52,12 +52,34 @@ int get_arrow_type()
         return getchar();
    
     getchar();
-    return 0;
+    return -1;
 }
 
-void clear_buffer(char buf[COMMAND_LEN])
+int move_cursor_horizontally(int arrow_type, int cur_pos, int buf_len)
 {
-    memset(buf, 0, COMMAND_LEN);
+    if (arrow_type == ARROW_LEFT) {
+        if (cur_pos < 1) return cur_pos;
+        cursor_left(1);
+        return --cur_pos;
+    }
+
+    if (arrow_type == ARROW_RIGHT) {
+        if (cur_pos >= buf_len) return cur_pos;
+        cursor_right(1);
+        return ++cur_pos;
+    }
+
+    return cur_pos;
+}
+
+/* inserts chars at any point in the char array */
+void insert_char_to_str(char buf[COMMAND_LEN], char c, int index)
+{
+    char tmp[COMMAND_LEN];
+    strncpy(tmp, buf, index);
+    tmp[index] = c;
+    strcpy(tmp + index + 1, buf + index); 
+    strcpy(buf, tmp);
 }
 
 void init_prompt(char *ps1, char *buf)
@@ -65,13 +87,14 @@ void init_prompt(char *ps1, char *buf)
     printf("%s %s", ps1, buf);
 }
 
-void update_prompt(char *ps1, char *buf, int cur_pos)
+void update_prompt(char *ps1, char *buf, int cursor_pos)
 {
     flush_line();
     printf("%s %s", ps1, buf);
-    int cursor_position = cur_pos + strlen(ps1) + 1;
-    // TODO: need to split buffer / shift all chars to the right of newly typed in char
-    //cursor_goto(cursor_position);
+    cursor_left(cursor_pos);
+    /* if cursor at the end of buffer, move cursor one to the right */
+    if (cursor_pos == 0)
+        cursor_right(1);
 }
 
 int prompt(struct HIST_FILE *hf, char *ps1, char buf[COMMAND_LEN])
@@ -84,6 +107,7 @@ int prompt(struct HIST_FILE *hf, char *ps1, char buf[COMMAND_LEN])
 
     init_prompt(ps1, buf);
     while (EOF != (ch = getchar()) && ch != '\n') {
+        /* return if buffer cannot store more chars */
         if (cur_pos == max_len) {
             buf[cur_pos] = 0;
             return 1;
@@ -93,9 +117,8 @@ int prompt(struct HIST_FILE *hf, char *ps1, char buf[COMMAND_LEN])
             buf[--cur_pos] = 0;
         } else if (ch == ARROW_KEY) {
             arrow_type = get_arrow_type();
-            if (arrow_type == ARROW_LEFT) {
-                cursor_left(1);
-                cur_pos--;
+            if (arrow_type == ARROW_LEFT || arrow_type == ARROW_RIGHT) {
+                cur_pos = move_cursor_horizontally(arrow_type, cur_pos, strlen(buf));
                 continue;
             }
 
@@ -105,12 +128,17 @@ int prompt(struct HIST_FILE *hf, char *ps1, char buf[COMMAND_LEN])
             /* chop off newline character and decrement length */
             buf[--new_buf_len] = 0;
             cur_pos = new_buf_len;
-            
+
         } else {
-            buf[cur_pos++] = ch;
+            if (cur_pos != strlen(buf)) {
+                insert_char_to_str(buf, ch, cur_pos++); 
+            } else {
+                /* no special keys have been pressed this session, so append char to input buffer */
+                buf[cur_pos++] = ch;
+            }
         }
 
-        update_prompt(ps1, buf, cur_pos);
+        update_prompt(ps1, buf, strlen(buf) - cur_pos);
     }
 
     return 0;

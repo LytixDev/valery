@@ -38,8 +38,9 @@
 #define flush_line() printf("\33[2K\r");
 
 void split_buffer(char *buf, char *cmd, char *args);
-void clear_buffer(char buf[COMMAND_LEN]);
 int get_arrow_type();
+int move_cursor_horizontally(int arrow_type, int cur_pos, int buf_len);
+void insert_char_to_str(char buf[COMMAND_LEN], char c, int index);
 void init_prompt(char *ps1, char *buf);
 void update_prompt(char *ps1, char *buf, int cursor_pos);
 int prompt(struct HIST_FILE *hf, char *ps1, char buf[COMMAND_LEN]);

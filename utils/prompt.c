@@ -97,7 +97,7 @@ void update_prompt(char *ps1, char *buf, int cursor_pos)
         cursor_right(1);
 }
 
-int prompt(struct HIST_FILE *hf, char *ps1, char buf[COMMAND_LEN])
+int prompt(struct HISTORY *hist, char *ps1, char buf[COMMAND_LEN])
 {
     int ch;
     int arrow_type;
@@ -106,6 +106,9 @@ int prompt(struct HIST_FILE *hf, char *ps1, char buf[COMMAND_LEN])
     size_t max_len = COMMAND_LEN;
 
     init_prompt(ps1, buf);
+    /* reset position in history */
+    hist->current_line = 0;
+
     while (EOF != (ch = getchar()) && ch != '\n') {
         /* return if buffer cannot store more chars */
         if (cur_pos == max_len) {
@@ -123,7 +126,7 @@ int prompt(struct HIST_FILE *hf, char *ps1, char buf[COMMAND_LEN])
             }
 
             /* store hist line inside buf */
-            read_hist_line(hf, buf, (arrow_type == ARROW_UP) ? HIST_UP : HIST_DOWN);
+            get_hist_line(hist, buf, (arrow_type == ARROW_UP) ? HIST_UP : HIST_DOWN);
             new_buf_len = strlen(buf);
             /* chop off newline character and decrement length */
             buf[--new_buf_len] = 0;

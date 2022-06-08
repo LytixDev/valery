@@ -28,27 +28,25 @@
 #define MAX_COMMANDS_BEFORE_WRITE 3
 
 /* types */
-typedef struct HIST_FILE {
+typedef struct HISTORY {
     FILE *fp;
+    char **stored_commands;
     size_t current_line;
-    size_t len;
-} HIST_FILE;
-
-typedef struct HIST_FILE_WRITER {
-    char **commands;
-    int total_commands_stored;
-} HIST_FILE_WRITER;
+    size_t f_current_line;
+    size_t f_len;
+    size_t total_stored_commands;
+} HISTORY;
 
 /* functions */
-struct HIST_FILE *new_hist_file();
-void free_hist_file(struct HIST_FILE *hf);
-struct HIST_FILE_WRITER *new_hist_file_writer();
-void free_hist_file_writer(struct HIST_FILE_WRITER *hfw);
-void save_command(struct HIST_FILE_WRITER *hfw, struct HIST_FILE *hf, char buf[COMMAND_LEN]);
-void write_commands_to_hist_file(struct HIST_FILE *hf, struct HIST_FILE_WRITER *hfw);
+struct HISTORY *init_history();
+void free_history(struct HISTORY *hist);
+void save_command(struct HISTORY *hist, char buf[COMMAND_LEN]);
+void write_commands_to_hist_file(struct HISTORY *hist);
 int get_len(FILE *fp);
-int open_hist_file(struct HIST_FILE *hf, char *full_path);
+/* returns 0 if it can open hist file, else 1 */
+int open_hist_file(struct HISTORY *hist, char *full_path);
 size_t read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN]);
-size_t read_hist_line(struct HIST_FILE *hf, char buf[COMMAND_LEN], int action);
+void update_current_line(struct HISTORY *hist, int action);
+size_t get_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], int action);
 
 #endif

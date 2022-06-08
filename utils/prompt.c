@@ -106,8 +106,8 @@ int prompt(struct HISTORY *hist, char *ps1, char buf[COMMAND_LEN])
     size_t max_len = COMMAND_LEN;
 
     init_prompt(ps1, buf);
-    /* reset position in history */
-    hist->current_line = 0;
+    /* reset position in history to bottom of queue */
+    hist->current_line = hist->f_current_line + hist->total_stored_commands;
 
     while (EOF != (ch = getchar()) && ch != '\n') {
         /* return if buffer cannot store more chars */

@@ -46,7 +46,7 @@ int get_len(FILE *fp);
 /* returns 0 if it can open hist file, else 1 */
 int open_hist_file(struct HISTORY *hist, char *full_path);
 size_t read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN]);
-void update_current_line(struct HISTORY *hist, int action);
+int update_current_line(struct HISTORY *hist, int action);
 size_t get_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], int action);
 
 #endif

@@ -115,14 +115,21 @@ size_t read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN])
     return len;
 }
 
-void update_current_line(struct HISTORY *hist, int action)
+int update_current_line(struct HISTORY *hist, int action)
 {
-    action == HIST_UP ? hist->current_line++ : hist->current_line--;
-    if (hist->current_line > hist->total_stored_commands + hist->f_len) {
-        hist->current_line = hist->total_stored_commands + hist->f_len;
-    } else if (hist->current_line < 0) {
+    action == HIST_UP ? hist->current_line-- : hist->current_line++;
+    /* clamp on boundaries and return 1 which signals to not read the current line */
+    if (action == HIST_UP && hist->current_line > 0) {
         hist->current_line = 0;
+        return 1;
     }
+
+    if (action == HIST_DOWN && hist->current_line > hist->f_len + hist->total_stored_commands) {
+        hist->current_line = hist->f_len + hist->total_stored_commands;
+        return 1;
+    }
+    
+    return 0;
 }
 
 size_t read_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], int action)
@@ -161,17 +168,15 @@ size_t read_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], int action)
 
 size_t get_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], int action)
 {
-    /*
-     * Move file pointer to previous new line.
-     * Increment by one to get next line.
-     * Store next line in buffer.
-     */
-
-    update_current_line(hist, action);
+    int rc;
+    printf("a:%d c:%ld, f:%ld\n", action, hist->current_line, hist->f_current_line);
+    rc = update_current_line(hist, action);
+    if (rc)
+        return 0;
 
     /* read from hist file only when command is not recent enough to be in memory */
-    if (hist->current_line > hist->total_stored_commands)
-        return read_hist_line(hist, buf, action);
+    //if (hist->current_line > hist->total_stored_commands)
+    return read_hist_line(hist, buf, action);
 
     strncpy(buf, hist->stored_commands[hist->current_line], COMMAND_LEN);
     return strlen(buf);

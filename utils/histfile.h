@@ -25,7 +25,11 @@
 #define _GNU_SOURCE
 #define HIST_UP 0
 #define HIST_DOWN 1
-#define MAX_COMMANDS_BEFORE_WRITE 3
+#define MAX_COMMANDS_BEFORE_WRITE 50
+#define READ_FROM_MEMORY 0
+#define READ_FROM_HIST 1
+#define DID_NOT_READ 2
+
 
 /* types */
 typedef struct HISTORY {
@@ -45,8 +49,9 @@ void write_commands_to_hist_file(struct HISTORY *hist);
 int get_len(FILE *fp);
 /* returns 0 if it can open hist file, else 1 */
 int open_hist_file(struct HISTORY *hist, char *full_path);
-size_t read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN]);
+void read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN]);
 int update_current_line(struct HISTORY *hist, int action);
-size_t get_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], int action);
+void reset_hist_pos(struct HISTORY *hist);
+int get_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], int action);
 
 #endif

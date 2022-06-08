@@ -72,8 +72,8 @@ void write_commands_to_hist_file(struct HISTORY *hist)
         }
     }
     /* reset counters */
-    hist->total_stored_commands = 0;
-    hist->f_current_line = hist->f_len - 1;
+    //hist->total_stored_commands = 0;
+    //hist->f_current_line = hist->f_len;
     /* move file pointer back to end of file */
     fseek(hist->fp, 0, SEEK_END);
 }
@@ -104,7 +104,7 @@ int open_hist_file(struct HISTORY *hist, char *full_path)
     return 1;
 }
 
-size_t read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN])
+void read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN])
 {
     size_t len = 0;
     char *tmp = (char *) malloc(sizeof(char) * COMMAND_LEN);;
@@ -112,14 +112,17 @@ size_t read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN])
     strncpy(buf, tmp, COMMAND_LEN);
     free(tmp);
     fseek(fp, ++offset, SEEK_SET);
-    return len;
 }
 
 int update_current_line(struct HISTORY *hist, int action)
 {
     action == HIST_UP ? hist->current_line-- : hist->current_line++;
+
+    //if (action == HIST_DOWN && hist->f_len == 0)
+    //    hist->f_len++;
+
     /* clamp on boundaries and return 1 which signals to not read the current line */
-    if (action == HIST_UP && hist->current_line > 0) {
+    if (action == HIST_UP && hist->current_line == -1) {
         hist->current_line = 0;
         return 1;
     }
@@ -132,26 +135,27 @@ int update_current_line(struct HISTORY *hist, int action)
     return 0;
 }
 
-size_t read_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], int action)
+void read_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], int action)
 {
     long offset = ftell(hist->fp);
     offset--;
 
     if (action == HIST_UP) {
-        if (hist->f_current_line == 0) {
+        if (hist->f_current_line == 0) { 
             fseek(hist->fp, 0, SEEK_SET);
-            return read_line_and_move_fp_back(hist->fp, offset, buf);
+            read_line_and_move_fp_back(hist->fp, offset, buf);
+            return;
         }
 
-        while (fgetc(hist->fp) != '\n')
+        while (fgetc(hist->fp) != '\n') 
             fseek(hist->fp, --offset, SEEK_SET);
         hist->f_current_line--;
 
     } else if (action == HIST_DOWN) {
         /* if at the end of file, do not read any lines */
-        if (hist->f_current_line == hist->f_len - 1) {
+        if (hist->f_current_line == hist->f_len) {
             buf[0] = 0;
-            return 0;
+            return;
         }
 
         /* edge case. if f_current_line == 0, go straight to read line */
@@ -162,22 +166,31 @@ size_t read_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], int action)
         hist->f_current_line++;
     }
 
-    return read_line_and_move_fp_back(hist->fp, offset, buf);
+    read_line_and_move_fp_back(hist->fp, offset, buf);
 }
 
+void reset_hist_pos(struct HISTORY *hist)
+{
+    hist->current_line = hist->f_len + hist->total_stored_commands;
+    hist->f_current_line = hist->f_len;
+    fseek(hist->fp, 0, SEEK_END);
+}
 
-size_t get_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], int action)
+int get_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], int action)
 {
     int rc;
-    printf("a:%d c:%ld, f:%ld\n", action, hist->current_line, hist->f_current_line);
+    printf("\nbefore: a:%d current_line:%ld, f_current_line:%ld total_stored_commands:%ld f_len:%ld\n", action, hist->current_line, hist->f_current_line, hist->total_stored_commands, hist->f_len);
     rc = update_current_line(hist, action);
     if (rc)
-        return 0;
+        return DID_NOT_READ;
 
     /* read from hist file only when command is not recent enough to be in memory */
-    //if (hist->current_line > hist->total_stored_commands)
-    return read_hist_line(hist, buf, action);
+    if (hist->current_line < hist->f_len) {
+        read_hist_line(hist, buf, action);
+        return READ_FROM_HIST;
+    }
 
-    strncpy(buf, hist->stored_commands[hist->current_line], COMMAND_LEN);
-    return strlen(buf);
+    strncpy(buf, hist->stored_commands[hist->current_line - hist->f_len], COMMAND_LEN);
+    printf("\nBUF:%s\n", buf);
+    return READ_FROM_MEMORY;
 }

@@ -97,15 +97,20 @@ void update_prompt(char *ps1, char *buf, int cursor_pos)
         cursor_right(1);
 }
 
-int prompt(struct HIST_FILE *hf, char *ps1, char buf[COMMAND_LEN])
+int prompt(struct HISTORY *hist, char *ps1, char buf[COMMAND_LEN])
 {
     int ch;
     int arrow_type;
     size_t new_buf_len;
     size_t cur_pos = 0;
     size_t max_len = COMMAND_LEN;
+    int rc;
+    int action;
 
     init_prompt(ps1, buf);
+    /* reset position in history to bottom of queue */
+    reset_hist_pos(hist);
+
     while (EOF != (ch = getchar()) && ch != '\n') {
         /* return if buffer cannot store more chars */
         if (cur_pos == max_len) {
@@ -123,11 +128,21 @@ int prompt(struct HIST_FILE *hf, char *ps1, char buf[COMMAND_LEN])
             }
 
             /* store hist line inside buf */
-            read_hist_line(hf, buf, (arrow_type == ARROW_UP) ? HIST_UP : HIST_DOWN);
-            new_buf_len = strlen(buf);
-            /* chop off newline character and decrement length */
-            buf[--new_buf_len] = 0;
-            cur_pos = new_buf_len;
+            action = (arrow_type == ARROW_UP) ? HIST_UP : HIST_DOWN;
+            rc = get_hist_line(hist, buf, action);
+
+            if (rc != DID_NOT_READ)
+                action == HIST_UP ? hist->pos-- : hist->pos++;
+
+            if (rc == READ_FROM_HIST) {
+                /* chop off newline character */
+                new_buf_len = strlen(buf);
+                buf[--new_buf_len] = 0;
+                cur_pos = new_buf_len;
+            } else if (rc == READ_FROM_MEMORY) {
+                new_buf_len = strlen(buf);
+                cur_pos = new_buf_len;
+            }
 
         } else {
             if (cur_pos != strlen(buf)) {

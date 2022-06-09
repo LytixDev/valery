@@ -79,8 +79,7 @@ void free_env(struct ENV *env)
 int main()
 {
     struct ENV *env = new_env();
-    struct HIST_FILE *hf = new_hist_file();
-    struct HIST_FILE_WRITER *hfw = new_hist_file_writer();
+    struct HISTORY *hist = init_history("/home/nic/.valery_hist");
     char input_buffer[COMMAND_LEN] = {0};
     char cmd[COMMAND_LEN];
     char args[COMMAND_LEN];
@@ -96,11 +95,9 @@ int main()
         return 1;
     }
 
-    open_hist_file(hf, "/home/nic/.valery_hist");
-
     /* main loop */
     while (1) {
-        rc = prompt(hf, env->PS1, input_buffer);
+        prompt(hist, env->PS1, input_buffer);
 
         /* loop enters here means ordinary command was typed in */
         split_buffer(input_buffer, cmd, args);
@@ -112,7 +109,7 @@ int main()
         putchar('\n');
         rc = system(full_cmd);
         env->exit_code = rc;
-        save_command(hfw, hf, input_buffer);
+        save_command(hist, input_buffer);
         /* clear all buffers */
         memset(input_buffer, 0, COMMAND_LEN);
         cmd[0] = 0;
@@ -120,10 +117,9 @@ int main()
     }
 
     /* free and write to file before exiting */
-    write_commands_to_hist_file(hf, hfw);
+    write_commands_to_hist_file(hist);
     free_env(env);
-    free_hist_file(hf);
-    free_hist_file_writer(hfw);
+    free_history(hist);
 
     printf("\nExiting ...\n");
     enable_term_flags();

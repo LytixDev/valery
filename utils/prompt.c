@@ -105,6 +105,7 @@ int prompt(struct HISTORY *hist, char *ps1, char buf[COMMAND_LEN])
     size_t cur_pos = 0;
     size_t max_len = COMMAND_LEN;
     int rc;
+    int action;
 
     init_prompt(ps1, buf);
     /* reset position in history to bottom of queue */
@@ -127,19 +128,21 @@ int prompt(struct HISTORY *hist, char *ps1, char buf[COMMAND_LEN])
             }
 
             /* store hist line inside buf */
-            rc = get_hist_line(hist, buf, (arrow_type == ARROW_UP) ? HIST_UP : HIST_DOWN);
+            action = (arrow_type == ARROW_UP) ? HIST_UP : HIST_DOWN;
+            rc = get_hist_line(hist, buf, action);
+
+            if (rc != DID_NOT_READ)
+                action == HIST_UP ? hist->pos-- : hist->pos++;
 
             if (rc == READ_FROM_HIST) {
+                /* chop off newline character */
                 new_buf_len = strlen(buf);
-                /* chop off newline character and decrement length */
                 buf[--new_buf_len] = 0;
                 cur_pos = new_buf_len;
             } else if (rc == READ_FROM_MEMORY) {
                 new_buf_len = strlen(buf);
                 cur_pos = new_buf_len;
             }
-
-            printf("before: current_line:%ld, f_current_line:%ld total_stored_commands:%ld f_len:%ld\n", hist->current_line, hist->f_current_line, hist->total_stored_commands, hist->f_len);
 
         } else {
             if (cur_pos != strlen(buf)) {

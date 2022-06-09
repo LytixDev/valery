@@ -79,7 +79,7 @@ void free_env(struct ENV *env)
 int main()
 {
     struct ENV *env = new_env();
-    struct HISTORY *hist = init_history();
+    struct HISTORY *hist = init_history("/home/nic/.valery_hist");
     char input_buffer[COMMAND_LEN] = {0};
     char cmd[COMMAND_LEN];
     char args[COMMAND_LEN];
@@ -94,8 +94,6 @@ int main()
         free_env(env);
         return 1;
     }
-
-    open_hist_file(hist, "/home/nic/.valery_hist");
 
     /* main loop */
     while (1) {

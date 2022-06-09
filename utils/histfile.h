@@ -32,25 +32,44 @@
 
 
 /* types */
+
+/*
+ * Holds recently typed in commands in and a connection to the hist file for previously
+ * typed in commands.
+ * 
+ * pos is initialized to total_stored_commands + f_len and can move up to zero.
+ * f_pos is initialized to f_len.
+ * 
+ * Operations on HISTORY:
+ * HIST_UP: decrements pos by one.
+ * HIST_DOWN: increments pos by one.
+ *
+ * use init_history() and free_history() to create and free HISTORY types.
+ */
 typedef struct HISTORY {
     FILE *fp;
+    /* newest last */
     char **stored_commands;
-    size_t current_line;
-    size_t f_current_line;
+    /* total stored commands in memory */
+    size_t t_stored;
+    /* absolute position in history queue */
+    size_t pos;
+    /* position of file pointer in history queue */
+    size_t f_pos;
+    /* amount of lines/commands in hist file */
     size_t f_len;
-    size_t total_stored_commands;
 } HISTORY;
 
 /* functions */
-struct HISTORY *init_history();
+struct HISTORY *init_history(char *full_pat_to_hist_file);
 void free_history(struct HISTORY *hist);
+void reset_hist_pos(struct HISTORY *hist);
 void save_command(struct HISTORY *hist, char buf[COMMAND_LEN]);
 void write_commands_to_hist_file(struct HISTORY *hist);
 int get_len(FILE *fp);
-/* returns 0 if it can open hist file, else 1 */
-int open_hist_file(struct HISTORY *hist, char *full_path);
+int out_of_bounds(struct HISTORY *hist, int action);
+int open_hist_file(struct HISTORY *hist, char *path);
 void read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN]);
-int update_current_line(struct HISTORY *hist, int action);
 void reset_hist_pos(struct HISTORY *hist);
 int get_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], int action);
 

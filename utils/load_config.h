@@ -22,6 +22,11 @@
 #ifndef LOAD_CONFIG
 #define LOAD_CONFIG
 
+/* functions */
+
+int set_home_dir(struct ENV *env);
+
+int get_config_path(struct ENV *env, char config_path[MAX_ENV_LEN]);
 
 int parse_config(struct ENV *env);
 

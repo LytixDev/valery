@@ -64,22 +64,25 @@ struct ENV *new_env()
     env->exit_code = 0;
     env->PS1 = (char *) malloc(sizeof(char) * MAX_ENV_LEN);
     env->PATH = (char *) malloc(sizeof(char) * MAX_ENV_LEN);
+    env->HOME = (char *) malloc(sizeof(char) * MAX_ENV_LEN);
     return env;
 }
 
 void free_env(struct ENV *env)
 {
-    if (env != NULL) {
-        free(env->PS1);
-        free(env->PATH);
-        free(env);
-    }
+    if (env == NULL)
+        return
+
+    free(env->PS1);
+    free(env->PATH);
+    free(env->HOME);
+    free(env);
 }
 
 int main()
 {
     struct ENV *env = new_env();
-    struct HISTORY *hist = init_history("/home/nic/.valery_hist");
+    char hist_file_path[MAX_ENV_LEN];
     char input_buffer[COMMAND_LEN] = {0};
     char cmd[COMMAND_LEN];
     char args[COMMAND_LEN];
@@ -95,21 +98,26 @@ int main()
         return 1;
     }
 
+    /* establish a connection to the hist file */
+    snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env->HOME, HISTFILE_NAME);
+    struct HISTORY *hist = init_history(hist_file_path);
+
     /* main loop */
     while (1) {
         prompt(hist, env->PS1, input_buffer);
 
         /* loop enters here means ordinary command was typed in */
-        split_buffer(input_buffer, cmd, args);
-        snprintf(full_cmd, 8192, "%s/%s %s", env->PATH, cmd, args);
-        
         if (strcmp(input_buffer, "exit") == 0)
             break;
 
+        split_buffer(input_buffer, cmd, args);
+        snprintf(full_cmd, 8192, "%s/%s %s", env->PATH, cmd, args);
+        
         putchar('\n');
         rc = system(full_cmd);
         env->exit_code = rc;
         save_command(hist, input_buffer);
+
         /* clear all buffers */
         memset(input_buffer, 0, COMMAND_LEN);
         cmd[0] = 0;

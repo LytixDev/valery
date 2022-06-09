@@ -25,13 +25,14 @@
 #define COMMAND_LEN 1024
 #define MAX_ENV_LEN 1024
 #define CONFIG_NAME ".valeryrc"
-#define HISTFILE_NAME ".valery_history"
+#define HISTFILE_NAME ".valery_hist"
 
 /* types */
 typedef struct ENV {
     uint8_t exit_code;
     char *PS1;
     char *PATH;
+    char *HOME;
 } ENV;
 
 /* functions */

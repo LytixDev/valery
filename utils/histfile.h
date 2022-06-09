@@ -23,12 +23,7 @@
 #define HISTFILE
 
 #define _GNU_SOURCE
-//#define HIST_UP 0
-//#define HIST_DOWN 1
 #define MAX_COMMANDS_BEFORE_WRITE 50
-//#define READ_FROM_MEMORY 0
-//#define READ_FROM_HIST 1
-//#define DID_NOT_READ 2
 
 
 /* types */
@@ -123,6 +118,6 @@ void read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN]);
  * returns where it got the hist line from (see definitions on the 
  * top of the file).
  */
-readfrom_t get_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], int action);
+readfrom_t get_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], histaction_t action);
 
 #endif

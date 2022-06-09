@@ -23,14 +23,6 @@
 #ifndef PROMPT
 #define PROMPT
 
-#define ARROW_KEY 27
-#define ARROW_KEY_2 91
-#define ARROW_UP 65
-#define ARROW_DOWN 66
-#define ARROW_RIGHT 67
-#define ARROW_LEFT 68
-
-#define BACKSPACE 127
 
 /* macros for moving the cursor horizontally */
 #define cursor_right(n) printf("\033[%dC", (n));
@@ -38,6 +30,17 @@
 #define cursor_goto(x) printf("\033[%d", (x));
 #define flush_line() printf("\33[2K\r");
 
+/* types */
+typedef enum {
+    ARROW_KEY = 27,
+    ARROW_KEY_2 = 91,
+    ARROW_UP = 65,
+    ARROW_DOWN = 66,
+    ARROW_RIGHT = 67,
+    ARROW_LEFT = 68,
+
+    BACKSPACE = 127
+} keycode_t;
 
 /* functions */
 
@@ -51,7 +54,7 @@ void split_buffer(char *buf, char *cmd, char *args);
 /* returns the type of arrow consumed from the terminal input buffer */
 int get_arrow_type();
 
-int move_cursor_horizontally(int arrow_type, int cur_pos, int buf_len);
+int move_cursor_horizontally(keycode_t arrow_type, int cur_pos, int buf_len);
 
 /* merge a char at any position into a char array */
 void insert_char_to_str(char buf[COMMAND_LEN], char c, int index);

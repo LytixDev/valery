@@ -182,7 +182,7 @@ void reset_hist_pos(struct HISTORY *hist)
     hist->pos = hist->f_len + hist->t_stored;
 }
 
-readfrom_t get_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], int action)
+readfrom_t get_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], histaction_t action)
 {
     int rc;
     rc = out_of_bounds(hist, action);

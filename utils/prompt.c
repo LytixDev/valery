@@ -55,7 +55,7 @@ int get_arrow_type()
     return -1;
 }
 
-int move_cursor_horizontally(int arrow_type, int cur_pos, int buf_len)
+int move_cursor_horizontally(keycode_t arrow_type, int cur_pos, int buf_len)
 {
     if (arrow_type == ARROW_LEFT) {
         if (cur_pos < 1) return cur_pos;
@@ -105,7 +105,7 @@ int prompt(struct HISTORY *hist, char *ps1, char buf[COMMAND_LEN])
     size_t cur_pos = 0;
     size_t max_len = COMMAND_LEN;
     readfrom_t rc;
-    int action;
+    histaction_t action;
 
     print_prompt(ps1, buf);
     /* reset position in history to bottom of queue */

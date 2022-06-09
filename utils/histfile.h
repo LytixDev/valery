@@ -60,17 +60,53 @@ typedef struct HISTORY {
     size_t f_len;
 } HISTORY;
 
+
 /* functions */
+
+/* returns a pointer of type HISTORY with malloced data */
 struct HISTORY *init_history(char *full_pat_to_hist_file);
+
+/* frees the data associated with the HISTORY pointer passed in */
 void free_history(struct HISTORY *hist);
+
+/* moves file pointer to the end and resets position counters */
 void reset_hist_pos(struct HISTORY *hist);
+
+/* stores the input buffer into memory */
 void save_command(struct HISTORY *hist, char buf[COMMAND_LEN]);
+
+/* 
+ * writes the stored commands to the hist file connection and clears
+ * data from memory.
+ */
 void write_commands_to_hist_file(struct HISTORY *hist);
+
+/* 
+ * returns the amount of lines in the file and in the process moves
+ * the file pointer to the end of the file.
+ */
 int get_len(FILE *fp);
+
+/* returns 1 if the given action will put the file pointer out of
+ * bounds, else 0.
+ */
 int out_of_bounds(struct HISTORY *hist, int action);
+
+/*
+ * opens a read and write connection to the hist file.
+ * creates a new hist file if input path does not exist.
+ * returns 1 if no connection could be made, else 0.
+ */
 int open_hist_file(struct HISTORY *hist, char *path);
+
+/* reads the current line and moves the file pointer back to its offset */
 void read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN]);
-void reset_hist_pos(struct HISTORY *hist);
+
+/*
+ * puts the current hist line into the buf argument.
+ * returns where it got the hist line from (see definitions on the 
+ * top of the file).
+ */
 int get_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], int action);
 
 #endif

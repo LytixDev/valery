@@ -32,17 +32,40 @@
 
 #define BACKSPACE 127
 
+/* macros for moving the cursor horizontally */
 #define cursor_right(n) printf("\033[%dC", (n));
 #define cursor_left(n) printf("\033[%dD", (n));
 #define cursor_goto(x) printf("\033[%d", (x));
 #define flush_line() printf("\33[2K\r");
 
+
+/* functions */
+
+/*
+ * splits the input buffer on the first space:
+ * - first part stored into cmd argument
+ * - second part stored into args argument
+ */
 void split_buffer(char *buf, char *cmd, char *args);
+
+/* returns the type of arrow consumed from the terminal input buffer */
 int get_arrow_type();
+
 int move_cursor_horizontally(int arrow_type, int cur_pos, int buf_len);
+
+/* merge a char at any position into a char array */
 void insert_char_to_str(char buf[COMMAND_LEN], char c, int index);
+
+/* prints the ps1 and the buffer */
 void init_prompt(char *ps1, char *buf);
+
+/*
+ * flushes the screen, prints the ps1 and buffer and moves the
+ * cursor to the end of the buffer.
+ */
 void update_prompt(char *ps1, char *buf, int cursor_pos);
+
+/* handles all the logic when receiving input from the user */
 int prompt(struct HISTORY *hist, char *ps1, char buf[COMMAND_LEN]);
 
 #endif

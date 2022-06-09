@@ -57,7 +57,7 @@ int move_cursor_horizontally(int arrow_type, int cur_pos, int buf_len);
 void insert_char_to_str(char buf[COMMAND_LEN], char c, int index);
 
 /* prints the ps1 and the buffer */
-void init_prompt(char *ps1, char *buf);
+void print_prompt(char *ps1, char *buf);
 
 /*
  * flushes the screen, prints the ps1 and buffer and moves the

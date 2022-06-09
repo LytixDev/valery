@@ -48,7 +48,7 @@ int get_config_path(struct ENV *env, char config_path[MAX_ENV_LEN])
     return 0;
 }
 
-int _find_pos(char look_for, char *str)
+static int _find_pos(char look_for, char *str)
 {
     int found_pos = 0;
 

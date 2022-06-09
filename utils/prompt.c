@@ -82,7 +82,7 @@ void insert_char_to_str(char buf[COMMAND_LEN], char c, int index)
     strcpy(buf, tmp);
 }
 
-void init_prompt(char *ps1, char *buf)
+void print_prompt(char *ps1, char *buf)
 {
     printf("%s %s", ps1, buf);
 }
@@ -90,7 +90,7 @@ void init_prompt(char *ps1, char *buf)
 void update_prompt(char *ps1, char *buf, int cursor_pos)
 {
     flush_line();
-    printf("%s %s", ps1, buf);
+    print_prompt(ps1, buf);
     cursor_left(cursor_pos);
     /* if cursor at the end of buffer, move cursor one to the right */
     if (cursor_pos == 0)
@@ -104,10 +104,10 @@ int prompt(struct HISTORY *hist, char *ps1, char buf[COMMAND_LEN])
     size_t new_buf_len;
     size_t cur_pos = 0;
     size_t max_len = COMMAND_LEN;
-    int rc;
+    readfrom_t rc;
     int action;
 
-    init_prompt(ps1, buf);
+    print_prompt(ps1, buf);
     /* reset position in history to bottom of queue */
     reset_hist_pos(hist);
 

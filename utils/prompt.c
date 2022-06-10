@@ -36,7 +36,9 @@ void split_buffer(char buf[COMMAND_LEN], char *cmd, char *args)
     
     while (*ptr != *delim && *ptr != 0)
         cmd[i++] = *ptr++;
-    
+
+    cmd[i] = 0;
+
     /* copy the rest of the buffer into args */
     strncpy(args, ++ptr, COMMAND_LEN - i);
 }

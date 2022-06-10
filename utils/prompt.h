@@ -48,8 +48,9 @@ typedef enum {
  * splits the input buffer on the first space:
  * - first part stored into cmd argument
  * - second part stored into args argument
+ * does NOT modify the input buffer.
  */
-void split_buffer(char *buf, char *cmd, char *args);
+void split_buffer(char buf[COMMAND_LEN], char *cmd, char *args);
 
 /* returns the type of arrow consumed from the terminal input buffer */
 int get_arrow_type();

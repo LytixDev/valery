@@ -27,18 +27,20 @@
 #include "../valery.h"
 
 
-void split_buffer(char *buf, char *cmd, char *args)
+void split_buffer(char buf[COMMAND_LEN], char *cmd, char *args)
 {
-    const char delim[] = " ";
+    /* make copy as to not modify the original buffer */
+    char *ptr = buf;
+    size_t i = 0;
+    const char *delim = " ";
+    
+    while (*ptr != *delim && *ptr != 0)
+        cmd[i++] = *ptr++;
 
-    char *cmd_tmp = strtok(buf, delim);
-    char *args_tmp = strtok(NULL, delim);
+    cmd[i] = 0;
 
-    if (cmd_tmp != NULL)
-        strcpy(cmd, cmd_tmp);
-
-    if (args_tmp != NULL)
-        strcpy(args, args_tmp);
+    /* copy the rest of the buffer into args */
+    strncpy(args, ++ptr, COMMAND_LEN - i);
 }
 
 int get_arrow_type()
@@ -55,7 +57,7 @@ int get_arrow_type()
     return -1;
 }
 
-int move_cursor_horizontally(int arrow_type, int cur_pos, int buf_len)
+int move_cursor_horizontally(keycode_t arrow_type, int cur_pos, int buf_len)
 {
     if (arrow_type == ARROW_LEFT) {
         if (cur_pos < 1) return cur_pos;
@@ -82,7 +84,7 @@ void insert_char_to_str(char buf[COMMAND_LEN], char c, int index)
     strcpy(buf, tmp);
 }
 
-void init_prompt(char *ps1, char *buf)
+void print_prompt(char *ps1, char *buf)
 {
     printf("%s %s", ps1, buf);
 }
@@ -90,7 +92,7 @@ void init_prompt(char *ps1, char *buf)
 void update_prompt(char *ps1, char *buf, int cursor_pos)
 {
     flush_line();
-    printf("%s %s", ps1, buf);
+    print_prompt(ps1, buf);
     cursor_left(cursor_pos);
     /* if cursor at the end of buffer, move cursor one to the right */
     if (cursor_pos == 0)
@@ -104,10 +106,10 @@ int prompt(struct HISTORY *hist, char *ps1, char buf[COMMAND_LEN])
     size_t new_buf_len;
     size_t cur_pos = 0;
     size_t max_len = COMMAND_LEN;
-    int rc;
-    int action;
+    readfrom_t rc;
+    histaction_t action;
 
-    init_prompt(ps1, buf);
+    print_prompt(ps1, buf);
     /* reset position in history to bottom of queue */
     reset_hist_pos(hist);
 

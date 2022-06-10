@@ -23,15 +23,20 @@
 #define HISTFILE
 
 #define _GNU_SOURCE
-#define HIST_UP 0
-#define HIST_DOWN 1
 #define MAX_COMMANDS_BEFORE_WRITE 50
-#define READ_FROM_MEMORY 0
-#define READ_FROM_HIST 1
-#define DID_NOT_READ 2
 
 
 /* types */
+typedef enum {
+    HIST_UP,
+    HIST_DOWN
+} histaction_t;
+
+typedef enum {
+    READ_FROM_MEMORY,
+    READ_FROM_HIST, 
+    DID_NOT_READ 
+} readfrom_t;
 
 /*
  * Holds recently typed in commands in and a connection to the hist file for previously
@@ -90,7 +95,7 @@ int get_len(FILE *fp);
 /* returns 1 if the given action will put the file pointer out of
  * bounds, else 0.
  */
-int out_of_bounds(struct HISTORY *hist, int action);
+int out_of_bounds(struct HISTORY *hist, histaction_t action);
 
 /*
  * opens a read and write connection to the hist file.
@@ -98,6 +103,12 @@ int out_of_bounds(struct HISTORY *hist, int action);
  * returns 1 if no connection could be made, else 0.
  */
 int open_hist_file(struct HISTORY *hist, char *path);
+
+/*
+ * moves the file pointer and updates f_pos in preperation for reading
+ * hist line.
+ */
+void read_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], histaction_t action);
 
 /* reads the current line and moves the file pointer back to its offset */
 void read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN]);
@@ -107,6 +118,6 @@ void read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN]);
  * returns where it got the hist line from (see definitions on the 
  * top of the file).
  */
-int get_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], int action);
+readfrom_t get_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], histaction_t action);
 
 #endif

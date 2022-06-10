@@ -64,7 +64,7 @@ void free_history(struct HISTORY *hist)
     free(hist);
 }
 
-int out_of_bounds(struct HISTORY *hist, int action)
+int out_of_bounds(struct HISTORY *hist, histaction_t action)
 {
     if (action == HIST_UP && hist->pos == 0)
         return 1;
@@ -91,9 +91,6 @@ void write_commands_to_hist_file(struct HISTORY *hist)
             hist->f_len++;
         }
     }
-    /* reset counters */
-    //hist->total_stored_commands = 0;
-    //hist->f_current_line = hist->f_len;
     /* move file pointer back to end of file */
     fseek(hist->fp, 0, SEEK_END);
 }
@@ -134,7 +131,7 @@ void read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN])
     fseek(fp, ++offset, SEEK_SET);
 }
 
-void read_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], int action)
+void read_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], histaction_t action)
 {
     /* get current file pointer position, and move one before the current line */
     long offset = hist->f_pos == 0 ? 1 : ftell(hist->fp);
@@ -185,7 +182,7 @@ void reset_hist_pos(struct HISTORY *hist)
     hist->pos = hist->f_len + hist->t_stored;
 }
 
-int get_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], int action)
+readfrom_t get_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], histaction_t action)
 {
     int rc;
     rc = out_of_bounds(hist, action);

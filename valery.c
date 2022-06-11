@@ -30,6 +30,7 @@
 #include "utils/load_config.h"
 #include "utils/prompt.h"
 #include "utils/histfile.h"
+#include "utils/exec.h"
 
 
 static volatile int is_running = 1;
@@ -111,10 +112,10 @@ int main()
             break;
 
         split_buffer(input_buffer, cmd, args);
-        snprintf(full_cmd, 8192, "%s/%s %s", env->PATH, cmd, args);
+        snprintf(full_cmd, 8192, "%s/%s", env->PATH, cmd);
         
         putchar('\n');
-        rc = system(full_cmd);
+        rc = valery_exec(full_cmd, args);
         env->exit_code = rc;
         save_command(hist, input_buffer);
 

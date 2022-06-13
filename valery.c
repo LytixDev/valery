@@ -116,6 +116,9 @@ int main()
         
         putchar('\n');
         rc = valery_exec(full_cmd, args);
+        if (rc == 1)
+            printf("valery: command not found: %s\n", cmd);
+
         env->exit_code = rc;
         save_command(hist, input_buffer);
 

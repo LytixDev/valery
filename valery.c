@@ -31,6 +31,7 @@
 #include "utils/prompt.h"
 #include "utils/histfile.h"
 #include "utils/exec.h"
+#include "utils/lexer.h"
 
 
 static volatile int is_running = 1;
@@ -111,10 +112,26 @@ int main()
         if (strcmp(input_buffer, "exit") == 0)
             break;
 
+
+        struct tokens_t *tokens = new_tokens_t();
+        tokenize(tokens, input_buffer);
+
+        printf("\nTOKENS!!:\n");
+        for (size_t i = 0; i < tokens->i; i++) {
+            printf("Token num %ld, val: %s\n", i, tokens->token_arr[i]);
+        }
+        free_tokens_t(tokens);
+
         split_buffer(input_buffer, cmd, args);
         snprintf(full_cmd, 8192, "%s/%s", env->PATH, cmd);
-        
+
         putchar('\n');
+
+        /*
+            
+           rc = valery_exec(tokens);
+
+        */
         rc = valery_exec(full_cmd, args);
         if (rc == 1)
             printf("valery: command not found: %s\n", cmd);

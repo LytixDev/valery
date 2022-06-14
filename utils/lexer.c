@@ -83,9 +83,6 @@ void tokenize(struct tokens_t *tokens, char *buf)
     char *token = strtok(buf, delim);
 
     while (token != NULL) {
-        printf("tokens state: i: %d, len: %d size_of_i: %d\n", tokens->i, tokens->len, tokens->allocated_size[tokens->i]);
-
-
         /* check if space for token and if and more memory needs to be allocated */
         if (tokens->i >= tokens->len) {
             increase_tokens_amount(tokens, tokens->len + 32);

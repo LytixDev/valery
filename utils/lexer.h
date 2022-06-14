@@ -29,6 +29,7 @@ typedef struct tokens_t {
     size_t *allocated_size;
     size_t i;
     size_t len;
+    size_t pipes;
 } tokens_t;
 
 /* functions */

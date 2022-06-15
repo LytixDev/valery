@@ -22,7 +22,8 @@
 #define DEFAULT_TOKEN_SIZE 512
 #define STARTING_TOKENS 8
 
-
+// every token before an operand is considered a part of the same execution goal 
+// when tokenizing in there are no args for a certain command, maybe add a NULL token.
 /* types */
 typedef struct tokens_t {
     char **token_arr;

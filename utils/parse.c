@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <error.h>
 #include "sys/wait.h"
 
 #include "exec.h"
@@ -24,80 +25,101 @@ int valery_exec2(struct tokens_t *tokens)
     // 4. write/redirect result originally for stdout pipe(),
 }
 
-int test_exec(char *path, char *args)
+void restore_normal_stream_behaviour(int saved_stdin, int saved_stdout)
 {
-    int status;
-    int return_code = 0;
-    char *args_cpy = args;
-    /* env unused in this case */
-    char *env[] = {NULL, NULL, NULL};
-    /* args being an empty string results in undefined behavior */
-    if (strcmp(args_cpy, "") == 0)
-        args_cpy = NULL;
-
-    char *full[] = {path, args_cpy};
-
-    pid_t new_pid = fork();
-    if (new_pid == CHILD_PID) {
-        return_code = execve(path, full, env);
-        return_code == -1 ? exit(EXIT_FAILURE) : exit(EXIT_SUCCESS);
-    }
-
-    waitpid(new_pid, &status, 0);
-
-    return status != 0;
+    /* restore normal steam behavior */
+    dup2(saved_stdin, STDIN_FILENO);
+    close(saved_stdin);
+    dup2(saved_stdout, STDOUT_FILENO);
+    close(saved_stdout);
 }
 
-
-int test()
+int prototype(char *first_cmd, char **first, char *second_cmd, char **second)
 {
-    int fd[2];
     int status;
+    int rc = 0;
+    char *env[] = {NULL, NULL, NULL};
+    /* make saves of stdout and stdin file descriptors */
+    int saved_stdin = dup(STDIN_FILENO);
+    int saved_stdout = dup(STDOUT_FILENO);
 
-    if (pipe(fd) == -1)
-        return 1;
+    int pipefd[2];
+    if (pipe(pipefd) == -1)
+       return -1;
 
-    int id = fork();
-
-    if (id == 0) {
-        close(fd[0]);
-        int x;
-        printf("Input a number: ");
-        scanf("%d", &x);
-
-        if (write(fd[1], &x, sizeof(int)) == -1) {
-            close(fd[1]);
-            exit(EXIT_FAILURE);
+    int pid = fork();
+    if (pid == 0) {
+        /* close read end of pipe as it is not used */
+        close(pipefd[0]);
+        /* redirect stdout into write end of pipe */
+        if (dup2(pipefd[1], STDOUT_FILENO) == -1) {
+            restore_normal_stream_behaviour(saved_stdin, saved_stdout);
+            return -1;
         }
-
-        close(fd[1]);
-        exit(EXIT_SUCCESS);
-
-    } else {
-        close(fd[1]);
-        int y;
-        if (read(fd[0], &y, sizeof(int)) != -1) {
-            close(fd[0]);
-            printf("Read from child process %d\n", y);
-        }
-        close(fd[0]);
+        rc = execve(first_cmd, first, env);
+        rc == -1 ? exit(EXIT_FAILURE) : exit(EXIT_SUCCESS);
     }
 
-    waitpid(id, &status, 0);
- 
-    return 0;
+    /* guarantees child process is executed first */
+    waitpid(pid, &status, 0);
+
+    /* parent process */
+    if (status != 0) {
+        restore_normal_stream_behaviour(saved_stdin, saved_stdout);
+        return 1;
+    }
+
+    /* close write end of pipe as it is not used */
+    close(pipefd[1]);
+
+    /* redirect stdin to read from pipe */
+    if (dup2(pipefd[0], STDIN_FILENO) == -1) {
+        restore_normal_stream_behaviour(saved_stdin, saved_stdout);
+        return -1;
+    }
+
+    /* fork process second time */
+    pid = fork();
+    /* this goes to stdin, so we don't need to redirect any output streams */
+    if (pid == 0) {
+        int rc = execve(second_cmd, second, env);
+        rc == -1 ? exit(EXIT_FAILURE) : exit(EXIT_SUCCESS);
+    }
+
+    waitpid(pid, &status, 0);
+
+    /* close read end of pipe as we are done reading */
+    close(pipefd[1]);
+    restore_normal_stream_behaviour(saved_stdin, saved_stdout);
+    return rc != 0;
 }
 
 
 int main()
 {
-    char buf[1024] = "/bin/ls -la | /bin/grep *.c";
-    struct tokens_t *tokens = new_tokens_t();
-    tokenize(tokens, buf);
-    char path[1024] = "/bin/ls";
-    char args[1024] = "-la";
+    char *first_cmd = (char *) malloc(sizeof(char) * 1024);
+    char *first_args = (char *) malloc(sizeof(char) * 1024);
+    char **first = (char **) malloc(sizeof(char *) * 2);
+    first[0] = first_cmd;
+    first[1] = first_args;
+    strcpy(first_cmd, "/bin/ls");
+    strcpy(first_args, "-la");
 
-    test_exec(path, args);
+    char *second_cmd = (char *) malloc(sizeof(char) * 1024);
+    char *second_args = (char *) malloc(sizeof(char) * 1024);
+    char **second = (char **) malloc(sizeof(char *) * 2);
+    second[0] = second_cmd;
+    second[1] = second_args;
+    strcpy(second_cmd, "/bin/grep");
+    strcpy(second_args, ".h");
+
+    
+
+    prototype(first_cmd, first, second_cmd, second);
+
+
+    printf("stdout works as expected. Type in char>");
+    int a = getc(stdin);
+    printf("\nstdin works as expcted: %c\n", a);
 }
 
-//https://stackoverflow.com/questions/29154056/redirect-stdout-to-a-file

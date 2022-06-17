@@ -37,6 +37,14 @@
 static volatile int is_running = 1;
 static struct termios originalt, newt;
 
+const char *operands[] = {
+    "|",  /* O_PIPE */
+    "||", /* O_OR   */
+    "&&", /* O_AND  */
+    ">",  /* O_RE   */
+    ">>"  /* O_APP  */
+};
+
 void disable_term_flags()
 {
     tcgetattr(STDIN_FILENO, &originalt);
@@ -116,23 +124,12 @@ int main()
         struct tokens_t *tokens = new_tokens_t();
         tokenize(tokens, input_buffer);
 
-        printf("\nTOKENS!!:\n");
-        for (size_t i = 0; i < tokens->i; i++) {
-            printf("Token num %ld, val: %s\n", i, tokens->token_arr[i]);
-        }
-        free_tokens_t(tokens);
 
-        split_buffer(input_buffer, cmd, args);
-        snprintf(full_cmd, 8192, "%s/%s", env->PATH, cmd);
-
+        /* start output of execution of buffer on new line */
         putchar('\n');
 
-        /*
-            
-           rc = valery_exec(tokens);
-
-        */
-        rc = valery_exec(full_cmd, args);
+        rc = valery_exec_buffer(tokens);
+        free_tokens_t(tokens);
         if (rc == 1)
             printf("valery: command not found: %s\n", cmd);
 

@@ -34,7 +34,7 @@ void restore_normal_stream_behaviour(int saved_stdin, int saved_stdout)
     close(saved_stdout);
 }
 
-int prototype(char *first_cmd, char **first, char *second_cmd, char **second)
+int prototype(char *first_cmd, char **first, char *second_cmd, char **second, int second_to_stdout)
 {
     int status;
     int rc = 0;
@@ -69,14 +69,18 @@ int prototype(char *first_cmd, char **first, char *second_cmd, char **second)
         return 1;
     }
 
-    /* close write end of pipe as it is not used */
-    close(pipefd[1]);
 
     /* redirect stdin to read from pipe */
     if (dup2(pipefd[0], STDIN_FILENO) == -1) {
         restore_normal_stream_behaviour(saved_stdin, saved_stdout);
         return -1;
     }
+
+    if (second_to_stdout)
+        dup2(pipefd[1], STDOUT_FILENO);
+
+    /* close write end of pipe as it is not used */
+    close(pipefd[1]);
 
     /* fork process second time */
     pid = fork();
@@ -115,7 +119,7 @@ int main()
 
     
 
-    prototype(first_cmd, first, second_cmd, second);
+    prototype(first_cmd, first, second_cmd, second, 1);
 
 
     printf("stdout works as expected. Type in char>");

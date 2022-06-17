@@ -22,15 +22,33 @@
 #define DEFAULT_TOKEN_SIZE 512
 #define STARTING_TOKENS 8
 
+//const char *operands[] = {
+//    "|",
+//    "||",
+//    "&&",
+//    ">",
+//    ">>",
+//};
+
+/* types */
+typedef enum operands_t {
+    O_PIPE,
+    O_OR,
+    O_AND,
+    O_RE,
+    O_APP,
+    O_NONE  /* special case: string is not an operand */
+
+} operands_t;
+
 // every token before an operand is considered a part of the same execution goal 
 // when tokenizing in there are no args for a certain command, maybe add a NULL token.
-/* types */
 typedef struct tokens_t {
     char **token_arr;
     size_t *allocated_size;
+    enum operands_t *is_op;
     size_t i;
     size_t len;
-    size_t pipes;
 } tokens_t;
 
 /* functions */
@@ -52,5 +70,7 @@ void increase_tokens_amount(struct tokens_t *tokens, size_t new_len);
  * for individual tokens and token_arr double pointer when necessary.
  */
 void tokenize(struct tokens_t *tokens, char *buf);
+
+enum operands_t get_token_operand(char *token);
 
 #endif

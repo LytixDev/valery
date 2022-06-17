@@ -19,15 +19,19 @@
 #ifndef EXEC
 #define EXEC
 
+#include "lexer.h"
+
 #define CHILD_PID 0
 
 /* functions */
 
-/*
+/* TODO: Update description
  * forks the process and executes a program with the given
  * path and args.
  * returns 0 if succesfull else 1.
  */
-int valery_exec(char *path, char *args);
+int valery_exec_program(char *path, char *args, int stream[2]);
+
+int valery_exec_buffer(struct tokens_t *tokens);
 
 #endif

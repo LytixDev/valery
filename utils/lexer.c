@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "lexer.h"
+#include "../valery.h"
 
 
 struct tokens_t *new_tokens_t()
@@ -30,10 +31,12 @@ struct tokens_t *new_tokens_t()
     struct tokens_t *tokens = (tokens_t *) malloc(sizeof(tokens_t));
     tokens->token_arr = (char **) malloc(STARTING_TOKENS * sizeof(char *));
     tokens->allocated_size = (size_t *) malloc(STARTING_TOKENS * sizeof(size_t));
+    tokens->is_op = (enum operands_t *) malloc(STARTING_TOKENS * sizeof(operands_t));
 
     for (size_t i = 0; i < STARTING_TOKENS;  i++){
         tokens->token_arr[i] = (char *) malloc(DEFAULT_TOKEN_SIZE * sizeof(char));
         tokens->allocated_size[i] = DEFAULT_TOKEN_SIZE;
+        tokens->is_op[i] = O_NONE;
     }
 
     tokens->i = 0;
@@ -52,6 +55,7 @@ void free_tokens_t(struct tokens_t *tokens)
 
     free(tokens->token_arr);
     free(tokens->allocated_size);
+    free(tokens->is_op);
 }
 
 void increase_token_size(struct tokens_t *tokens, size_t new_size)
@@ -65,15 +69,17 @@ void increase_tokens_amount(struct tokens_t *tokens, size_t new_len)
 {
     tokens->token_arr = (char **) realloc(tokens->token_arr, new_len * sizeof(char *));
     tokens->allocated_size = (size_t *) realloc(tokens->allocated_size, new_len * sizeof(size_t));
+    tokens->is_op = (enum operands_t *) realloc(tokens->is_op, new_len * sizeof(operands_t));
 
     if (tokens->token_arr == NULL || tokens->allocated_size == NULL)
-        printf("oh oh\n");
+        printf("oh oh we in trouble\n");
 
     tokens->len = new_len;
 
     for (size_t i = tokens->len; i < new_len; i++) {
         tokens->token_arr[i] = (char *) malloc(DEFAULT_TOKEN_SIZE * sizeof(char));
         tokens->allocated_size[i] = DEFAULT_TOKEN_SIZE;
+        tokens->is_op[i] = O_NONE;
     }
 }
 
@@ -94,8 +100,29 @@ void tokenize(struct tokens_t *tokens, char *buf)
             increase_token_size(tokens, token_len + 1);
         }
 
-        strcpy(tokens->token_arr[tokens->i++], token);
+        tokens->is_op[tokens->i] = get_token_operand(token);
+        strncpy(tokens->token_arr[tokens->i++], token, token_len);
         token = strtok(NULL, delim);
     }
 
+}
+
+enum operands_t get_token_operand(char *token)
+{
+    if (strcmp(token, operands[0]) == 0)
+        return O_PIPE;
+
+    if (strcmp(token, operands[1]) == 0)
+        return O_OR;
+
+    if (strcmp(token, operands[2]) == 0)
+        return O_AND;
+
+    if (strcmp(token, operands[3]) == 0)
+        return O_RE;
+
+    if (strcmp(token, operands[4]) == 0)
+        return O_APP;
+    
+    return O_NONE;
 }

@@ -23,10 +23,16 @@
 #include <string.h>
 
 #include "lexer.h"
-#include "../valery.h"
 
+const char *operands[] = {
+    "|",  /* O_PIPE */
+    "||", /* O_OR   */
+    "&&", /* O_AND  */
+    ">",  /* O_RE   */
+    ">>"  /* O_APP  */
+};
 
-struct tokens_t *new_tokens_t()
+struct tokens_t *malloc_tokens_t()
 {
     struct tokens_t *tokens = (tokens_t *) malloc(sizeof(tokens_t));
     tokens->token_arr = (char **) malloc(STARTING_TOKENS * sizeof(char *));
@@ -95,13 +101,14 @@ void tokenize(struct tokens_t *tokens, char *buf)
         }
 
         /* TODO: avoid strlen by copying and reallocing (if necessary) in same pass ? */
-        size_t token_len = strlen(token);
+        /* +1 to account for null byte */
+        size_t token_len = strlen(token) + 1;
         if (token_len >= tokens->allocated_size[tokens->i]) {
             increase_token_size(tokens, token_len + 1);
         }
 
         tokens->is_op[tokens->i] = get_token_operand(token);
-        strncpy(tokens->token_arr[tokens->i++], token, token_len);
+        strncpy(tokens->token_arr[tokens->i++], token, token_len + 1);
         token = strtok(NULL, delim);
     }
 

@@ -42,7 +42,7 @@ typedef struct ENV {
 void disable_term_flags();
 void enable_term_flags();
 void catch_exit_signal(int signal);
-struct ENV *new_env();
+struct ENV *malloc_env();
 void free_env(struct ENV *env);
 
 #endif

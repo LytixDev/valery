@@ -37,13 +37,6 @@
 static volatile int is_running = 1;
 static struct termios originalt, newt;
 
-const char *operands[] = {
-    "|",  /* O_PIPE */
-    "||", /* O_OR   */
-    "&&", /* O_AND  */
-    ">",  /* O_RE   */
-    ">>"  /* O_APP  */
-};
 
 void disable_term_flags()
 {
@@ -68,7 +61,7 @@ void catch_exit_signal(int signal)
     is_running = 0;
 }
 
-struct ENV *new_env()
+struct ENV *malloc_env()
 {
     struct ENV *env = (ENV *) malloc(sizeof(ENV));
     env->exit_code = 0;
@@ -91,7 +84,7 @@ void free_env(struct ENV *env)
 
 int main()
 {
-    struct ENV *env = new_env();
+    struct ENV *env = malloc_env();
     char hist_file_path[MAX_ENV_LEN];
     char input_buffer[COMMAND_LEN] = {0};
     char cmd[COMMAND_LEN];
@@ -110,7 +103,7 @@ int main()
 
     /* establish a connection to the hist file */
     snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env->HOME, HISTFILE_NAME);
-    struct HISTORY *hist = init_history(hist_file_path);
+    struct HISTORY *hist = malloc_history(hist_file_path);
 
     /* main loop */
     while (1) {
@@ -121,7 +114,7 @@ int main()
             break;
 
 
-        struct tokens_t *tokens = new_tokens_t();
+        struct tokens_t *tokens = malloc_tokens_t();
         tokenize(tokens, input_buffer);
 
 

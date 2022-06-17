@@ -19,16 +19,11 @@
 #ifndef LEXER
 #define LEXER
 
-#define DEFAULT_TOKEN_SIZE 512
+#define DEFAULT_TOKEN_SIZE 128
 #define STARTING_TOKENS 8
+#define TOTAL_OPERANDS 5
 
-//const char *operands[] = {
-//    "|",
-//    "||",
-//    "&&",
-//    ">",
-//    ">>",
-//};
+extern const char *operands[TOTAL_OPERANDS];
 
 /* types */
 typedef enum operands_t {
@@ -54,7 +49,7 @@ typedef struct tokens_t {
 /* functions */
 
 /* returns a new token type with default malloced space */
-struct tokens_t *new_tokens_t();
+struct tokens_t *malloc_tokens_t();
 
 void free_tokens_t(struct tokens_t *tokens);
 

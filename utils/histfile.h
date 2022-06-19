@@ -69,7 +69,7 @@ typedef struct HISTORY {
 /* functions */
 
 /* returns a pointer of type HISTORY with malloced data */
-struct HISTORY *init_history(char *full_pat_to_hist_file);
+struct HISTORY *malloc_history(char *full_pat_to_hist_file);
 
 /* frees the data associated with the HISTORY pointer passed in */
 void free_history(struct HISTORY *hist);

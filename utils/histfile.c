@@ -27,7 +27,7 @@
 #include "../valery.h"
 
 
-struct HISTORY *init_history(char *full_path_to_hist_file)
+struct HISTORY *malloc_history(char *full_path_to_hist_file)
 {
     struct HISTORY *hist = (HISTORY *) malloc(sizeof(HISTORY));
     hist->fp = (FILE *) malloc(sizeof(FILE));

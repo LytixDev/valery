@@ -31,10 +31,12 @@
 #include "utils/prompt.h"
 #include "utils/histfile.h"
 #include "utils/exec.h"
+#include "utils/lexer.h"
 
 
 static volatile int is_running = 1;
 static struct termios originalt, newt;
+
 
 void disable_term_flags()
 {
@@ -59,7 +61,7 @@ void catch_exit_signal(int signal)
     is_running = 0;
 }
 
-struct ENV *new_env()
+struct ENV *malloc_env()
 {
     struct ENV *env = (ENV *) malloc(sizeof(ENV));
     env->exit_code = 0;
@@ -82,7 +84,7 @@ void free_env(struct ENV *env)
 
 int main()
 {
-    struct ENV *env = new_env();
+    struct ENV *env = malloc_env();
     char hist_file_path[MAX_ENV_LEN];
     char input_buffer[COMMAND_LEN] = {0};
     char cmd[COMMAND_LEN];
@@ -101,7 +103,7 @@ int main()
 
     /* establish a connection to the hist file */
     snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env->HOME, HISTFILE_NAME);
-    struct HISTORY *hist = init_history(hist_file_path);
+    struct HISTORY *hist = malloc_history(hist_file_path);
 
     /* main loop */
     while (1) {
@@ -111,16 +113,24 @@ int main()
         if (strcmp(input_buffer, "exit") == 0)
             break;
 
-        split_buffer(input_buffer, cmd, args);
-        snprintf(full_cmd, 8192, "%s/%s", env->PATH, cmd);
-        
+
+        struct tokens_t *tokens = malloc_tokens_t();
+        tokenize(tokens, input_buffer);
+
+
+        /* start output of execution of buffer on new line */
         putchar('\n');
-        rc = valery_exec(full_cmd, args);
+
+        rc = valery_exec_buffer(tokens, env);
+        if (rc == 1)
+            printf("valery: command not found: %s\n", cmd);
+
         env->exit_code = rc;
         save_command(hist, input_buffer);
 
         /* clear all buffers */
         memset(input_buffer, 0, COMMAND_LEN);
+        free_tokens_t(tokens);
         cmd[0] = 0;
         args[0] = 0;
     }

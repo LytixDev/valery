@@ -36,12 +36,10 @@ typedef enum operands_t {
 
 } operands_t;
 
-// every token before an operand is considered a part of the same execution goal 
-// when tokenizing in there are no args for a certain command, maybe add a NULL token.
 typedef struct tokens_t {
     char **token_arr;
     size_t *allocated_size;
-    enum operands_t *is_op;
+    enum operands_t *token_type;
     size_t i;
     size_t len;
 } tokens_t;

@@ -23,22 +23,17 @@
 #include "sys/wait.h"
 
 #include "exec.h"
+#include "../valery.h"
 #include "lexer.h"
 
 
-int valery_exec_program(char *path, char *args, int stream[2])
+int valery_exec_program(char *path, char *args)
 {
     int status;
     int return_code = 0;
     char *args_cpy = args;
     /* env unused in this case */
     char *env[] = {NULL, NULL, NULL};
-    int stream_is_pipe = 0;
-
-    if (stream[0] != STDIN_FILENO || stream[1] != STDOUT_FILENO) {
-        pipe(stream);
-        stream_is_pipe = 1;
-    }
 
     /* args being an empty string results in undefined behavior */
     if (strcmp(args_cpy, "") == 0)
@@ -48,26 +43,8 @@ int valery_exec_program(char *path, char *args, int stream[2])
 
     pid_t new_pid = fork();
     if (new_pid == CHILD_PID) {
-        /* if read is to pipe, point stdin to the pipe's read end */
-        if (stream[0] != STDIN_FILENO)
-            dup2(stream[0], STDIN_FILENO);
-
-        /* if write is to pipe, redirect stdout to the pipe's write end */
-        if (stream[1] != STDOUT_FILENO)
-            dup2(stream[1], STDOUT_FILENO);
-        
-        if (stream_is_pipe) {
-            close(stream[0]);
-            close(stream[1]);
-        }
-
         return_code = execve(path, full, env);
         return_code == -1 ? exit(EXIT_FAILURE) : exit(EXIT_SUCCESS);
-    }
-
-    if (stream_is_pipe) {
-        close(stream[0]);
-        close(stream[1]);
     }
 
     waitpid(new_pid, &status, 0);
@@ -75,21 +52,68 @@ int valery_exec_program(char *path, char *args, int stream[2])
     return status != 0;
 }
 
-int valery_exec_buffer(struct tokens_t *tokens)
+int valery_exec_buffer(struct tokens_t *tokens, struct ENV *env)
 {
+    /* TODO: parse buffer, handle operands and handle different pipes/streams */
     int stream[2];
     stream[0] = STDIN_FILENO;
     stream[1] = STDOUT_FILENO;
+    int no_more_operands;
+    int first = 1;
+    int pos = 0;
+    int rc = 0;
+    // todo: realloc when necessar
+    char *cmd = (char *) malloc(1024 * sizeof(char));
+    char *args = (char *) malloc(1024 * sizeof(char));
 
-    printf("\nTOKENS!!:\n");
-    for (size_t i = 0; i < tokens->i; i++) {
-        printf("Token num %ld, val: %s, type: %d\n", i, tokens->token_arr[i], tokens->is_op[i]);
+    while (1) {
+        no_more_operands = 1;
+        memset(args, 0, 1024);
+
+        /*
+        printf("\nTOKENS!!:\n");
+        for (size_t i = 0; i < tokens->i; i++) {
+            printf("Token num %ld, val: %s, type: %d\n", i, tokens->token_arr[i], tokens->token_type[i]);
+        }
+        */
+
+        if (tokens->token_type[pos] != O_NONE) {
+            fprintf(stderr, "valery: invalid starting token '%s'\n", tokens->token_arr[pos]);
+            rc = 1;
+            break;
+        }
+        /* set cmd to be first token */
+        snprintf(cmd, 1024, "%s/%s", env->PATH, tokens->token_arr[pos++]);
+
+        /* check if there are no more operands */
+        for (int i = pos; i < tokens->i; i++) {
+            if (tokens->token_type[i] != O_NONE) {
+                no_more_operands = 0;
+                break;
+            }
+        }
+        
+        /* copy subsequent tokens until next operand into args */
+        while (tokens->token_type[pos] == O_NONE && pos < tokens->i) {
+            // TODO: ensure memory safety and seperation of args by whitespace
+            strcat(args, tokens->token_arr[pos++]);
+        }
+
+        rc = valery_exec_program(cmd, args);
+        if (rc == 1) {
+            fprintf(stderr, "valery: command not found '%s'\n", cmd);
+            break;
+        }
+
+        /* move past operand */
+        pos++;
+        if (pos >= tokens->i)
+            break;
+        first = 0;
     }
 
-    //split_buffer(input_buffer, cmd, args);
-    //snprintf(full_cmd, 8192, "%s/%s", env->PATH, cmd);
 
-
-    //rc = valery_exec(full_cmd, args, stream);
-    return 0;
+    free(cmd);
+    free(args);
+    return rc;
 }

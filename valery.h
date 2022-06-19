@@ -26,9 +26,6 @@
 #define MAX_ENV_LEN 1024
 #define CONFIG_NAME ".valeryrc"
 #define HISTFILE_NAME ".valery_hist"
-#define TOTAL_OPERANDS 5
-
-extern const char *operands[TOTAL_OPERANDS];
 
 /* types */
 typedef struct ENV {

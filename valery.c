@@ -121,8 +121,7 @@ int main()
         /* start output of execution of buffer on new line */
         putchar('\n');
 
-        rc = valery_exec_buffer(tokens);
-        free_tokens_t(tokens);
+        rc = valery_exec_buffer(tokens, env);
         if (rc == 1)
             printf("valery: command not found: %s\n", cmd);
 
@@ -131,6 +130,7 @@ int main()
 
         /* clear all buffers */
         memset(input_buffer, 0, COMMAND_LEN);
+        free_tokens_t(tokens);
         cmd[0] = 0;
         args[0] = 0;
     }

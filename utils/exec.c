@@ -55,22 +55,21 @@ int valery_exec_program(char *path, char *args)
 int valery_exec_buffer(struct tokens_t *tokens, struct ENV *env)
 {
     /* TODO: parse buffer, handle operands and handle different pipes/streams */
-    int stream[2];
-    stream[0] = STDIN_FILENO;
-    stream[1] = STDOUT_FILENO;
     int no_more_operands;
     int first = 1;
     int pos = 0;
     int rc = 0;
+
     // todo: realloc when necessar
     char *cmd = (char *) malloc(1024 * sizeof(char));
     char *args = (char *) malloc(1024 * sizeof(char));
 
     while (1) {
         no_more_operands = 1;
+        memset(cmd, 0, 1024);
         memset(args, 0, 1024);
 
-        /*
+        /*// debug
         printf("\nTOKENS!!:\n");
         for (size_t i = 0; i < tokens->i; i++) {
             printf("Token num %ld, val: %s, type: %d\n", i, tokens->token_arr[i], tokens->token_type[i]);
@@ -82,6 +81,7 @@ int valery_exec_buffer(struct tokens_t *tokens, struct ENV *env)
             rc = 2;
             break;
         }
+
         /* set cmd to be first token */
         snprintf(cmd, 1024, "%s/%s", env->PATH, tokens->token_arr[pos++]);
 
@@ -111,7 +111,6 @@ int valery_exec_buffer(struct tokens_t *tokens, struct ENV *env)
             break;
         first = 0;
     }
-
 
     free(cmd);
     free(args);

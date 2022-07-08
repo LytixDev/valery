@@ -109,22 +109,20 @@ int main()
     while (1) {
         prompt(hist, env->PS1, input_buffer);
 
+        /* start output of execution of buffer on new line */
+        putchar('\n');
+
+        if (strcmp(input_buffer, "") == 0)
+            continue;
+
         /* loop enters here means ordinary command was typed in */
         if (strcmp(input_buffer, "exit") == 0)
             break;
 
-
         struct tokens_t *tokens = malloc_tokens_t();
         tokenize(tokens, input_buffer);
 
-        /* start output of execution of buffer on new line */
-        putchar('\n');
-
         rc = valery_exec_buffer(tokens, env);
-        // dealt with in valery_exec_buffer
-        //if (rc == 1)
-        //    printf("valery: command not found: %s\n", cmd);
-
         env->exit_code = rc;
         save_command(hist, input_buffer);
 

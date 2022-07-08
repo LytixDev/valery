@@ -79,7 +79,7 @@ int valery_exec_buffer(struct tokens_t *tokens, struct ENV *env)
 
         if (tokens->token_type[pos] != O_NONE) {
             fprintf(stderr, "valery: invalid starting token '%s'\n", tokens->token_arr[pos]);
-            rc = 1;
+            rc = 2;
             break;
         }
         /* set cmd to be first token */

@@ -117,13 +117,13 @@ int main()
         struct tokens_t *tokens = malloc_tokens_t();
         tokenize(tokens, input_buffer);
 
-
         /* start output of execution of buffer on new line */
         putchar('\n');
 
         rc = valery_exec_buffer(tokens, env);
-        if (rc == 1)
-            printf("valery: command not found: %s\n", cmd);
+        // dealt with in valery_exec_buffer
+        //if (rc == 1)
+        //    printf("valery: command not found: %s\n", cmd);
 
         env->exit_code = rc;
         save_command(hist, input_buffer);

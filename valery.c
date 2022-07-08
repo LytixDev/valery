@@ -108,15 +108,14 @@ int main()
     /* main loop */
     while (1) {
         prompt(hist, env->PS1, input_buffer);
-
+        save_command(hist, input_buffer);
         /* start output of execution of buffer on new line */
         putchar('\n');
 
         if (strcmp(input_buffer, "") == 0)
             continue;
-
         /* loop enters here means ordinary command was typed in */
-        if (strcmp(input_buffer, "exit") == 0)
+        else if (strcmp(input_buffer, "exit") == 0)
             break;
 
         struct tokens_t *tokens = malloc_tokens_t();
@@ -124,7 +123,6 @@ int main()
 
         rc = valery_exec_buffer(tokens, env);
         env->exit_code = rc;
-        save_command(hist, input_buffer);
 
         /* clear all buffers */
         memset(input_buffer, 0, COMMAND_LEN);

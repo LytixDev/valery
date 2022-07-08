@@ -117,7 +117,6 @@ int main()
         struct tokens_t *tokens = malloc_tokens_t();
         tokenize(tokens, input_buffer);
 
-
         /* start output of execution of buffer on new line */
         putchar('\n');
 

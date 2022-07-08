@@ -93,6 +93,7 @@ void tokenize(struct tokens_t *tokens, char *buf)
 {
     const char delim[] = " ";
     char *token = strtok(buf, delim);
+    size_t token_len;
 
     while (token != NULL) {
         /* check if space for token and if and more memory needs to be allocated */
@@ -100,16 +101,19 @@ void tokenize(struct tokens_t *tokens, char *buf)
             increase_tokens_amount(tokens, tokens->len + 32);
         }
 
-        /* TODO: avoid strlen by copying and reallocing (if necessary) in same pass ? */
-        /* +1 to account for null byte */
-        size_t token_len = strlen(token) + 1;
-        if (token_len >= tokens->allocated_size[tokens->i]) {
-            increase_token_size(tokens, token_len + 1);
-        }
+        token_len = 0;
+        do {
+            tokens->token_arr[tokens->i][token_len] = *token;
+            if (token_len++ == tokens->allocated_size[tokens->i])
+                increase_token_size(tokens, token_len + 32);
+        } while (*(++token) != 0);
+
+        /* add null byte */
+        tokens->token_arr[tokens->i][token_len] = 0;
 
         tokens->token_type[tokens->i] = get_token_operand(token);
-        strncpy(tokens->token_arr[tokens->i++], token, token_len + 1);
         token = strtok(NULL, delim);
+        tokens->i++;
     }
 
 }

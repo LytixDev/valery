@@ -70,6 +70,6 @@ void print_prompt(char *ps1, char *buf);
 void update_prompt(char *ps1, char *buf, int cursor_pos);
 
 /* handles all the logic when receiving input from the user */
-int prompt(struct HISTORY *hist, char *ps1, char buf[COMMAND_LEN]);
+int prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN]);
 
 #endif

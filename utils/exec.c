@@ -25,6 +25,7 @@
 #include "exec.h"
 #include "../valery.h"
 #include "lexer.h"
+#include "../builtin/builtins.h"
 
 
 int valery_exec_program(char *path, char *args)
@@ -61,6 +62,7 @@ int valery_exec_buffer(struct tokens_t *tokens, struct ENV *env)
     int rc = 0;
 
     // todo: realloc when necessar
+    char *cmdt = (char *) malloc(1024 * sizeof(char));
     char *cmd = (char *) malloc(1024 * sizeof(char));
     char *args = (char *) malloc(1024 * sizeof(char));
 
@@ -75,6 +77,7 @@ int valery_exec_buffer(struct tokens_t *tokens, struct ENV *env)
             break;
         }
 
+        snprintf(cmdt, 1024, "%s", tokens->token_arr[pos]);
         /* set cmd to be first token */
         snprintf(cmd, 1024, "%s/%s", env->PATH, tokens->token_arr[pos++]);
 
@@ -92,10 +95,16 @@ int valery_exec_buffer(struct tokens_t *tokens, struct ENV *env)
             strcat(args, tokens->token_arr[pos++]);
         }
 
-        rc = valery_exec_program(cmd, args);
-        if (rc == 1) {
-            fprintf(stderr, "valery: command not found '%s'\n", cmd);
-            break;
+        if (strcmp(cmdt, "which") == 0) {
+            rc = which(args, env->PATH);
+        } else if (strcmp(cmdt, "cd") == 0) {
+            rc = cd(args);
+        } else {
+            rc = valery_exec_program(cmd, args);
+            if (rc == 1) {
+                fprintf(stderr, "valery: command not found '%s'\n", cmd);
+                break;
+            }
         }
 
         /* move past operand */

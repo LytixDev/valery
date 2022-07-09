@@ -24,6 +24,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "builtins.h"
+
 
 /*
  *  Current implementaion assumes path is only one directory and is platform dependent.
@@ -37,8 +39,11 @@ int which(char *program_name, char *path)
     struct dirent *dir;
     struct stat sb;
 
-    d = opendir(path);
+    /* check if program name is shell builtin */
+    if (strcmp(program_name, "cd") == 0) goto builtin;
+    if (strcmp(program_name, "which") == 0) goto builtin;
 
+    d = opendir(path);
     if (d == NULL)
         return 1;
 
@@ -58,9 +63,15 @@ int which(char *program_name, char *path)
         }
     }
 
+    fprintf(stderr, "%s: not found\n", program_name);
     return 1;
-}
 
+builtin:
+    printf("%s: shell builtin\n", program_name);
+    return 0;
+
+}
+/*
 int main(int argc, char *argv[])
 {
     if (argc == 3) {
@@ -70,3 +81,4 @@ int main(int argc, char *argv[])
 
     return 1;
 }
+*/

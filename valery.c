@@ -32,6 +32,7 @@
 #include "utils/histfile.h"
 #include "utils/exec.h"
 #include "utils/lexer.h"
+#include "builtin/builtins.h"
 
 
 static volatile int received_sigint = 0;

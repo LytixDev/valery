@@ -53,6 +53,7 @@ int get_arrow_type()
     if (getchar() == ARROW_KEY_2)
         return getchar();
    
+    /* consume and discard next char */
     getchar();
     return -1;
 }
@@ -104,10 +105,12 @@ int prompt(struct HISTORY *hist, char *ps1, char buf[COMMAND_LEN])
     int ch;
     int arrow_type;
     size_t new_buf_len;
-    size_t cur_pos = 0;
     size_t max_len = COMMAND_LEN;
     readfrom_t rc;
     histaction_t action;
+    size_t cur_pos = 0;
+    /* the size of the buffer being used, not the size allocated */
+    size_t buf_len = 0;
 
     print_prompt(ps1, buf);
     /* reset position in history to bottom of queue */
@@ -115,48 +118,59 @@ int prompt(struct HISTORY *hist, char *ps1, char buf[COMMAND_LEN])
 
     while (EOF != (ch = getchar()) && ch != '\n') {
         /* return if buffer cannot store more chars */
-        if (cur_pos == max_len) {
-            buf[cur_pos] = 0;
+        if (buf_len == max_len) {
+            buf[--buf_len] = 0;
             return 1;
         }
 
-        if (ch == BACKSPACE && cur_pos > 0) {
-            buf[--cur_pos] = 0;
-        } else if (ch == ARROW_KEY) {
-            arrow_type = get_arrow_type();
-            if (arrow_type == ARROW_LEFT || arrow_type == ARROW_RIGHT) {
-                cur_pos = move_cursor_horizontally(arrow_type, cur_pos, strlen(buf));
-                continue;
-            }
+        switch (ch) {
+            case BACKSPACE:
+                if (cur_pos > 0) {
+                    buf[--cur_pos] = 0;
+                    buf_len--;
+                }
+                break;
 
-            /* store hist line inside buf */
-            action = (arrow_type == ARROW_UP) ? HIST_UP : HIST_DOWN;
-            rc = get_hist_line(hist, buf, action);
+            case ARROW_KEY:
+                arrow_type = get_arrow_type();
+                if (arrow_type == ARROW_LEFT || arrow_type == ARROW_RIGHT) {
+                    cur_pos = move_cursor_horizontally(arrow_type, cur_pos, buf_len);
+                    break;
+                }
 
-            if (rc != DID_NOT_READ)
-                action == HIST_UP ? hist->pos-- : hist->pos++;
+                /* execution enters here means either arrow up or down was pressed */
+                /* store hist line inside buf */
+                action = (arrow_type == ARROW_UP) ? HIST_UP : HIST_DOWN;
+                rc = get_hist_line(hist, buf, action);
 
-            if (rc == READ_FROM_HIST) {
-                /* chop off newline character */
-                new_buf_len = strlen(buf);
-                buf[--new_buf_len] = 0;
-                cur_pos = new_buf_len;
-            } else if (rc == READ_FROM_MEMORY) {
-                new_buf_len = strlen(buf);
-                cur_pos = new_buf_len;
-            }
+                if (rc != DID_NOT_READ)
+                    action == HIST_UP ? hist->pos-- : hist->pos++;
 
-        } else {
-            if (cur_pos != strlen(buf)) {
-                insert_char_to_str(buf, ch, cur_pos++); 
-            } else {
-                /* no special keys have been pressed this session, so append char to input buffer */
-                buf[cur_pos++] = ch;
-            }
+                if (rc == READ_FROM_HIST) {
+                    /* chop off newline character */
+                    buf_len = strlen(buf);
+                    buf[--buf_len] = 0;
+                    cur_pos = buf_len;
+                } else if (rc == READ_FROM_MEMORY) {
+                    buf_len = strlen(buf);
+                    cur_pos = buf_len;
+                }
+                break;
+
+            default:
+                if (cur_pos != buf_len) {
+                    /* insert char at any position of the buffer */
+                    insert_char_to_str(buf, ch, cur_pos++); 
+                    buf_len++;
+                } else {
+                    /* no special keys have been pressed this session, so append char to input buffer */
+                    buf[cur_pos++] = ch;
+                    buf_len++;
+                }
         }
-
-        update_prompt(ps1, buf, strlen(buf) - cur_pos);
+        update_prompt(ps1, buf, buf_len - cur_pos);
     }
 
+    putchar('\n');
     return 0;
 }

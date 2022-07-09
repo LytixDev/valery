@@ -34,7 +34,7 @@
 #include "utils/lexer.h"
 
 
-static volatile int is_running = 1;
+static volatile int received_sigint = 0;
 static struct termios originalt, newt;
 
 
@@ -58,7 +58,7 @@ void enable_term_flags()
 
 void catch_exit_signal(int signal)
 {
-    is_running = 0;
+    received_sigint = 1;
 }
 
 struct ENV *malloc_env()
@@ -107,24 +107,31 @@ int main()
 
     /* main loop */
     while (1) {
+        /* TODO: can we reuse instead of mallocing a new one each loop? */
+        struct tokens_t *tokens = malloc_tokens_t();
         prompt(hist, env->PS1, input_buffer);
+
+        /* skip exec if ctrl+c is caught */
+        if (received_sigint) {
+            received_sigint = 0;
+            signal(SIGINT, catch_exit_signal);
+            goto end_loop;
+        }
+
         save_command(hist, input_buffer);
-        /* start output of execution of buffer on new line */
-        putchar('\n');
 
         if (strcmp(input_buffer, "") == 0)
-            continue;
-        /* loop enters here means ordinary command was typed in */
+            goto end_loop;
         else if (strcmp(input_buffer, "exit") == 0)
             break;
 
-        struct tokens_t *tokens = malloc_tokens_t();
+        /* loop enters here means ordinary command was typed in */
         tokenize(tokens, input_buffer);
-
         rc = valery_exec_buffer(tokens, env);
         env->exit_code = rc;
 
-        /* clear all buffers */
+        /* clears all buffers */
+    end_loop:
         memset(input_buffer, 0, COMMAND_LEN);
         free_tokens_t(tokens);
         cmd[0] = 0;

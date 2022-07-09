@@ -53,6 +53,7 @@ int get_arrow_type()
     if (getchar() == ARROW_KEY_2)
         return getchar();
    
+    /* consume and discard next char */
     getchar();
     return -1;
 }
@@ -158,5 +159,6 @@ int prompt(struct HISTORY *hist, char *ps1, char buf[COMMAND_LEN])
         update_prompt(ps1, buf, strlen(buf) - cur_pos);
     }
 
+    putchar('\n');
     return 0;
 }

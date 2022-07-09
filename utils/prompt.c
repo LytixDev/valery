@@ -100,7 +100,7 @@ void update_prompt(char *ps1, char *buf, int cursor_pos)
         cursor_right(1);
 }
 
-int prompt(struct HISTORY *hist, char *ps1, char buf[COMMAND_LEN])
+int prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN])
 {
     int ch;
     int arrow_type;
@@ -143,10 +143,11 @@ int prompt(struct HISTORY *hist, char *ps1, char buf[COMMAND_LEN])
                 action = (arrow_type == ARROW_UP) ? HIST_UP : HIST_DOWN;
                 rc = get_hist_line(hist, buf, action);
 
-                if (rc != DID_NOT_READ)
-                    action == HIST_UP ? hist->pos-- : hist->pos++;
-
-                if (rc == READ_FROM_HIST) {
+                if (rc == DID_NOT_READ && action == HIST_DOWN) {
+                    /* clear buffer when no hist line was read */
+                    memset(buf, 0, COMMAND_LEN);
+                    buf_len = cur_pos = 0;
+                } else if (rc == READ_FROM_HIST) {
                     /* chop off newline character */
                     buf_len = strlen(buf);
                     buf[--buf_len] = 0;

@@ -103,7 +103,7 @@ int main()
 
     /* establish a connection to the hist file */
     snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env->HOME, HISTFILE_NAME);
-    struct HISTORY *hist = malloc_history(hist_file_path);
+    struct hist_t *hist = malloc_history(hist_file_path);
 
     /* main loop */
     while (1) {

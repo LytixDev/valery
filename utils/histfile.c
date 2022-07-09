@@ -27,11 +27,11 @@
 #include "../valery.h"
 
 
-struct HISTORY *malloc_history(char *full_path_to_hist_file)
+struct hist_t *malloc_history(char *full_path_to_hist_file)
 {
-    struct HISTORY *hist = (HISTORY *) malloc(sizeof(HISTORY));
+    struct hist_t *hist = (hist_t *) malloc(sizeof(hist_t));
     hist->fp = (FILE *) malloc(sizeof(FILE));
-    hist->t_stored = 0;
+    hist->s_len = 0;
     hist->stored_commands = malloc(MAX_COMMANDS_BEFORE_WRITE * sizeof(char *));
 
     /* allocate space for all strings */
@@ -43,13 +43,16 @@ struct HISTORY *malloc_history(char *full_path_to_hist_file)
     if (rc == 1)
         hist->fp = NULL;
 
-    /* initially no commands in memory, so set pos to file pos */
-    hist->pos = hist->f_pos;
+    /*
+     * initially no commands in memory, so set pos to file pos
+     * NB: hist->pos is zero indexed
+     */
+    hist->pos = hist->f_pos - 1;
     
     return hist;
 }
 
-void free_history(struct HISTORY *hist)
+void free_history(struct hist_t *hist)
 {
     if (hist == NULL)
         return;
@@ -64,27 +67,28 @@ void free_history(struct HISTORY *hist)
     free(hist);
 }
 
-int out_of_bounds(struct HISTORY *hist, histaction_t action)
+int out_of_bounds(struct hist_t *hist, histaction_t action)
 {
     if (action == HIST_UP && hist->pos == 0)
         return 1;
 
-    if (action == HIST_DOWN && hist->pos == hist->t_stored + hist->f_len)
+    /* minus 1 because hist->pos is zero indexed */
+    if (action == HIST_DOWN && hist->pos == hist->s_len + hist->f_len - 1)
         return 1;
 
     return 0;
 }
 
-void save_command(struct HISTORY *hist, char buf[COMMAND_LEN])
+void save_command(struct hist_t *hist, char buf[COMMAND_LEN])
 {
-    if (hist->t_stored == MAX_COMMANDS_BEFORE_WRITE)
+    if (hist->s_len == MAX_COMMANDS_BEFORE_WRITE)
         write_commands_to_hist_file(hist);
-    strncpy(hist->stored_commands[hist->t_stored++], buf, COMMAND_LEN);
+    strncpy(hist->stored_commands[hist->s_len++], buf, COMMAND_LEN);
 }
 
-void write_commands_to_hist_file(struct HISTORY *hist)
+void write_commands_to_hist_file(struct hist_t *hist)
 {
-    for (int i = 0; i < hist->t_stored; i++) {
+    for (int i = 0; i < hist->s_len; i++) {
         if (strcmp(hist->stored_commands[i], "") != 0) {
             fputs(hist->stored_commands[i], hist->fp);
             fputs("\n", hist->fp);
@@ -95,25 +99,28 @@ void write_commands_to_hist_file(struct HISTORY *hist)
     fseek(hist->fp, 0, SEEK_END);
 }
 
-int get_len(FILE *fp)
+void count_hist_lines(struct hist_t *hist)
 {
-    unsigned int len = 0;
+    size_t len = 0;
+    size_t chars = 0;
 
-    while(!feof(fp)) {
-      if(fgetc(fp) == '\n')
-        len++;
+    while(!feof(hist->fp)) {
+        chars++;
+        if(fgetc(hist->fp) == '\n')
+            len++;
     }
 
-    return len;
+    hist->f_len = len;
+    hist->f_chars = chars;
 }
 
-int open_hist_file(struct HISTORY *hist, char *path)
+int open_hist_file(struct hist_t *hist, char *path)
 {
     hist->fp = fopen(path, "a+");
 
     if (hist->fp != NULL) {
-        /* get_len() moves file pointer to end of file */
-        hist->f_len = get_len(hist->fp);
+        /* count_hist_lines() moves file pointer to end of file */
+        count_hist_lines(hist);
         hist->f_pos = hist->f_len;
         return 0;
     }
@@ -121,82 +128,57 @@ int open_hist_file(struct HISTORY *hist, char *path)
     return 1;
 }
 
-void read_line_and_move_fp_back(FILE *fp, long offset, char buf[COMMAND_LEN])
+void read_hist_line(struct hist_t *hist, char buf[COMMAND_LEN], histaction_t action)
 {
-    size_t len = 0;
-    char *tmp = (char *) malloc(sizeof(char) * COMMAND_LEN);;
-    getline(&tmp, &len, fp);
-    strncpy(buf, tmp, COMMAND_LEN);
-    free(tmp);
-    fseek(fp, ++offset, SEEK_SET);
-}
+    unsigned long position_in_file = ftell(hist->fp);
+    /* decrement pos to one char before \n, unless it is at the beginning */
+    if (position_in_file != 0) --position_in_file;
 
-void read_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], histaction_t action)
-{
-    /* get current file pointer position, and move one before the current line */
-    long offset = hist->f_pos == 0 ? 1 : ftell(hist->fp);
-    offset--;
-
-    if (action == HIST_UP) {
-        /* special case when file pointer is at the start of the file */
-        if (hist->f_pos == hist->f_len) {
-            fseek(hist->fp, 0, SEEK_END);
-            offset = ftell(hist->fp);
-            offset--;
-        }
-        
-        /*
-         * special case when pos is at the beginning of the file,
-         * and there is no newline to seek after
-         */
-        if (hist->f_pos == 1) {
-            fseek(hist->fp, 0, SEEK_SET);
+    while (fgetc(hist->fp) != '\n') {
+        if (action == HIST_UP) {
+            if (position_in_file == 0) { 
+                /* actual position will be delayed by one, so set file pointer to zero */
+                fseek(hist->fp, 0, SEEK_SET);
+                break;
+            }
+            fseek(hist->fp, --position_in_file, SEEK_SET);
         } else {
-            while (fgetc(hist->fp) != '\n')
-                fseek(hist->fp, --offset, SEEK_SET);
+            if (position_in_file == hist->f_chars) break;
+            fseek(hist->fp, ++position_in_file, SEEK_SET);
         }
-
-        hist->f_pos--;
-    } else {
-        /* special case when file pointer is at the start of the file */
-        if (hist->f_pos == 0) {
-            fseek(hist->fp, 0, SEEK_SET);
-        } else {
-            while (fgetc(hist->fp) != '\n')
-                fseek(hist->fp, ++offset, SEEK_SET);
-            offset++;
-        }
-
-        hist->f_pos++;
     }
 
-    read_line_and_move_fp_back(hist->fp, offset, buf);
+    /* read hist line into buffer */
+    fgets(buf, COMMAND_LEN, hist->fp);
+    /* move file pointer one past '\n' */
+    fseek(hist->fp, ++position_in_file, SEEK_SET);
 }
 
-void reset_hist_pos(struct HISTORY *hist)
+void reset_hist_pos(struct hist_t *hist)
 {
     /* move file pointer to end of file */
     fseek(hist->fp, 0, SEEK_END);
     /* reset position counters */
     hist->f_pos = hist->f_len;
-    hist->pos = hist->f_len + hist->t_stored;
+    hist->pos = hist->f_len + hist->s_len;
 }
 
-readfrom_t get_hist_line(struct HISTORY *hist, char buf[COMMAND_LEN], histaction_t action)
+readfrom_t get_hist_line(struct hist_t *hist, char buf[COMMAND_LEN], histaction_t action)
 {
-    int rc;
-    rc = out_of_bounds(hist, action);
-    if (rc)
+    if (out_of_bounds(hist, action))
         return DID_NOT_READ;
 
+    action == HIST_UP ? hist->pos-- : hist->pos++;
+
     /* read from memory */
-    if (hist->pos > hist->f_len) {
-        int index = hist->pos - hist->f_len - 1;
+    if (hist->pos + 1 > hist->f_len) {
+        int index = hist->pos - hist->f_len;
         strncpy(buf, hist->stored_commands[index], COMMAND_LEN);
         return READ_FROM_MEMORY;
     }
 
     /* read from hist file */
     read_hist_line(hist, buf, action);
+
     return READ_FROM_HIST;
 }

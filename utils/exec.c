@@ -69,13 +69,6 @@ int valery_exec_buffer(struct tokens_t *tokens, struct ENV *env)
         memset(cmd, 0, 1024);
         memset(args, 0, 1024);
 
-        /*// debug
-        printf("\nTOKENS!!:\n");
-        for (size_t i = 0; i < tokens->i; i++) {
-            printf("Token num %ld, val: %s, type: %d\n", i, tokens->token_arr[i], tokens->token_type[i]);
-        }
-        */
-
         if (tokens->token_type[pos] != O_NONE) {
             fprintf(stderr, "valery: invalid starting token '%s'\n", tokens->token_arr[pos]);
             rc = 2;

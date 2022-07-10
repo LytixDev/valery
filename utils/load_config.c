@@ -112,6 +112,15 @@ int parse_config(struct ENV *env)
 
     }
 
+    //TODO: fix this
+    //#define  _POSIX_C_SOURCE = 200112L
+    //char *p = getenv("HOME");
+    //printf("%s\n", p);
+    //setenv("TERM", "st", 1);
+    //p = getenv("TERM");
+    //printf("%s\n", p);
+
+
     return 0;
 
 }

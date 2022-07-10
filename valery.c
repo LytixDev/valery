@@ -90,7 +90,6 @@ int main()
     char input_buffer[COMMAND_LEN] = {0};
     char cmd[COMMAND_LEN];
     char args[COMMAND_LEN];
-    char full_cmd[8192];
 
     signal(SIGINT, catch_exit_signal);
     disable_term_flags();

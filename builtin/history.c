@@ -31,19 +31,20 @@ int history(struct hist_t *hist)
         return 1;
 
     char buf[COMMAND_LEN];
-    int rc;
+    long rc;
     int i;
     int len;
     size_t histlines = hist->s_len + hist->f_len;
     if (histlines == 0)
         return 1;
 
+    reset_hist_pos(hist);
     /* only read valid amount of histlines */
     len = histlines >= LINES ? LINES : histlines;
     for (i = len; i > 0; i--)
         traverse_hist(hist, HIST_UP); 
 
-    for (i = len; i > 2; i--) {
+    for (i = len; i > 1; i--) {
         rc = get_hist_line(hist, buf, HIST_DOWN);
         /* chop off new line character */
         if (rc == READ_FROM_HIST)

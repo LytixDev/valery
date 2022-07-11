@@ -93,8 +93,12 @@ void write_commands_to_hist_file(struct hist_t *hist);
  */
 void count_hist_lines(struct hist_t *hist);
 
-/* */
-unsigned long traverse_hist(struct hist_t *hist, histaction_t direction);
+/*
+ * traverses the hist one line in the given direction.
+ * NB: function does not make sure direction does not cause
+ * hist to go out of bounds.
+ */
+long traverse_hist(struct hist_t *hist, histaction_t direction);
 
 /* returns 1 if the given action will put the file pointer out of
  * bounds, else 0.
@@ -109,10 +113,10 @@ int out_of_bounds(struct hist_t *hist, histaction_t action);
 int open_hist_file(struct hist_t *hist, char *path);
 
 /*
- * moves the file pointer and updates f_pos in preperation for reading
- * hist line.
+ * reads one line of the hist file and moves the file pointer back to the given offset.
+ * if offset is -1, it uses ftell(hist->fp) to get the offset
  */
-void read_hist_line(struct hist_t *hist, char buf[COMMAND_LEN], histaction_t action);
+void read_hist_line_from_file(struct hist_t *hist, char buf[COMMAND_LEN], long offset, histaction_t action);
 
 /*
  * puts the current hist line into the buf argument.

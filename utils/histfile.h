@@ -32,9 +32,9 @@ typedef enum {
 } histaction_t;
 
 typedef enum {
-    READ_FROM_MEMORY,
-    READ_FROM_HIST, 
-    DID_NOT_READ 
+    READ_FROM_MEMORY = -1,
+    READ_FROM_HIST = -2, 
+    DID_NOT_READ = -3 
 } readfrom_t;
 
 /*

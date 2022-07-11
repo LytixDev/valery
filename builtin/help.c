@@ -15,22 +15,24 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "../utils/histfile.h"
+#include <stdio.h>
 
-#ifndef BUILTINS
-#define BUILTINS
+#include "builtins.h"
 
-#define total_builtin_functions 4
-extern char *builtin_names[total_builtin_functions];
+int help()
+{
+    printf("valery - Unix-like shell written by Nicolai Brand (https://lytix.dev) 2022\n"
+           "\nThe goal of the project is to be a playground in order to learn how to write memory-safe, "
+           "efficient, readable and useful C code.\n");
 
+    printf("\nOn startup, valery reads the '.valeryrc' file in the $HOME folder to customize the environment."
+           "Typed in commands are stored in '.valery_hist' in the $HOME folder.\n");
 
-/* functions */
-int which(char *program_name, char *path);
+    printf("\nList of shell builtins:\n");
+    for (int i = 0; i < total_builtin_functions; i++) {
+        printf("%s  ", builtin_names[i]);
+    }
 
-int cd(char *directory);
-
-int history(struct hist_t *hist);
-
-int help();
-
-#endif
+    printf("\n");
+    return 0;
+}

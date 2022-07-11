@@ -98,6 +98,7 @@ int main()
     if (rc == 1) {
         fprintf(stderr, "error parsing .valeryrc");
         free_env(env);
+        enable_term_flags();
         return 1;
     }
 

@@ -102,6 +102,8 @@ int valery_exec_buffer(struct tokens_t *tokens, struct ENV *env, struct hist_t *
             rc = cd(args);
         } else if (strcmp(cmdt, "history") == 0) {
             rc = history(hist);
+        } else if (strcmp(cmdt, "help") == 0) {
+            rc = help();
         } else {
             rc = valery_exec_program(cmd, args);
             if (rc == 1) {

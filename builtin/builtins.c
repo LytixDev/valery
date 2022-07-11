@@ -15,22 +15,4 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "../utils/histfile.h"
-
-#ifndef BUILTINS
-#define BUILTINS
-
-#define total_builtin_functions 4
-extern char *builtin_names[total_builtin_functions];
-
-
-/* functions */
-int which(char *program_name, char *path);
-
-int cd(char *directory);
-
-int history(struct hist_t *hist);
-
-int help();
-
-#endif
+char *builtin_names[] = {"cd", "which", "history", "help"};

@@ -24,6 +24,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "builtins.h"
+
 
 int which(char *program_name, char *path)
 {
@@ -32,8 +34,10 @@ int which(char *program_name, char *path)
     struct stat sb;
 
     /* check if program name is shell builtin */
-    if (strcmp(program_name, "cd") == 0) goto builtin;
-    if (strcmp(program_name, "which") == 0) goto builtin;
+    for (int i = 0; i < total_builtin_functions; i++) {
+        if (strcmp(builtin_names[i], program_name) == 0)
+            goto builtin;
+    }
 
     d = opendir(path);
     if (d == NULL)

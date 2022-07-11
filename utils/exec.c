@@ -22,9 +22,10 @@
 #include <string.h>
 #include "sys/wait.h"
 
-#include "exec.h"
-#include "../valery.h"
 #include "lexer.h"
+#include "exec.h"
+#include "histfile.h"
+#include "../valery.h"
 #include "../builtin/builtins.h"
 
 
@@ -53,7 +54,7 @@ int valery_exec_program(char *path, char *args)
     return status != 0;
 }
 
-int valery_exec_buffer(struct tokens_t *tokens, struct ENV *env)
+int valery_exec_buffer(struct tokens_t *tokens, struct ENV *env, struct hist_t *hist)
 {
     /* TODO: parse buffer, handle operands and handle different pipes/streams */
     int no_more_operands;
@@ -99,6 +100,8 @@ int valery_exec_buffer(struct tokens_t *tokens, struct ENV *env)
             rc = which(args, env->PATH);
         } else if (strcmp(cmdt, "cd") == 0) {
             rc = cd(args);
+        } else if (strcmp(cmdt, "history") == 0) {
+            rc = history(hist);
         } else {
             rc = valery_exec_program(cmd, args);
             if (rc == 1) {

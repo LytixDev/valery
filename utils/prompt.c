@@ -27,22 +27,6 @@
 #include "../valery.h"
 
 
-void split_buffer(char buf[COMMAND_LEN], char *cmd, char *args)
-{
-    /* make copy as to not modify the original buffer */
-    char *ptr = buf;
-    size_t i = 0;
-    const char *delim = " ";
-    
-    while (*ptr != *delim && *ptr != 0)
-        cmd[i++] = *ptr++;
-
-    cmd[i] = 0;
-
-    /* copy the rest of the buffer into args */
-    strncpy(args, ++ptr, COMMAND_LEN - i);
-}
-
 int get_arrow_type()
 {
     /*

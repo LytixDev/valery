@@ -128,14 +128,21 @@ int open_hist_file(struct hist_t *hist, char *path)
     return 1;
 }
 
-void read_hist_line(struct hist_t *hist, char buf[COMMAND_LEN], histaction_t action)
+long traverse_hist(struct hist_t *hist, histaction_t direction)
 {
-    unsigned long position_in_file = ftell(hist->fp);
+    direction == HIST_UP ? hist->pos-- : hist->pos++;
+
+    /* histline in memory, do not update file pointer in histfile */
+    if (hist->pos + 1 > hist->f_len)
+        return READ_FROM_MEMORY;
+
+    /* read from hist file */
+    long position_in_file = ftell(hist->fp);
     /* decrement pos to one char before \n, unless it is at the beginning */
     if (position_in_file != 0) --position_in_file;
 
     while (fgetc(hist->fp) != '\n') {
-        if (action == HIST_UP) {
+        if (direction == HIST_UP) {
             if (position_in_file == 0) { 
                 /* actual position will be delayed by one, so set file pointer to zero */
                 fseek(hist->fp, 0, SEEK_SET);
@@ -147,11 +154,19 @@ void read_hist_line(struct hist_t *hist, char buf[COMMAND_LEN], histaction_t act
             fseek(hist->fp, ++position_in_file, SEEK_SET);
         }
     }
+    position_in_file++;
 
+    return position_in_file;
+}
+
+void read_hist_line_from_file(struct hist_t *hist, char buf[COMMAND_LEN], long offset, histaction_t action)
+{
+    if (offset == -1)
+        offset = ftell(hist->fp);
     /* read hist line into buffer */
     fgets(buf, COMMAND_LEN, hist->fp);
-    /* move file pointer one past '\n' */
-    fseek(hist->fp, ++position_in_file, SEEK_SET);
+    /* move file pointer back to last '\n' */
+    fseek(hist->fp, offset, SEEK_SET);
 }
 
 void reset_hist_pos(struct hist_t *hist)
@@ -168,17 +183,14 @@ readfrom_t get_hist_line(struct hist_t *hist, char buf[COMMAND_LEN], histaction_
     if (out_of_bounds(hist, action))
         return DID_NOT_READ;
 
-    action == HIST_UP ? hist->pos-- : hist->pos++;
-
-    /* read from memory */
-    if (hist->pos + 1 > hist->f_len) {
+    long rc = traverse_hist(hist, action);
+    if (rc == READ_FROM_MEMORY) {
         int index = hist->pos - hist->f_len;
         strncpy(buf, hist->stored_commands[index], COMMAND_LEN);
         return READ_FROM_MEMORY;
     }
 
-    /* read from hist file */
-    read_hist_line(hist, buf, action);
-
+    /* read from hist file, rc is the offset of the file pointer */
+    read_hist_line_from_file(hist, buf, rc, action);
     return READ_FROM_HIST;
 }

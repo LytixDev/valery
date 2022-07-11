@@ -15,6 +15,8 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "../utils/histfile.h"
+
 #ifndef BUILTINS
 #define BUILTINS
 
@@ -22,5 +24,7 @@
 int which(char *program_name, char *path);
 
 int cd(char *directory);
+
+int history(struct hist_t *hist);
 
 #endif

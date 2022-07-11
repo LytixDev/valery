@@ -20,6 +20,7 @@
 #define EXEC
 
 #include "lexer.h"
+#include "histfile.h"
 #include "../valery.h"
 
 #define CHILD_PID 0
@@ -34,6 +35,6 @@
 int valery_exec_program(char *path, char *args);
 
 /* parses the tokens and execs them accordingly */
-int valery_exec_buffer(struct tokens_t *tokens, struct ENV *env);
+int valery_exec_buffer(struct tokens_t *tokens, struct ENV *env, struct hist_t *hist);
 
 #endif

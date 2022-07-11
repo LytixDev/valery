@@ -111,7 +111,5 @@ int parse_config(struct ENV *env)
         }
 
     }
-
     return 0;
-
 }

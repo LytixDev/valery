@@ -8,4 +8,4 @@ fi
 bin_dir="$HOME/.local/share/valery/bin"
 mkdir -p "$bin_dir"
 
-gcc -o valery -std=c11 valery.c utils/prompt.c utils/load_config.c utils/histfile.c utils/exec.c utils/lexer.c builtin/which.c builtin/cd.c
+gcc -o valery -std=c11 valery.c utils/prompt.c utils/load_config.c utils/histfile.c utils/exec.c utils/lexer.c builtin/which.c builtin/cd.c builtin/history.c

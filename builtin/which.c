@@ -24,14 +24,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "builtins.h"
-
-
-/*
- *  Current implementaion assumes path is only one directory and is platform dependent.
- *  Returns 1 if it could not find the program in path.
- *  Returns 0 if it could find the program and prints the path.
- */
 
 int which(char *program_name, char *path)
 {

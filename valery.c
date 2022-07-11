@@ -127,7 +127,7 @@ int main()
 
         /* loop enters here means ordinary command was typed in */
         tokenize(tokens, input_buffer);
-        rc = valery_exec_buffer(tokens, env);
+        rc = valery_exec_buffer(tokens, env, hist);
         env->exit_code = rc;
 
         /* clears all buffers */

@@ -93,6 +93,9 @@ void write_commands_to_hist_file(struct hist_t *hist);
  */
 void count_hist_lines(struct hist_t *hist);
 
+/* */
+unsigned long traverse_hist(struct hist_t *hist, histaction_t direction);
+
 /* returns 1 if the given action will put the file pointer out of
  * bounds, else 0.
  */

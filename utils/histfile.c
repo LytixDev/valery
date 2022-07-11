@@ -128,6 +128,40 @@ int open_hist_file(struct hist_t *hist, char *path)
     return 1;
 }
 
+unsigned long traverse_hist(struct hist_t *hist, histaction_t direction)
+{
+    if (out_of_bounds(hist, direction))
+        return -1;
+
+    direction == HIST_UP ? hist->pos-- : hist->pos++;
+
+    /* histline in memory, do not update file pointer in histfile */
+    if (hist->pos + 1 > hist->f_len)
+        return 0;
+
+    /* read from hist file */
+    unsigned long position_in_file = ftell(hist->fp);
+    /* decrement pos to one char before \n, unless it is at the beginning */
+    if (position_in_file != 0) --position_in_file;
+
+    while (fgetc(hist->fp) != '\n') {
+        if (direction == HIST_UP) {
+            if (position_in_file == 0) { 
+                /* actual position will be delayed by one, so set file pointer to zero */
+                fseek(hist->fp, 0, SEEK_SET);
+                break;
+            }
+            fseek(hist->fp, --position_in_file, SEEK_SET);
+        } else {
+            if (position_in_file == hist->f_chars) break;
+            fseek(hist->fp, ++position_in_file, SEEK_SET);
+        }
+    }
+    position_in_file++;
+
+    return position_in_file;
+}
+
 void read_hist_line(struct hist_t *hist, char buf[COMMAND_LEN], histaction_t action)
 {
     unsigned long position_in_file = ftell(hist->fp);
@@ -147,11 +181,12 @@ void read_hist_line(struct hist_t *hist, char buf[COMMAND_LEN], histaction_t act
             fseek(hist->fp, ++position_in_file, SEEK_SET);
         }
     }
+    position_in_file++;
 
     /* read hist line into buffer */
     fgets(buf, COMMAND_LEN, hist->fp);
-    /* move file pointer one past '\n' */
-    fseek(hist->fp, ++position_in_file, SEEK_SET);
+    /* move file pointer back to last '\n' */
+    fseek(hist->fp, position_in_file, SEEK_SET);
 }
 
 void reset_hist_pos(struct hist_t *hist)

@@ -20,12 +20,24 @@
 #ifndef BUILTINS
 #define BUILTINS
 
+#define COMMAND_IN_PATH 0
+#define COMMAND_NOT_FOUND 1
+#define COMMAND_IS_BUILTIN 2
+
 #define total_builtin_functions 4
 extern char *builtin_names[total_builtin_functions];
 
 
 /* functions */
-int which(char *program_name, char *path);
+
+/*
+ * if which is used interactively, pass NULL as the path_result parameter.
+ * if path_result is not NULL, assumes the function is not used interactively.
+ * in this case, the program does not print the result, but instead puts the 
+ * address of the path from paths into path_result if it is found.
+ * returns COMMAND_IN_PATH, COMMAND_IS_BUILTIN and COMMAND_NOT_FOUND accordingly.
+ */
+int which(char *program_name, char **paths, int total_paths, char **path_result);
 
 int cd(char *directory);
 

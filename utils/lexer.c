@@ -111,9 +111,9 @@ void tokenize(struct tokens_t *tokens, char *buf)
         /* add null byte */
         tokens->token_arr[tokens->i][token_len] = 0;
 
-        tokens->token_type[tokens->i] = get_token_operand(token);
-        token = strtok(NULL, delim);
+        tokens->token_type[tokens->i] = get_token_operand(tokens->token_arr[tokens->i]);
         tokens->i++;
+        token = strtok(NULL, delim);
     }
 
 }

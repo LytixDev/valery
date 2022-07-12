@@ -35,6 +35,6 @@
 int valery_exec_program(char *path, char *args);
 
 /* parses the tokens and execs them accordingly */
-int valery_exec_buffer(struct tokens_t *tokens, struct ENV *env, struct hist_t *hist);
+int valery_exec_buffer(struct tokens_t *tokens, struct env_t *env, struct hist_t *hist);
 
 #endif

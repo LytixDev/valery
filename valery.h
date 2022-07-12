@@ -26,20 +26,30 @@
 #define MAX_ENV_LEN 1024
 #define CONFIG_NAME ".valeryrc"
 #define HISTFILE_NAME ".valery_hist"
+#define STARTING_PATHS 5
 
 /* types */
-typedef struct ENV {
-    uint8_t exit_code;
-    char *PS1;
+typedef struct env_t {
     char *PATH;
+    char **paths;
+    int current_path;
+    int total_paths;
+    int exit_code;
+    char *PS1;
     char *HOME;
-} ENV;
+} env_t;
 
 /* functions */
 void disable_term_flags();
+
 void enable_term_flags();
+
 void catch_exit_signal(int signal);
-struct ENV *malloc_env();
-void free_env(struct ENV *env);
+
+struct env_t *malloc_env();
+
+void resize_path_len(struct env_t *env, int new_len);
+
+void free_env(struct env_t *env);
 
 #endif

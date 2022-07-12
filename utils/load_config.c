@@ -28,7 +28,7 @@
 #include "load_config.h"
 #include "../valery.h"
 
-int set_home_dir(struct ENV *env)
+int set_home_dir(struct env_t *env)
 {
     struct passwd *pw = getpwuid(getuid());
     char *homedir = pw->pw_dir;
@@ -40,7 +40,7 @@ int set_home_dir(struct ENV *env)
     return 0;
 }
 
-int get_config_path(struct ENV *env, char config_path[MAX_ENV_LEN])
+int get_config_path(struct env_t *env, char config_path[MAX_ENV_LEN])
 {
 
     snprintf(config_path, MAX_ENV_LEN, "%s/%s", env->HOME, CONFIG_NAME);
@@ -61,7 +61,21 @@ static int _find_pos(char look_for, char *str)
     return -1;
 }
 
-int parse_config(struct ENV *env)
+void unwrap_paths(struct env_t *env)
+{
+    const char delim[] = ":";
+    char *path = strtok(env->PATH, delim);
+    
+    while (path != NULL) {
+        if (env->current_path == env->total_paths - 1) {
+            //increase_path_len();
+        }
+        strcpy(env->paths[env->current_path++], path);
+        path = strtok(NULL, delim);
+    }
+}
+
+int parse_config(struct env_t *env)
 {
     /*
      * TODO: look for config in various places, f.ex: ~/.config/ 
@@ -111,5 +125,6 @@ int parse_config(struct ENV *env)
         }
 
     }
+    unwrap_paths(env);
     return 0;
 }

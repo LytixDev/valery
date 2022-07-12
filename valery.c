@@ -62,30 +62,49 @@ void catch_exit_signal(int signal)
     received_sigint = 1;
 }
 
-struct ENV *malloc_env()
+struct env_t *malloc_env()
 {
-    struct ENV *env = (ENV *) malloc(sizeof(ENV));
+    struct env_t *env = (env_t *) malloc(sizeof(env_t));
+    env->paths = (char **) malloc(STARTING_PATHS * sizeof(char *));
+    for (int i = 0; i < STARTING_PATHS; i++)
+        env->paths[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
+
+    env->total_paths = STARTING_PATHS;
+    env->current_path = 0;
+    env->PATH = (char *) malloc(MAX_ENV_LEN * sizeof(char));
     env->exit_code = 0;
-    env->PS1 = (char *) malloc(sizeof(char) * MAX_ENV_LEN);
-    env->PATH = (char *) malloc(sizeof(char) * MAX_ENV_LEN);
-    env->HOME = (char *) malloc(sizeof(char) * MAX_ENV_LEN);
+    env->PS1 = (char *) malloc(MAX_ENV_LEN * sizeof(char));
+    env->HOME = (char *) malloc(MAX_ENV_LEN * sizeof(char));
     return env;
 }
 
-void free_env(struct ENV *env)
+void resize_path_len(struct env_t *env, int new_len) {
+    env->paths = (char **) realloc(env->paths, new_len * sizeof(char *));
+    for (int i = env->total_paths; i < new_len; i++)
+        env->paths[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
+
+    env->total_paths = new_len;
+    return;
+}
+
+void free_env(struct env_t *env)
 {
     if (env == NULL)
-        return
+        return;
+    
+    for (int i = 0; i < env->total_paths; i++)
+        free(env->paths[i]);
 
-    free(env->PS1);
+    free(env->paths);
     free(env->PATH);
+    free(env->PS1);
     free(env->HOME);
     free(env);
 }
 
 int main()
 {
-    struct ENV *env = malloc_env();
+    struct env_t *env = malloc_env();
     char hist_file_path[MAX_ENV_LEN];
     char input_buffer[COMMAND_LEN] = {0};
     char cmd[COMMAND_LEN];

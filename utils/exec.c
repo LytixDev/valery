@@ -54,11 +54,15 @@ int valery_exec_program(char *path, char *args)
     return status != 0;
 }
 
-int valery_exec_buffer(struct tokens_t *tokens, struct ENV *env, struct hist_t *hist)
+int valery_exec_buffer(struct tokens_t *tokens, struct env_t *env, struct hist_t *hist)
 {
+    // debug
+    for (int i = 0; i < tokens->i; i++) {
+        printf("val: '%s', type: %d\n", tokens->token_arr[i], tokens->token_type[i]);
+    }
+
     /* TODO: parse buffer, handle operands and handle different pipes/streams */
     int no_more_operands;
-    int first = 1;
     int pos = 0;
     int rc = 0;
 
@@ -116,7 +120,6 @@ int valery_exec_buffer(struct tokens_t *tokens, struct ENV *env, struct hist_t *
         pos++;
         if (pos >= tokens->i)
             break;
-        first = 0;
     }
 
     free(cmd);

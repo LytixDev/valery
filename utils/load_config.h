@@ -24,10 +24,12 @@
 
 /* functions */
 
-int set_home_dir(struct ENV *env);
+int set_home_dir(struct env_t *env);
 
-int get_config_path(struct ENV *env, char config_path[MAX_ENV_LEN]);
+int get_config_path(struct env_t *env, char config_path[MAX_ENV_LEN]);
 
-int parse_config(struct ENV *env);
+void unwrap_paths(struct env_t *env);
+
+int parse_config(struct env_t *env);
 
 #endif

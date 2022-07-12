@@ -42,7 +42,7 @@ int which(char *program_name, char **paths, int total_paths, char **path_result)
     DIR *d;
     struct dirent *dir;
     struct stat sb;
-
+    
     for (int i = 0; i < total_paths; i++) {
         char *path = paths[i];
         d = opendir(path);
@@ -52,7 +52,6 @@ int which(char *program_name, char **paths, int total_paths, char **path_result)
         while ((dir = readdir(d)) != NULL) {
             /* check for name equality */
             if (strcmp(program_name, dir->d_name) == 0) {
-
                 char final[1024];
                 snprintf(final, 1024, "%s/%s", path, program_name);
 

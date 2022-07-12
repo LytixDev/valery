@@ -101,7 +101,7 @@ int valery_exec_buffer(struct tokens_t *tokens, struct env_t *env, struct hist_t
         }
 
         if (strcmp(cmdt, "which") == 0) {
-            rc = which(args, env->PATH);
+            rc = which(args, env->paths, env->total_paths);
         } else if (strcmp(cmdt, "cd") == 0) {
             rc = cd(args);
         } else if (strcmp(cmdt, "history") == 0) {
@@ -111,7 +111,7 @@ int valery_exec_buffer(struct tokens_t *tokens, struct env_t *env, struct hist_t
         } else {
             rc = valery_exec_program(cmd, args);
             if (rc == 1) {
-                fprintf(stderr, "valery: command not found '%s'\n", cmd);
+                fprintf(stderr, "valery: command not found '%s'\n", cmdt);
                 break;
             }
         }

@@ -27,7 +27,7 @@
 #include "builtins.h"
 
 
-int which(char *program_name, char *path)
+int which(char *program_name, char **paths, int total_paths)
 {
     DIR *d;
     struct dirent *dir;
@@ -39,22 +39,25 @@ int which(char *program_name, char *path)
             goto builtin;
     }
 
-    d = opendir(path);
-    if (d == NULL)
-        return 1;
+    for (int i = 0; i < total_paths; i++) {
+        char *path = paths[i];
+        d = opendir(path);
+        if (d == NULL)
+            continue;
 
-    while ((dir = readdir(d)) != NULL) {
-        /* check for name equality */
-        if (strcmp(program_name, dir->d_name) == 0) {
+        while ((dir = readdir(d)) != NULL) {
+            /* check for name equality */
+            if (strcmp(program_name, dir->d_name) == 0) {
 
-            char final[1024];
-            snprintf(final, 1024, "%s/%s", path, program_name);
+                char final[1024];
+                snprintf(final, 1024, "%s/%s", path, program_name);
 
-            /* check if executable bit is on */
-            if (stat(final, &sb) == 0 && sb.st_mode & S_IXUSR) {
-                printf("%s/%s\n", path, program_name);
-                closedir(d);
-                return 0;
+                /* check if executable bit is on */
+                if (stat(final, &sb) == 0 && sb.st_mode & S_IXUSR) {
+                    printf("%s/%s\n", path, program_name);
+                    closedir(d);
+                    return 0;
+                }
             }
         }
     }

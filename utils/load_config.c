@@ -67,9 +67,9 @@ void unwrap_paths(struct env_t *env)
     char *path = strtok(env->PATH, delim);
     
     while (path != NULL) {
-        if (env->current_path == env->total_paths - 1) {
-            //increase_path_len();
-        }
+        if (env->current_path == env->total_paths - 1)
+            resize_path_len(env, env->total_paths + 5);
+       
         strcpy(env->paths[env->current_path++], path);
         path = strtok(NULL, delim);
     }

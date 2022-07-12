@@ -25,7 +25,7 @@ extern char *builtin_names[total_builtin_functions];
 
 
 /* functions */
-int which(char *program_name, char *path);
+int which(char *program_name, char **paths, int total_paths);
 
 int cd(char *directory);
 

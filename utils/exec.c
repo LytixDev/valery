@@ -29,37 +29,73 @@
 #include "../builtin/builtins.h"
 
 
-int valery_exec_program(char *path, char *args)
+int valery_exec_program(char *program_name, char *args, struct env_t *env)
 {
     int status;
+    int rc;
     int return_code = 0;
+    /* malloc one char double pointer to hold the address of the
+     * char array with the path of the program */
+    char **found_path = (char **) malloc(sizeof(char *));
+    // TODO: make memory robust
+    char command_with_path[1024];
     char *args_cpy = args;
-    /* env unused in this case */
-    char *env[] = {NULL, NULL, NULL};
+    // TODO: add environment variables
+    char *environ[] = {NULL, NULL, NULL};
+
+    rc = which(program_name, env->paths, env->total_paths, found_path);
+    if (rc != COMMAND_IN_PATH) {
+        free(found_path);
+        return 1;
+    }
+
+    /* command has been found in path and found_path should poit to the address containg the string */
+    snprintf(command_with_path, 1024, "%s/%s", *found_path, program_name);
 
     /* args being an empty string results in undefined behavior */
     if (strcmp(args_cpy, "") == 0)
         args_cpy = NULL;
 
-    char *full[] = {path, args_cpy};
+    char *full[] = {command_with_path, args_cpy};
 
     pid_t new_pid = fork();
     if (new_pid == CHILD_PID) {
-        return_code = execve(path, full, env);
+        return_code = execve(command_with_path, full, environ);
         return_code == -1 ? exit(EXIT_FAILURE) : exit(EXIT_SUCCESS);
     }
 
     waitpid(new_pid, &status, 0);
 
+    free(found_path);
     return status != 0;
 }
 
-int valery_exec_buffer(struct tokens_t *tokens, struct env_t *env, struct hist_t *hist)
+int valery_eval_tokens(char *program_name, char *args, struct env_t *env, struct hist_t *hist)
+{
+    int rc;
+    //TODO: there has to be a cleaner way?
+    /* check if program is shell builtin */
+    if (strcmp(program_name, "which") == 0) {
+        rc = which(args, env->paths, env->total_paths, NULL);
+    } else if (strcmp(program_name, "cd") == 0) {
+        rc = cd(args);
+    } else if (strcmp(program_name, "history") == 0) {
+        rc = history(hist);
+    } else if (strcmp(program_name, "help") == 0) {
+        rc = help();
+    } else {
+        /* attempt to execute program from path */
+        rc = valery_exec_program(program_name, args, env);
+    }
+    return rc;
+}
+
+int valery_parse_tokens(struct tokens_t *tokens, struct env_t *env, struct hist_t *hist)
 {
     // debug
-    for (int i = 0; i < tokens->i; i++) {
-        printf("val: '%s', type: %d\n", tokens->token_arr[i], tokens->token_type[i]);
-    }
+    //for (int i = 0; i < tokens->i; i++) {
+    //    printf("val: '%s', type: %d\n", tokens->token_arr[i], tokens->token_type[i]);
+    //}
 
     /* TODO: parse buffer, handle operands and handle different pipes/streams */
     int no_more_operands;
@@ -67,7 +103,6 @@ int valery_exec_buffer(struct tokens_t *tokens, struct env_t *env, struct hist_t
     int rc = 0;
 
     // todo: realloc when necessar
-    char *cmdt = (char *) malloc(1024 * sizeof(char));
     char *cmd = (char *) malloc(1024 * sizeof(char));
     char *args = (char *) malloc(1024 * sizeof(char));
 
@@ -82,9 +117,8 @@ int valery_exec_buffer(struct tokens_t *tokens, struct env_t *env, struct hist_t
             break;
         }
 
-        snprintf(cmdt, 1024, "%s", tokens->token_arr[pos]);
         /* set cmd to be first token */
-        snprintf(cmd, 1024, "%s/%s", env->PATH, tokens->token_arr[pos++]);
+        snprintf(cmd, 1024, "%s", tokens->token_arr[pos++]);
 
         /* check if there are no more operands */
         for (int i = pos; i < tokens->i; i++) {
@@ -100,21 +134,7 @@ int valery_exec_buffer(struct tokens_t *tokens, struct env_t *env, struct hist_t
             strcat(args, tokens->token_arr[pos++]);
         }
 
-        if (strcmp(cmdt, "which") == 0) {
-            rc = which(args, env->paths, env->total_paths);
-        } else if (strcmp(cmdt, "cd") == 0) {
-            rc = cd(args);
-        } else if (strcmp(cmdt, "history") == 0) {
-            rc = history(hist);
-        } else if (strcmp(cmdt, "help") == 0) {
-            rc = help();
-        } else {
-            rc = valery_exec_program(cmd, args);
-            if (rc == 1) {
-                fprintf(stderr, "valery: command not found '%s'\n", cmdt);
-                break;
-            }
-        }
+        rc = valery_eval_tokens(cmd, args, env, hist);
 
         /* move past operand */
         pos++;

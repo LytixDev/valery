@@ -27,17 +27,21 @@
 #include "builtins.h"
 
 
-int which(char *program_name, char **paths, int total_paths)
+int which(char *program_name, char **paths, int total_paths, char **path_result)
 {
+    /* check if program name is shell builtin */
+    for (int i = 0; i < total_builtin_functions; i++) {
+        if (strcmp(builtin_names[i], program_name) == 0) {
+            if (path_result == NULL)
+                printf("%s: shell builtin\n", program_name);
+
+            return COMMAND_IS_BUILTIN;
+        }
+    }
+
     DIR *d;
     struct dirent *dir;
     struct stat sb;
-
-    /* check if program name is shell builtin */
-    for (int i = 0; i < total_builtin_functions; i++) {
-        if (strcmp(builtin_names[i], program_name) == 0)
-            goto builtin;
-    }
 
     for (int i = 0; i < total_paths; i++) {
         char *path = paths[i];
@@ -54,21 +58,26 @@ int which(char *program_name, char **paths, int total_paths)
 
                 /* check if executable bit is on */
                 if (stat(final, &sb) == 0 && sb.st_mode & S_IXUSR) {
-                    printf("%s/%s\n", path, program_name);
                     closedir(d);
-                    return 0;
+
+                    /* path_result is NULL means 'which' is used interactively,
+                     * and should print the found path, but not attempt to 
+                     * modify path_result as this is not used in this case */
+                    if (path_result == NULL)
+                        printf("%s/%s\n", path, program_name);
+                    else
+                        *path_result = path;
+
+                    return COMMAND_IN_PATH;
                 }
             }
         }
     }
 
-    fprintf(stderr, "%s: not found\n", program_name);
-    return 1;
+    if (path_result == NULL)
+        fprintf(stderr, "%s: not found\n", program_name);
 
-builtin:
-    printf("%s: shell builtin\n", program_name);
-    return 0;
-
+    return COMMAND_NOT_FOUND;
 }
 /*
 int main(int argc, char *argv[])

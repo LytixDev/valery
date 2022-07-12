@@ -26,18 +26,23 @@
 #define CHILD_PID 0
 
 /* functions */
-
 /*
  * forks the process and attempts to executes the given program.
  * calls the builtin 'which' (builtin/which.c) to get the full program path.
  * returns 0 if succesfull, else 1.
  */
-int valery_exec_program(char *program, char *args, struct env_t *env);
+int valery_exec_program(char *program_name, char *args, struct env_t *env);
 
-/* */
+/* evalutes how the tokens should be executed */
 int valery_eval_tokens(char *program_name, char *args, struct env_t *env, struct hist_t *hist);
 
 /* parses the tokens and calls eval on them accordingly */
 int valery_parse_tokens(struct tokens_t *tokens, struct env_t *env, struct hist_t *hist);
+
+/*
+ * how the three aformentioned functions relate to each other:
+ *
+ * [tokenized buffer] -> valery_parse_tokens() -> valery_eval_tokens() -> valery_exec_program();
+ */
 
 #endif

@@ -89,6 +89,12 @@ void increase_tokens_amount(struct tokens_t *tokens, size_t new_len)
     }
 }
 
+char *my_strtok(char *str, const char **delims, char **save_ptr)
+{
+    /* split token into*/
+    return NULL;
+}
+
 void tokenize(struct tokens_t *tokens, char *buf)
 {
     const char delim[] = " ";

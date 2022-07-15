@@ -1,0 +1,21 @@
+token
+    string
+    type
+    str_len
+    str_allocated
+
+
+tokens
+    array of token
+    total_tokens
+    total_tokens_allocated
+
+
+-----
+tokens_t
+    array of strings
+    array of allocated size for the strings
+    array of types
+    total_strings
+    total_strings_allocated
+

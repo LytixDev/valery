@@ -34,23 +34,19 @@ int valery_exec_program(char *program_name, char *args, struct env_t *env)
     int status;
     int rc;
     int return_code = 0;
-    /* malloc one char double pointer to hold the address of the
-     * char array with the path of the program */
-    char **found_path = (char **) malloc(sizeof(char *));
+    char *found_path;
     // TODO: make memory robust
     char command_with_path[1024];
     char *args_cpy = args;
     // TODO: add environment variables
     char *environ[] = {NULL, NULL, NULL};
 
-    rc = which(program_name, env->paths, env->total_paths, found_path);
-    if (rc != COMMAND_IN_PATH) {
-        free(found_path);
+    rc = which(program_name, env->paths, env->total_paths, &found_path);
+    if (rc != COMMAND_IN_PATH)
         return 1;
-    }
 
     /* command has been found in path and found_path should poit to the address containg the string */
-    snprintf(command_with_path, 1024, "%s/%s", *found_path, program_name);
+    snprintf(command_with_path, 1024, "%s/%s", found_path, program_name);
 
     /* args being an empty string results in undefined behavior */
     if (strcmp(args_cpy, "") == 0)
@@ -65,8 +61,6 @@ int valery_exec_program(char *program_name, char *args, struct env_t *env)
     }
 
     waitpid(new_pid, &status, 0);
-
-    free(found_path);
     return status != 0;
 }
 

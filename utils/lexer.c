@@ -80,13 +80,13 @@ void increase_tokens_amount(struct tokens_t *tokens, size_t new_len)
     if (tokens->token_arr == NULL || tokens->allocated_size == NULL)
         printf("oh oh we in trouble\n");
 
-    tokens->len = new_len;
-
     for (size_t i = tokens->len; i < new_len; i++) {
         tokens->token_arr[i] = (char *) malloc(DEFAULT_TOKEN_SIZE * sizeof(char));
         tokens->allocated_size[i] = DEFAULT_TOKEN_SIZE;
         tokens->token_type[i] = O_NONE;
     }
+
+    tokens->len = new_len;
 }
 
 char *my_strtok(char *str, const char **delims, char **save_ptr)

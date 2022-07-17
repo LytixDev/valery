@@ -14,6 +14,6 @@ jobs:
     runs-on: ${{matrix.os}}
     steps:
       - name: Build
-        run: ./builds.sh
+        run: ./build.sh
       - name: Run
         run: ./valery

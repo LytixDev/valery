@@ -102,8 +102,16 @@ void free_env(struct env_t *env)
     free(env);
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    if (argc > 1) {
+        printf("%s\n", argv[1]);
+        if (strcmp(argv[1], "--help") == 0) {
+            help();
+            return 0;
+        }
+    }
+
     struct env_t *env = malloc_env();
     char hist_file_path[MAX_ENV_LEN];
     char input_buffer[COMMAND_LEN] = {0};

@@ -13,7 +13,15 @@ jobs:
             cc: gcc
     runs-on: ${{matrix.os}}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Dependencies
+        if: startswith(matrix.os, 'ubuntu-')
+        run: sudo apt-get update -qyy
+
       - name: Build
         run: ./build.sh
+
       - name: Run
         run: ./valery

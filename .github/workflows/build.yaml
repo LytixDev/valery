@@ -24,4 +24,6 @@ jobs:
         run: ./build.sh
 
       - name: Run
-        run: ./valery
+        run: |
+          cp .valeryrc ~
+          ./valery

@@ -34,10 +34,10 @@
 int valery_exec_program(char *program_name, char *args, struct env_t *env);
 
 /* evalutes how the tokens should be executed */
-int valery_eval_tokens(char *program_name, char *args, struct env_t *env, struct hist_t *hist);
+int valery_eval_token(char *program_name, char *args, struct env_t *env, struct hist_t *hist);
 
 /* parses the tokens and calls eval on them accordingly */
-int valery_parse_tokens(struct tokens_t *tokens, struct env_t *env, struct hist_t *hist);
+int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hist_t *hist);
 
 /*
  * how the three aformentioned functions relate to each other:

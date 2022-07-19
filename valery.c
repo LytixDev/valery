@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
     /* main loop */
     while (1) {
         /* TODO: can we reuse instead of mallocing a new one each loop? */
-        struct tokens_t *tokens = malloc_tokens_t();
+        struct tokenized_str_t *ts = tokenized_str_t_malloc();
         prompt(hist, env->PS1, input_buffer);
 
         /* skip exec if ctrl+c is caught */
@@ -154,14 +154,14 @@ int main(int argc, char *argv[])
             break;
 
         /* loop enters here means ordinary command was typed in */
-        tokenize(tokens, input_buffer);
-        rc = valery_parse_tokens(tokens, env, hist);
+        tokenize(ts, input_buffer);
+        rc = valery_parse_tokens(ts, env, hist);
         env->exit_code = rc;
 
         /* clears all buffers */
     end_loop:
         memset(input_buffer, 0, COMMAND_LEN);
-        free_tokens_t(tokens);
+        tokenized_str_t_free(ts);
         cmd[0] = 0;
         args[0] = 0;
     }

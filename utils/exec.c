@@ -64,7 +64,7 @@ int valery_exec_program(char *program_name, char *args, struct env_t *env)
     return status != 0;
 }
 
-int valery_eval_tokens(char *program_name, char *args, struct env_t *env, struct hist_t *hist)
+int valery_eval_token(char *program_name, char *args, struct env_t *env, struct hist_t *hist)
 {
     int rc;
     //TODO: there has to be a cleaner way?
@@ -84,59 +84,59 @@ int valery_eval_tokens(char *program_name, char *args, struct env_t *env, struct
     return rc;
 }
 
-int valery_parse_tokens(struct tokens_t *tokens, struct env_t *env, struct hist_t *hist)
+int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hist_t *hist)
 {
-    // debug
-    //for (int i = 0; i < tokens->i; i++) {
-    //    printf("val: '%s', type: %d\n", tokens->token_arr[i], tokens->token_type[i]);
-    //}
+    trim_spaces(ts);
+    //tokenized_str_t_print(ts);
+
+    return 0;
 
     /* TODO: parse buffer, handle operands and handle different pipes/streams */
-    int no_more_operands;
-    int pos = 0;
-    int rc = 0;
+    //int no_more_operands;
+    //int pos = 0;
+    //int rc = 0;
 
-    // todo: realloc when necessar
-    char *cmd = (char *) malloc(1024 * sizeof(char));
-    char *args = (char *) malloc(1024 * sizeof(char));
+    //// todo: realloc when necessar
+    //char *cmd = (char *) malloc(1024 * sizeof(char));
+    //char *args = (char *) malloc(1024 * sizeof(char));
 
-    while (1) {
-        no_more_operands = 1;
-        memset(cmd, 0, 1024);
-        memset(args, 0, 1024);
+    //while (1) {
+    //    no_more_operands = 1;
+    //    memset(cmd, 0, 1024);
+    //    memset(args, 0, 1024);
 
-        if (tokens->token_type[pos] != O_NONE) {
-            fprintf(stderr, "valery: invalid starting token '%s'\n", tokens->token_arr[pos]);
-            rc = 2;
-            break;
-        }
+    //    if (tokens->token_type[pos] != O_NONE) {
+    //        fprintf(stderr, "valery: invalid starting token '%s'\n", tokens->token_arr[pos]);
+    //        rc = 2;
+    //        break;
+    //    }
 
-        /* set cmd to be first token */
-        snprintf(cmd, 1024, "%s", tokens->token_arr[pos++]);
+    //    /* set cmd to be first token */
+    //    snprintf(cmd, 1024, "%s", tokens->token_arr[pos++]);
 
-        /* check if there are no more operands */
-        for (int i = pos; i < tokens->i; i++) {
-            if (tokens->token_type[i] != O_NONE) {
-                no_more_operands = 0;
-                break;
-            }
-        }
-        
-        /* copy subsequent tokens until next operand into args */
-        while (tokens->token_type[pos] == O_NONE && pos < tokens->i) {
-            // TODO: ensure memory safety and seperation of args by whitespace
-            strcat(args, tokens->token_arr[pos++]);
-        }
+    //    /* check if there are no more operands */
+    //    for (int i = pos; i < tokens->i; i++) {
+    //        if (tokens->token_type[i] != O_NONE) {
+    //            no_more_operands = 0;
+    //            break;
+    //        }
+    //    }
+    //    
+    //    /* copy subsequent tokens until next operand into args */
+    //    while (tokens->token_type[pos] == O_NONE && pos < tokens->i) {
+    //        // TODO: ensure memory safety and seperation of args by whitespace
+    //        strcat(args, tokens->token_arr[pos++]);
+    //    }
 
-        rc = valery_eval_tokens(cmd, args, env, hist);
+    //    rc = valery_eval_tokens(cmd, args, env, hist);
 
-        /* move past operand */
-        pos++;
-        if (pos >= tokens->i)
-            break;
-    }
+    //    /* move past operand */
+    //    pos++;
+    //    if (pos >= tokens->i)
+    //        break;
+    //}
 
-    free(cmd);
-    free(args);
-    return rc;
+    //free(cmd);
+    //free(args);
+    //return rc;
 }

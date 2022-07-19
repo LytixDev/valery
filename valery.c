@@ -57,7 +57,7 @@ void enable_term_flags()
     tcsetattr(STDIN_FILENO, TCSANOW, &originalt);
 }
 
-void catch_exit_signal(int signal)
+static inline void catch_exit_signal(int signal)
 {
     received_sigint = 1;
 }
@@ -102,8 +102,16 @@ void free_env(struct env_t *env)
     free(env);
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    if (argc > 1) {
+        printf("%s\n", argv[1]);
+        if (strcmp(argv[1], "--help") == 0) {
+            help();
+            return 0;
+        }
+    }
+
     struct env_t *env = malloc_env();
     char hist_file_path[MAX_ENV_LEN];
     char input_buffer[COMMAND_LEN] = {0};
@@ -128,7 +136,7 @@ int main()
     /* main loop */
     while (1) {
         /* TODO: can we reuse instead of mallocing a new one each loop? */
-        struct tokens_t *tokens = malloc_tokens_t();
+        struct tokenized_str_t *ts = tokenized_str_t_malloc();
         prompt(hist, env->PS1, input_buffer);
 
         /* skip exec if ctrl+c is caught */
@@ -146,14 +154,14 @@ int main()
             break;
 
         /* loop enters here means ordinary command was typed in */
-        tokenize(tokens, input_buffer);
-        rc = valery_parse_tokens(tokens, env, hist);
+        tokenize(ts, input_buffer);
+        rc = valery_parse_tokens(ts, env, hist);
         env->exit_code = rc;
 
         /* clears all buffers */
     end_loop:
         memset(input_buffer, 0, COMMAND_LEN);
-        free_tokens_t(tokens);
+        tokenized_str_t_free(ts);
         cmd[0] = 0;
         args[0] = 0;
     }

@@ -44,7 +44,7 @@ void disable_term_flags();
 
 void enable_term_flags();
 
-void catch_exit_signal(int signal);
+static inline void catch_exit_signal(int signal);
 
 struct env_t *malloc_env();
 

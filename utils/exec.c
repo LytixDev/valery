@@ -29,7 +29,7 @@
 #include "../builtin/builtins.h"
 
 
-int valery_exec_program(char *program_name, char *args, struct env_t *env)
+int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t *env)
 {
     int status;
     int rc;
@@ -37,7 +37,6 @@ int valery_exec_program(char *program_name, char *args, struct env_t *env)
     char *found_path;
     // TODO: make memory robust
     char command_with_path[1024];
-    char *args_cpy = args;
     // TODO: add environment variables
     char *environ[] = {NULL, NULL, NULL};
 
@@ -48,13 +47,20 @@ int valery_exec_program(char *program_name, char *args, struct env_t *env)
     /* command has been found in path and found_path should poit to the address containg the string */
     snprintf(command_with_path, 1024, "%s/%s", found_path, program_name);
 
-    /* args being an empty string results in undefined behavior */
-    if (args_cpy != NULL) {
-        if (strcmp(args_cpy, "") == 0)
-            args_cpy = NULL;
-    }
 
-    char *full[] = {command_with_path, args_cpy};
+    /*
+     * full must contain program name and an argument.
+     * last argument must be NULL to signify end of pointer arr.
+     * ex: full = { "/bin/ls", "-la", "/", NULL }
+     */
+    char *full[2 + argc];
+    full[0] = command_with_path;
+
+    for (int i = 1; i < argc + 1; i++)
+        full[i] = argv[i - 1];
+
+    /* last pointer always NULL */
+    full[1 + argc] = NULL;
 
     pid_t new_pid = fork();
     if (new_pid == CHILD_PID) {
@@ -81,7 +87,8 @@ int valery_eval_token(char *program_name, char *args, struct env_t *env, struct 
         rc = help();
     } else {
         /* attempt to execute program from path */
-        rc = valery_exec_program(program_name, args, env);
+        //TODO: fix
+        //rc = valery_exec_program(program_name, args, env);
     }
     return rc;
 }
@@ -89,23 +96,25 @@ int valery_eval_token(char *program_name, char *args, struct env_t *env, struct 
 int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hist_t *hist)
 {
     trim_spaces(ts);
+    int rc;
 
-    /* substitute first space (if present) with null byte */
-    /*
-    char *arg_start = NULL;
-    char *s = ts->tokens[0]->str;
-    while (*s != 0) {
-        if (*s == ' ') {
-            *s = 0;
-            arg_start = ++s;
-            break;
+    // TODO: refactor? at least make memory safe
+    char *argv[8];
+    int argc = 0;
+    char *str_cpy = ts->tokens[0]->str;
+
+    while (*str_cpy != 0) {
+        if (*str_cpy == ' ') {
+            *str_cpy = 0;
+            argv[argc++] = ++str_cpy;
+        } else {
+            str_cpy++;
         }
-        s++;
     }
 
-    valery_eval_token(ts->tokens[0]->str, arg_start, env, hist);
-    */
-    tokenized_str_t_print(ts);
+    rc = valery_exec_program(ts->tokens[0]->str, argv, argc, env);
+    printf("%d\n", rc);
+
 
     return 0;
 

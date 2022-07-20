@@ -379,25 +379,3 @@ void trim_spaces(struct tokenized_str_t *ts)
     }
 
 }
-
-/*
-enum operands_t get_token_operand(char *token)
-{
-    if (strcmp(token, operands_str[0]) == 0)
-        return O_PIPE;
-
-    if (strcmp(token, operands_str[1]) == 0)
-        return O_OR;
-
-    if (strcmp(token, operands_str[2]) == 0)
-        return O_AND;
-
-    if (strcmp(token, operands_str[3]) == 0)
-        return O_RE;
-
-    if (strcmp(token, operands_str[4]) == 0)
-        return O_APP;
-    
-    return O_NONE;
-}
-*/

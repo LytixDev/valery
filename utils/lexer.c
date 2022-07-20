@@ -25,7 +25,13 @@
 
 #include "lexer.h"
 
-const char *operands[] = {
+/*
+ * enum representation is found in lexer.h.
+ * comment dextral to the str is the integral constant.
+ * since first value in enum is 'O_NONE' = 0, use 'O_<x>' - 1 to get str
+ * representation given an integral constant.
+ */
+const char *operands_str[] = {
     "|",  /* O_PIPE */
     "||", /* O_OR   */
     "&&", /* O_AND  */
@@ -33,8 +39,18 @@ const char *operands[] = {
     ">>"  /* O_APP  */
 };
 
+const operands_t operands[] = {
+    O_PIPE,
+    O_OR,
+    O_AND,
+    O_RE,
+    O_APP
+};
+
 
 //void tokenize(struct tokens_t *tokens, char *buf)
+    
+
 //{
 //    const char delim[] = " ";
 //    char *token = strtok(buf, delim);
@@ -76,6 +92,9 @@ struct token_t *token_t_malloc()
 
 void token_t_free(struct token_t *t)
 {
+    if (t == NULL)
+        return;
+
     free(t->str);
     free(t);
 }
@@ -103,6 +122,9 @@ struct tokenized_str_t *tokenized_str_t_malloc()
 
 void tokenized_str_t_free(struct tokenized_str_t *ts)
 {
+    if (ts == NULL)
+        return;
+
     for (size_t i = 0; i < ts->tokens_allocated; i++)
         token_t_free(ts->tokens[i]);
 
@@ -128,6 +150,12 @@ void token_t_append_char(struct token_t *t, char c)
 
 }
 
+void token_t_pop_char(struct token_t *t)
+{
+    if (t->str_len > 0)
+        t->str[--(t->str_len)] = 0;
+}
+
 void tokenized_str_t_append_char(struct tokenized_str_t *ts, char c)
 {
     //if (ts->total_tokens >= ts->tokens_allocated)
@@ -139,10 +167,20 @@ void tokenized_str_t_append_char(struct tokenized_str_t *ts, char c)
 /* just for debugging purpsos */
 void tokenized_str_t_print(struct tokenized_str_t *ts)
 {
+    int type;
     printf("metadata: total tokens: %ld, total tokens allocated: %ld\n\n", ts->total_tokens + 1, ts->tokens_allocated);
 
-    for (size_t i = 0; i < ts->total_tokens + 1; i++)
-        printf("token num %ld, token str: '%s', token type: %d, token len: %ld, token allocated: %ld\n", i, ts->tokens[i]->str, ts->tokens[i]->type, ts->tokens[i]->str_len, ts->tokens[i]->str_allocated);
+    for (size_t i = 0; i < ts->total_tokens + 1; i++) {
+        type = ts->tokens[i]->type - 1;
+        if (type == -1)
+            printf("token num %ld, token str: '%s', token type: O_NONE, token len: %ld, token allocated: %ld\n",\
+               i, ts->tokens[i]->str, ts->tokens[i]->str_len,\
+               ts->tokens[i]->str_allocated);
+        else
+            printf("token num %ld, token str: '%s', token type: %s, token len: %ld, token allocated: %ld\n",\
+               i, ts->tokens[i]->str, operands_str[ts->tokens[i]->type - 1], ts->tokens[i]->str_len,\
+               ts->tokens[i]->str_allocated);
+    }
 }
 
 
@@ -165,6 +203,17 @@ int occurence_in_list(bool *list, size_t len, bool item)
     return s;
 }
 
+/* returns first delim, therefore will not work if multiple delims are valid */
+// jank but werks
+operands_t which_delim(bool list[TOTAL_OPERANDS])
+{
+    for (int i = 0; i < TOTAL_OPERANDS; i++) {
+        if (list[i] == true)
+            return operands[i];
+    }
+    return O_NONE;
+}
+
 
 bool possible_delims(char c, size_t pos, bool pd[TOTAL_OPERANDS])
 {
@@ -172,7 +221,7 @@ bool possible_delims(char c, size_t pos, bool pd[TOTAL_OPERANDS])
         if (!bool_in_list(pd, TOTAL_OPERANDS, true))
             return false;
 
-        if (operands[i][pos] != c) {
+        if (operands_str[i][pos] != c) {
             pd[i] = false;
         }
     }
@@ -195,25 +244,28 @@ void tokenize(struct tokenized_str_t *ts, char *buffer)
         if (possible_delims(c, 0, pd)) {
             ts->total_tokens++;
 
-            ts->tokens[ts->total_tokens]->str[0] = c;
-            token_len = 1;
+            tokenized_str_t_append_char(ts, c);
 
             while ((c = *buffer++) != 0) {
-                ts->tokens[ts->total_tokens]->str[token_len] = c;
-                possible_delims(c, token_len, pd);
+                tokenized_str_t_append_char(ts, c);
+                possible_delims(c, token_len++, pd);
                 int len = occurence_in_list(pd, TOTAL_OPERANDS, true);
 
+                /* if len is 1 then operand is determined and we can add it and continue */
                 if (len == 1) {
-                    ts->total_tokens++;
+                    ts->tokens[ts->total_tokens]->type = which_delim(pd);
                     break;
                 }
 
+                /* if len is 0 then there is either a syntax error or token minus current char is valid operand */
                 if (len == 0) {
-                    ts->tokens[ts->total_tokens]->str[token_len] = 0;
+                    /* remove prev char */
+                    token_t_pop_char(ts->tokens[ts->total_tokens]);
 
                     bool found = false;
                     for (int i = 0; i < TOTAL_OPERANDS; i++) {
-                        if (strcmp(operands[i], ts->tokens[ts->total_tokens]->str) == 0) {
+                        if (strcmp(operands_str[i], ts->tokens[ts->total_tokens]->str) == 0) {
+                            ts->tokens[ts->total_tokens]->type = operands[i];
                             found = true;
                             break;
                         }
@@ -221,7 +273,6 @@ void tokenize(struct tokenized_str_t *ts, char *buffer)
 
                     if (found) {
                         buffer--;
-                        ts->total_tokens++;
                         break;
                     }
 
@@ -230,12 +281,13 @@ void tokenize(struct tokenized_str_t *ts, char *buffer)
                         return;
                     }
                 }
+                /* len is greater than 1 and the operand is ambigious so we continue */
             }
 
+            ts->total_tokens++;
             token_len = 0;
 
         } else {
-            //printf("added: %c, to token nr: %ld at position: %ld\n", c, ts->total_tokens, token_len);
             token_t_append_char(ts->tokens[ts->total_tokens], c);
         }
     }
@@ -301,22 +353,24 @@ void trim_spaces(struct tokenized_str_t *ts)
 
 }
 
+/*
 enum operands_t get_token_operand(char *token)
 {
-    if (strcmp(token, operands[0]) == 0)
+    if (strcmp(token, operands_str[0]) == 0)
         return O_PIPE;
 
-    if (strcmp(token, operands[1]) == 0)
+    if (strcmp(token, operands_str[1]) == 0)
         return O_OR;
 
-    if (strcmp(token, operands[2]) == 0)
+    if (strcmp(token, operands_str[2]) == 0)
         return O_AND;
 
-    if (strcmp(token, operands[3]) == 0)
+    if (strcmp(token, operands_str[3]) == 0)
         return O_RE;
 
-    if (strcmp(token, operands[4]) == 0)
+    if (strcmp(token, operands_str[4]) == 0)
         return O_APP;
     
     return O_NONE;
 }
+*/

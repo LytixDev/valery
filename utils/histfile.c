@@ -104,9 +104,9 @@ void count_hist_lines(struct hist_t *hist)
     size_t len = 0;
     size_t chars = 0;
 
-    while(!feof(hist->fp)) {
+    while (!feof(hist->fp)) {
         chars++;
-        if(fgetc(hist->fp) == '\n')
+        if (fgetc(hist->fp) == '\n')
             len++;
     }
 

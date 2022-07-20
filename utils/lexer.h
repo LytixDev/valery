@@ -25,17 +25,16 @@
 #define STARTING_TOKENS 8
 #define TOTAL_OPERANDS 5
 
-extern const char *operands[TOTAL_OPERANDS];
 
 /* types */
+/* see definition of *operands[] in lexer.c for string representation of the operands */
 typedef enum operands_t {
+    O_NONE,  /* special case: string is not an operand */
     O_PIPE,
     O_OR,
     O_AND,
     O_RE,
-    O_APP,
-    O_NONE  /* special case: string is not an operand */
-
+    O_APP
 } operands_t;
 
 
@@ -54,6 +53,12 @@ typedef struct tokenized_str_t {
 } tokenized_str_t;
 
 
+/* extern variable definitions */
+extern const char *operands_str[TOTAL_OPERANDS];
+extern const operands_t operands[TOTAL_OPERANDS];
+
+
+/* functions */
 struct token_t *token_t_malloc();
 
 void token_t_free(struct token_t *t);

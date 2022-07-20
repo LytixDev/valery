@@ -89,7 +89,9 @@ int valery_eval_token(char *program_name, char *args, struct env_t *env, struct 
 int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hist_t *hist)
 {
     trim_spaces(ts);
+
     /* substitute first space (if present) with null byte */
+    /*
     char *arg_start = NULL;
     char *s = ts->tokens[0]->str;
     while (*s != 0) {
@@ -102,6 +104,10 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
     }
 
     valery_eval_token(ts->tokens[0]->str, arg_start, env, hist);
+    */
+
+    tokenized_str_t_print(ts);
+    putchar('\n');
 
 
     return 0;

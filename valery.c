@@ -156,9 +156,11 @@ int main(int argc, char *argv[])
             break;
 
         /* loop enters here means ordinary command was typed in */
-        tokenize(ts, input_buffer);
-        rc = valery_parse_tokens(ts, env, hist);
-        env->exit_code = rc;
+        rc = tokenize(ts, input_buffer);
+        if (rc == 0) {
+            rc = valery_parse_tokens(ts, env, hist);
+            env->exit_code = rc;
+        }
 
     /* clears all buffers */
     end_loop:

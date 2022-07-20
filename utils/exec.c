@@ -113,9 +113,6 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
     }
 
     rc = valery_exec_program(ts->tokens[0]->str, argv, argc, env);
-    printf("%d\n", rc);
-
-
     return 0;
 
     /* TODO: parse buffer, handle operands and handle different pipes/streams */

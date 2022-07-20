@@ -99,7 +99,7 @@ bool possible_delims(char c, size_t pos, bool pd[TOTAL_OPERANDS]);
 // TODO: temporary solution
 void trim_spaces(struct tokenized_str_t *ts);
 
-void tokenize(struct tokenized_str_t *ts, char *buffer);
+int tokenize(struct tokenized_str_t *ts, char *buffer);
 
 void tokenized_str_t_clear(struct tokenized_str_t *ts);
 

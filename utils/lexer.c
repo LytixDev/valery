@@ -244,10 +244,11 @@ bool possible_delims(char c, size_t pos, bool pd[TOTAL_OPERANDS])
     return bool_in_list(pd, TOTAL_OPERANDS, true);
 }
 
-void tokenize(struct tokenized_str_t *ts, char *buffer)
+int tokenize(struct tokenized_str_t *ts, char *buffer)
 {
-    // TODO: remove
     char c;
+    /* always pointing to beginning of buffer */
+    const char *buf_p = buffer;
     bool pd[TOTAL_OPERANDS];
     size_t token_len = 0;
 
@@ -289,7 +290,13 @@ void tokenize(struct tokenized_str_t *ts, char *buffer)
                         break;
                     } else {
                         printf("SYNTAX ERROR near: '%c'\n", c);
-                        return;
+                        printf("     %s\n", buf_p);
+
+                        long offset = buffer - buf_p;
+                        for (int i = 0; i < buffer - buf_p + 4; i++)
+                            putchar(' ');
+                        printf("^ unexpected token\n");
+                        return -1;
                     }
                 }
                 /* len is greater than 1 and the operand is ambigious so we continue */
@@ -309,6 +316,8 @@ void tokenize(struct tokenized_str_t *ts, char *buffer)
         /* revert incrementation; no more tokens will be added */
         ts->total_tokens--;
     }
+
+    return 0;
 }
 
 void trim_spaces(struct tokenized_str_t *ts)

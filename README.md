@@ -1,5 +1,5 @@
 # valery
-Unix like interactive shell. Only for educational purposes and not meant to serve practical use. Everything written by and me and licensed under GPL v3.
+Unix like interactive shell. Only for educational purposes and not meant to serve practical use. Everything written by and me (Nicolai Brand, https://lytix.dev) and licensed under GPL v3.
 
 ## Installtion and set up
 Dependencies: `gcc`

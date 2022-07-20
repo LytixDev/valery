@@ -143,11 +143,10 @@ void tokenized_str_t_resize(struct tokenized_str_t *ts, size_t new_size)
 void token_t_append_char(struct token_t *t, char c)
 {
     if (t->str_len >= t->str_allocated)
-        token_t_resize(t, t->str_allocated * 2);
+        token_t_resize(t, t->str_allocated + 32);
 
     t->str[t->str_len++] = c;
-    t->str[t->str_len] = 0;
-
+    //t->str[t->str_len] = 0;
 }
 
 void token_t_pop_char(struct token_t *t)
@@ -162,6 +161,15 @@ void tokenized_str_t_append_char(struct tokenized_str_t *ts, char c)
     //    tokenized_str_t_resize(ts, ts->tokens_allocated * 2);
 
     token_t_append_char(ts->tokens[ts->total_tokens], c);
+}
+
+/* adds sentinel value to token_t->str and increments total tokens */
+void tokenized_str_t_finalize_token(struct tokenized_str_t *ts)
+{
+    if (ts->total_tokens == ts->tokens_allocated)
+        tokenized_str_t_resize(ts, ts->tokens_allocated + 32);
+
+    token_t_append_char(ts->tokens[ts->total_tokens++], 0);
 }
 
 /* just for debugging purpsos */
@@ -231,19 +239,16 @@ bool possible_delims(char c, size_t pos, bool pd[TOTAL_OPERANDS])
 
 void tokenize(struct tokenized_str_t *ts, char *buffer)
 {
-    char **token_str_ptr;
     char c;
     bool pd[TOTAL_OPERANDS];
-    char token[1024];
-    bool is_cmd = true;
     size_t token_len = 0;
 
     while ((c = *buffer++) != 0) {
         memset(pd, true, TOTAL_OPERANDS);
 
         if (possible_delims(c, 0, pd)) {
-            ts->total_tokens++;
-
+            /* is this too much of a black box for our purposes? */
+            tokenized_str_t_finalize_token(ts);
             tokenized_str_t_append_char(ts, c);
 
             while ((c = *buffer++) != 0) {
@@ -284,13 +289,19 @@ void tokenize(struct tokenized_str_t *ts, char *buffer)
                 /* len is greater than 1 and the operand is ambigious so we continue */
             }
 
-            ts->total_tokens++;
+            tokenized_str_t_finalize_token(ts);
             token_len = 0;
 
         } else {
             token_t_append_char(ts->tokens[ts->total_tokens], c);
         }
     }
+    if (!bool_in_list(pd, TOTAL_OPERANDS, true)) {
+        tokenized_str_t_finalize_token(ts);
+        /* function above increments total tokens, but since there will be no more tokens, decrement it again */
+        ts->total_tokens--;
+    }
+
 }
 
 void trim_spaces(struct tokenized_str_t *ts)

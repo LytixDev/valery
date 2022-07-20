@@ -72,15 +72,17 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     return status != 0;
 }
 
-int valery_eval_token(char *program_name, char *args, struct env_t *env, struct hist_t *hist)
+int valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *env, struct hist_t *hist)
 {
     int rc;
     //TODO: there has to be a cleaner way?
     /* check if program is shell builtin */
     if (strcmp(program_name, "which") == 0) {
-        rc = which(args, env->paths, env->total_paths, NULL);
+        // TODO: use all args
+        rc = which(argv[0], env->paths, env->total_paths, NULL);
     } else if (strcmp(program_name, "cd") == 0) {
-        rc = cd(args);
+        // TODO: use all args
+        rc = cd(argv[0]);
     } else if (strcmp(program_name, "history") == 0) {
         rc = history(hist);
     } else if (strcmp(program_name, "help") == 0) {
@@ -112,7 +114,7 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
         }
     }
 
-    rc = valery_exec_program(ts->tokens[0]->str, argv, argc, env);
+    rc = valery_eval_token(ts->tokens[0]->str, argv, argc, env, hist);
     return 0;
 
     /* TODO: parse buffer, handle operands and handle different pipes/streams */

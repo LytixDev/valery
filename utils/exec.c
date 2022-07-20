@@ -49,8 +49,10 @@ int valery_exec_program(char *program_name, char *args, struct env_t *env)
     snprintf(command_with_path, 1024, "%s/%s", found_path, program_name);
 
     /* args being an empty string results in undefined behavior */
-    if (strcmp(args_cpy, "") == 0)
-        args_cpy = NULL;
+    if (args_cpy != NULL) {
+        if (strcmp(args_cpy, "") == 0)
+            args_cpy = NULL;
+    }
 
     char *full[] = {command_with_path, args_cpy};
 
@@ -87,7 +89,20 @@ int valery_eval_token(char *program_name, char *args, struct env_t *env, struct 
 int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hist_t *hist)
 {
     trim_spaces(ts);
-    //tokenized_str_t_print(ts);
+    /* substitute first space (if present) with null byte */
+    char *arg_start = NULL;
+    char *s = ts->tokens[0]->str;
+    while (*s != 0) {
+        if (*s == ' ') {
+            *s = 0;
+            arg_start = ++s;
+            break;
+        }
+        s++;
+    }
+
+    valery_eval_token(ts->tokens[0]->str, arg_start, env, hist);
+
 
     return 0;
 

@@ -105,10 +105,7 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
 
     valery_eval_token(ts->tokens[0]->str, arg_start, env, hist);
     */
-
     tokenized_str_t_print(ts);
-    putchar('\n');
-
 
     return 0;
 

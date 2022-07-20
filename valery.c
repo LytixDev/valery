@@ -133,10 +133,12 @@ int main(int argc, char *argv[])
     snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env->HOME, HISTFILE_NAME);
     struct hist_t *hist = malloc_history(hist_file_path);
 
+
+    struct tokenized_str_t *ts = tokenized_str_t_malloc();
+
     /* main loop */
     while (1) {
         /* TODO: can we reuse instead of mallocing a new one each loop? */
-        struct tokenized_str_t *ts = tokenized_str_t_malloc();
         prompt(hist, env->PS1, input_buffer);
 
         /* skip exec if ctrl+c is caught */
@@ -158,10 +160,11 @@ int main(int argc, char *argv[])
         rc = valery_parse_tokens(ts, env, hist);
         env->exit_code = rc;
 
-        /* clears all buffers */
+    /* clears all buffers */
     end_loop:
+        tokenized_str_t_clear(ts);
         memset(input_buffer, 0, COMMAND_LEN);
-        tokenized_str_t_free(ts);
+        //tokenized_str_t_free(ts);
         cmd[0] = 0;
         args[0] = 0;
     }

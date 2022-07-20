@@ -140,13 +140,23 @@ void tokenized_str_t_resize(struct tokenized_str_t *ts, size_t new_size)
     ts->tokens_allocated = new_size;
 }
 
+/* clears the object and prepares it for a new loop */
+void tokenized_str_t_clear(struct tokenized_str_t *ts)
+{
+    for (size_t i = 0; i < ts->total_tokens + 1; i++) {
+        ts->tokens[i]->str_len = 0;
+        ts->tokens[i]->type = O_NONE;
+    }
+
+    ts->total_tokens = 0;
+}
+
 void token_t_append_char(struct token_t *t, char c)
 {
     if (t->str_len >= t->str_allocated)
         token_t_resize(t, t->str_allocated + 32);
 
     t->str[t->str_len++] = c;
-    //t->str[t->str_len] = 0;
 }
 
 void token_t_pop_char(struct token_t *t)
@@ -157,9 +167,6 @@ void token_t_pop_char(struct token_t *t)
 
 void tokenized_str_t_append_char(struct tokenized_str_t *ts, char c)
 {
-    //if (ts->total_tokens >= ts->tokens_allocated)
-    //    tokenized_str_t_resize(ts, ts->tokens_allocated * 2);
-
     token_t_append_char(ts->tokens[ts->total_tokens], c);
 }
 
@@ -239,6 +246,7 @@ bool possible_delims(char c, size_t pos, bool pd[TOTAL_OPERANDS])
 
 void tokenize(struct tokenized_str_t *ts, char *buffer)
 {
+    // TODO: remove
     char c;
     bool pd[TOTAL_OPERANDS];
     size_t token_len = 0;
@@ -279,10 +287,8 @@ void tokenize(struct tokenized_str_t *ts, char *buffer)
                     if (found) {
                         buffer--;
                         break;
-                    }
-
-                    if (!found) {
-                        printf("SYNTAX ERROR near: '%c' or '%s'\n", c, buffer);
+                    } else {
+                        printf("SYNTAX ERROR near: '%c'\n", c);
                         return;
                     }
                 }
@@ -293,15 +299,16 @@ void tokenize(struct tokenized_str_t *ts, char *buffer)
             token_len = 0;
 
         } else {
-            token_t_append_char(ts->tokens[ts->total_tokens], c);
+            tokenized_str_t_append_char(ts, c);
         }
     }
-    if (!bool_in_list(pd, TOTAL_OPERANDS, true)) {
+    /* finalize last token. if it has O_NONE type then it has not been finalized */
+    if (ts->tokens[ts->total_tokens]->type == O_NONE) {
+        /* increments total tokens */
         tokenized_str_t_finalize_token(ts);
-        /* function above increments total tokens, but since there will be no more tokens, decrement it again */
+        /* revert incrementation; no more tokens will be added */
         ts->total_tokens--;
     }
-
 }
 
 void trim_spaces(struct tokenized_str_t *ts)

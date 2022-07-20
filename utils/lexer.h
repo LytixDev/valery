@@ -101,4 +101,6 @@ void trim_spaces(struct tokenized_str_t *ts);
 
 void tokenize(struct tokenized_str_t *ts, char *buffer);
 
+void tokenized_str_t_clear(struct tokenized_str_t *ts);
+
 #endif

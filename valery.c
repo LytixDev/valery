@@ -113,15 +113,19 @@ int main(int argc, char *argv[])
     }
 
     struct env_t *env = malloc_env();
+    struct hist_t *hist;
+    struct tokenized_str_t *ts;
     char hist_file_path[MAX_ENV_LEN];
     char input_buffer[COMMAND_LEN] = {0};
     char cmd[COMMAND_LEN];
     char args[COMMAND_LEN];
+    int rc;
+    int rc_env;
 
     signal(SIGINT, catch_exit_signal);
     disable_term_flags();
 
-    int rc = parse_config(env);
+    rc = parse_config(env);
     if (rc == 1) {
         fprintf(stderr, "error parsing .valeryrc");
         free_env(env);
@@ -131,14 +135,13 @@ int main(int argc, char *argv[])
 
     /* establish a connection to the hist file */
     snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env->HOME, HISTFILE_NAME);
-    struct hist_t *hist = malloc_history(hist_file_path);
+    hist = malloc_history(hist_file_path);
 
-
-    struct tokenized_str_t *ts = tokenized_str_t_malloc();
+    /* create tokenized_str_t object. Will reused same object every loop. */
+    ts = tokenized_str_t_malloc();
 
     /* main loop */
     while (1) {
-        /* TODO: can we reuse instead of mallocing a new one each loop? */
         prompt(hist, env->PS1, input_buffer);
 
         /* skip exec if ctrl+c is caught */
@@ -158,15 +161,14 @@ int main(int argc, char *argv[])
         /* loop enters here means ordinary command was typed in */
         rc = tokenize(ts, input_buffer);
         if (rc == 0) {
-            rc = valery_parse_tokens(ts, env, hist);
-            env->exit_code = rc;
+            rc_env = valery_parse_tokens(ts, env, hist);
+            env->exit_code = rc_env;
         }
 
     /* clears all buffers */
     end_loop:
         tokenized_str_t_clear(ts);
         memset(input_buffer, 0, COMMAND_LEN);
-        //tokenized_str_t_free(ts);
         cmd[0] = 0;
         args[0] = 0;
     }
@@ -176,8 +178,7 @@ int main(int argc, char *argv[])
     free_env(env);
     free_history(hist);
 
-    printf("\nExiting ...\n");
+    printf("Exiting ...\n");
     enable_term_flags();
-
     return 0;
 }

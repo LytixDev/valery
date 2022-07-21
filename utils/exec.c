@@ -89,8 +89,7 @@ int valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *
         rc = help();
     } else {
         /* attempt to execute program from path */
-        //TODO: fix
-        //rc = valery_exec_program(program_name, args, env);
+        rc = valery_exec_program(program_name, argv, argc, env);
     }
     return rc;
 }
@@ -99,6 +98,9 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
 {
     trim_spaces(ts);
     int rc;
+
+    tokenized_str_t_print(ts);
+    return 0;
 
     // TODO: refactor? at least make memory safe
     char *argv[8];
@@ -115,6 +117,8 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
     }
 
     rc = valery_eval_token(ts->tokens[0]->str, argv, argc, env, hist);
+    if (rc == 1)
+        printf("valery: command not found '%s'\n", ts->tokens[0]->str);
     return 0;
 
     /* TODO: parse buffer, handle operands and handle different pipes/streams */

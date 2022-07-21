@@ -163,6 +163,14 @@ void tokenized_str_t_finalize_token(struct tokenized_str_t *ts)
     token_t_append_char(ts->tokens[ts->total_tokens++], 0);
 }
 
+struct token_t *tokenized_str_t_next(struct tokenized_str_t *ts)
+{
+    if (ts->total_tokens == ts->tokens_allocated)
+        tokenized_str_t_resize(ts, ts->tokens_allocated + 32);
+
+    return ts->tokens[++(ts->total_tokens)];
+}
+
 /* just for debugging */
 void tokenized_str_t_print(struct tokenized_str_t *ts)
 {
@@ -239,19 +247,25 @@ void print_syntax_error(const char *buf_start, char *buf_err)
 int tokenize(struct tokenized_str_t *ts, char *buffer)
 {
     char c;
-    const char *buf_p = buffer; /* always pointing to beginning of buffer */
-    bool pd[TOTAL_OPERANDS];    /* values representing if operand is a possible delimeter */
+    const char *buf_p = buffer;                /* always pointing to beginning of buffer */
+    bool pd[TOTAL_OPERANDS];                   /* values representing if operand is a possible delimeter */
     int total_pd;
-    size_t delim_token_len = 0; /* keeps track of length of tokens that are delims */
+    size_t delim_token_len = 0;                /* keeps track of length of tokens that are delims */
+    token_t *t = ts->tokens[ts->total_tokens]; /* the current token we are modifying */
 
     while ((c = *buffer++) != 0) {
         /* reset possible delims to all be true */
         memset(pd, true, TOTAL_OPERANDS);
 
         if (possible_delims(c, 0, pd)) {
-            /* is this too much of a black box for our purposes? */
-            if (ts->tokens[ts->total_tokens]->str_len != 0)
-                tokenized_str_t_finalize_token(ts);
+            /* as the current char can be an operand, the current token is done and can be finalized */
+            if (t->str_len != 0) {
+                /* add sentinel value to finalize string */
+                token_t_append_char(t, 0);
+                /* returns a pointer to the next token_t in ts->tokens */
+                t = tokenized_str_t_next(ts);
+            }
+
             tokenized_str_t_append_char(ts, c);
 
             while ((c = *buffer++) != 0) {

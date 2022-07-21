@@ -29,7 +29,7 @@
 #include "../builtin/builtins.h"
 
 
-int valery_exec_program(char *program_name, char *args, struct env_t *env)
+int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t *env)
 {
     int status;
     int rc;
@@ -37,7 +37,6 @@ int valery_exec_program(char *program_name, char *args, struct env_t *env)
     char *found_path;
     // TODO: make memory robust
     char command_with_path[1024];
-    char *args_cpy = args;
     // TODO: add environment variables
     char *environ[] = {NULL, NULL, NULL};
 
@@ -48,11 +47,20 @@ int valery_exec_program(char *program_name, char *args, struct env_t *env)
     /* command has been found in path and found_path should poit to the address containg the string */
     snprintf(command_with_path, 1024, "%s/%s", found_path, program_name);
 
-    /* args being an empty string results in undefined behavior */
-    if (strcmp(args_cpy, "") == 0)
-        args_cpy = NULL;
 
-    char *full[] = {command_with_path, args_cpy};
+    /*
+     * full must contain program name and an argument.
+     * last argument must be NULL to signify end of pointer arr.
+     * ex: full = { "/bin/ls", "-la", "/", NULL }
+     */
+    char *full[2 + argc];
+    full[0] = command_with_path;
+
+    for (int i = 1; i < argc + 1; i++)
+        full[i] = argv[i - 1];
+
+    /* last pointer always NULL */
+    full[1 + argc] = NULL;
 
     pid_t new_pid = fork();
     if (new_pid == CHILD_PID) {
@@ -64,22 +72,24 @@ int valery_exec_program(char *program_name, char *args, struct env_t *env)
     return status != 0;
 }
 
-int valery_eval_token(char *program_name, char *args, struct env_t *env, struct hist_t *hist)
+int valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *env, struct hist_t *hist)
 {
     int rc;
     //TODO: there has to be a cleaner way?
     /* check if program is shell builtin */
     if (strcmp(program_name, "which") == 0) {
-        rc = which(args, env->paths, env->total_paths, NULL);
+        // TODO: use all args
+        rc = which(argv[0], env->paths, env->total_paths, NULL);
     } else if (strcmp(program_name, "cd") == 0) {
-        rc = cd(args);
+        // TODO: use all args
+        rc = cd(argv[0]);
     } else if (strcmp(program_name, "history") == 0) {
         rc = history(hist);
     } else if (strcmp(program_name, "help") == 0) {
         rc = help();
     } else {
         /* attempt to execute program from path */
-        rc = valery_exec_program(program_name, args, env);
+        rc = valery_exec_program(program_name, argv, argc, env);
     }
     return rc;
 }
@@ -87,8 +97,28 @@ int valery_eval_token(char *program_name, char *args, struct env_t *env, struct 
 int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hist_t *hist)
 {
     trim_spaces(ts);
-    //tokenized_str_t_print(ts);
+    int rc;
 
+    tokenized_str_t_print(ts);
+    return 0;
+
+    // TODO: refactor? at least make memory safe
+    char *argv[8];
+    int argc = 0;
+    char *str_cpy = ts->tokens[0]->str;
+
+    while (*str_cpy != 0) {
+        if (*str_cpy == ' ') {
+            *str_cpy = 0;
+            argv[argc++] = ++str_cpy;
+        } else {
+            str_cpy++;
+        }
+    }
+
+    rc = valery_eval_token(ts->tokens[0]->str, argv, argc, env, hist);
+    if (rc == 1)
+        printf("valery: command not found '%s'\n", ts->tokens[0]->str);
     return 0;
 
     /* TODO: parse buffer, handle operands and handle different pipes/streams */

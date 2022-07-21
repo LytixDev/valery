@@ -23,19 +23,26 @@
 
 #define DEFAULT_TOKEN_SIZE 128
 #define STARTING_TOKENS 8
-#define TOTAL_OPERANDS 5
+#define TOTAL_OPERANDS 13
 
-extern const char *operands[TOTAL_OPERANDS];
 
 /* types */
+/* see definition of *operands[] in lexer.c for string representation of the operands */
 typedef enum operands_t {
+    O_NONE,  /* special case: string is not an operand */
     O_PIPE,
     O_OR,
+    O_AMP,
     O_AND,
-    O_RE,
-    O_APP,
-    O_NONE  /* special case: string is not an operand */
-
+    O_OUTP,
+    O_OUPP,
+    O_INP,
+    O_INPP,
+    O_SEMI,
+    O_INPAR,
+    O_OUTPAR,
+    O_INBRA,
+    O_OUTBRA
 } operands_t;
 
 
@@ -54,19 +61,32 @@ typedef struct tokenized_str_t {
 } tokenized_str_t;
 
 
+/* extern variable definitions */
+extern const char *operands_str[TOTAL_OPERANDS];
+extern const operands_t operands[TOTAL_OPERANDS];
+
+
+/* functions */
+/* returns a pointer to a malloced token_t object with DEFAULT_TOKEN_SIZE size str */
 struct token_t *token_t_malloc();
 
 void token_t_free(struct token_t *t);
 
 void token_t_resize(struct token_t *t, size_t new_size);
 
+/* returns a pointer to a malloced tokenized_str_t object with STARTING_TOKENS amount of token_t */
 struct tokenized_str_t *tokenized_str_t_malloc();
 
 void tokenized_str_t_free(struct tokenized_str_t *ts);
 
 void tokenized_str_t_resize(struct tokenized_str_t *ts, size_t new_size);
 
-enum operands_t get_token_operand(char *token);
+/*
+ * 'cleans' the object and makes it act as though it has just been malloced.
+ * does not actually wipe any token_t->str, but if sentinel null byte is
+ * correctly set it does not matter.
+ */
+void tokenized_str_t_clear(struct tokenized_str_t *ts);
 
 /*
  * adds the char parameter to the end of the str.
@@ -74,10 +94,14 @@ enum operands_t get_token_operand(char *token);
  */
 void token_t_append_char(struct token_t *t, char c);
 
-/*
- * calls token_t_append_char() using the endmost token.
- */
+/* replaces the last char in the char array with the sentinel null byte */
+void token_t_pop_char(struct token_t *t);
+
+/* calls token_t_append_char() using the endmost token */
 void tokenized_str_t_append_char(struct tokenized_str_t *ts, char c);
+
+/* adds the sentinel null byte to the endmost token and increments total_tokens */
+void tokenized_str_t_finalize_token(struct tokenized_str_t *ts);
 
 /* just for debugging purpsos */
 void tokenized_str_t_print(struct tokenized_str_t *ts);
@@ -89,11 +113,20 @@ bool bool_in_list(bool *list, size_t len, bool item);
 int occurence_in_list(bool *list, size_t len, bool item);
 
 // TODO: this is ugly
+/* returns which delim is set to true in the list */
+operands_t which_delim(bool list[TOTAL_OPERANDS]);
+
+// TODO: this is ugly
 bool possible_delims(char c, size_t pos, bool pd[TOTAL_OPERANDS]);
+
+/* prints a nice syntax error to stderr */
+void print_syntax_error(const char *buf_start, char *buf_err);
+
+// TODO: add short explanation
+int tokenize(struct tokenized_str_t *ts, char *buffer);
 
 // TODO: temporary solution
 void trim_spaces(struct tokenized_str_t *ts);
 
-void tokenize(struct tokenized_str_t *ts, char *buffer);
 
 #endif

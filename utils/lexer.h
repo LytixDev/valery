@@ -100,8 +100,11 @@ void token_t_pop_char(struct token_t *t);
 /* calls token_t_append_char() using the endmost token */
 void tokenized_str_t_append_char(struct tokenized_str_t *ts, char c);
 
-/* adds the sentinel null byte to the endmost token and increments total_tokens */
-void tokenized_str_t_finalize_token(struct tokenized_str_t *ts);
+/* 
+ * increments total_tokens and returns a pointer to the next token_t
+ * calls tokenized_str_t_resize() if necessary.
+ */
+struct token_t *tokenized_str_t_next(struct tokenized_str_t *ts);
 
 /* just for debugging purpsos */
 void tokenized_str_t_print(struct tokenized_str_t *ts);

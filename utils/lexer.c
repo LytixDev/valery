@@ -154,15 +154,6 @@ void tokenized_str_t_append_char(struct tokenized_str_t *ts, char c)
     token_t_append_char(ts->tokens[ts->total_tokens], c);
 }
 
-/* adds sentinel value to token_t->str and increments total tokens */
-void tokenized_str_t_finalize_token(struct tokenized_str_t *ts)
-{
-    if (ts->total_tokens == ts->tokens_allocated)
-        tokenized_str_t_resize(ts, ts->tokens_allocated + 32);
-
-    token_t_append_char(ts->tokens[ts->total_tokens++], 0);
-}
-
 struct token_t *tokenized_str_t_next(struct tokenized_str_t *ts)
 {
     if (++(ts->total_tokens) >= ts->tokens_allocated)

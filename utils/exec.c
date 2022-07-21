@@ -99,9 +99,6 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
     trim_spaces(ts);
     int rc;
 
-    tokenized_str_t_print(ts);
-    return 0;
-
     // TODO: refactor? at least make memory safe
     char *argv[8];
     int argc = 0;

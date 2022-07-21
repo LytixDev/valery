@@ -29,7 +29,7 @@
 /* types */
 /* see definition of *operands[] in lexer.c for string representation of the operands */
 typedef enum operands_t {
-    O_NONE,  /* special case: string is not an operand */
+    O_NONE = -1,  /* special case: string is not an operand */
     O_PIPE,
     O_OR,
     O_AMP,

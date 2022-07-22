@@ -59,13 +59,21 @@ int move_cursor_horizontally(keycode_t arrow_type, int cur_pos, int buf_len)
     return cur_pos;
 }
 
-/* inserts chars at any point in the char array */
+/* inserts char at any point in the char array */
 void insert_char_to_str(char buf[COMMAND_LEN], char c, int index)
 {
     char tmp[COMMAND_LEN];
     strncpy(tmp, buf, index);
     tmp[index] = c;
     strcpy(tmp + index + 1, buf + index); 
+    strcpy(buf, tmp);
+}
+
+void remove_char_from_str(char buf[COMMAND_LEN], int index)
+{
+    char tmp[COMMAND_LEN];
+    strncpy(tmp, buf, index - 1);
+    strcpy(tmp + index - 1, buf + index); 
     strcpy(buf, tmp);
 }
 
@@ -110,7 +118,8 @@ int prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN])
         switch (ch) {
             case BACKSPACE:
                 if (cur_pos > 0) {
-                    buf[--cur_pos] = 0;
+                    remove_char_from_str(buf, cur_pos);
+                    cur_pos--;
                     buf_len--;
                 }
                 break;

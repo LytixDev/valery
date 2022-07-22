@@ -48,9 +48,9 @@ const char *operands_str[] = {
 };
 
 const operands_t operands[] = {
-    O_PIPE,
-    O_OR,
-    O_AMP,
+    O_PIPE, /* 0       */
+    O_OR,   /* 1       */
+    O_AMP,  /* 2 etc.. */
     O_AND,
     O_OUTP,
     O_OUPP,
@@ -154,13 +154,24 @@ void tokenized_str_t_append_char(struct tokenized_str_t *ts, char c)
     token_t_append_char(ts->tokens[ts->total_tokens], c);
 }
 
-/* adds sentinel value to token_t->str and increments total tokens */
-void tokenized_str_t_finalize_token(struct tokenized_str_t *ts)
+struct token_t *tokenized_str_t_next(struct tokenized_str_t *ts)
 {
-    if (ts->total_tokens == ts->tokens_allocated)
+    if (++(ts->total_tokens) >= ts->tokens_allocated)
         tokenized_str_t_resize(ts, ts->tokens_allocated + 32);
 
-    token_t_append_char(ts->tokens[ts->total_tokens++], 0);
+    return ts->tokens[ts->total_tokens];
+}
+
+void token_t_print(struct token_t *t)
+{
+    char type[32];
+    if (t->type == -1)
+        strcpy(type, "O_NONE");
+    else
+        strcpy(type, operands_str[t->type]);
+
+    printf("TOKEN_T: str: '%s', type: '%s', str_len: '%ld', str_allocated: '%ld'",\
+           t->str, type, t->str_len, t->str_allocated);
 }
 
 /* just for debugging */
@@ -170,60 +181,33 @@ void tokenized_str_t_print(struct tokenized_str_t *ts)
     printf("metadata: total tokens: %ld, total tokens allocated: %ld\n\n", ts->total_tokens + 1, ts->tokens_allocated);
 
     for (size_t i = 0; i < ts->total_tokens + 1; i++) {
-        if (type == -1)
-            printf("token num %ld, token str: '%s', token type: O_NONE, token len: %ld, token allocated: %ld\n",\
-               i, ts->tokens[i]->str, ts->tokens[i]->str_len,\
-               ts->tokens[i]->str_allocated);
-        else
-            printf("token num %ld, token str: '%s', token type: %s, token len: %ld, token allocated: %ld\n",\
-               i, ts->tokens[i]->str, operands_str[ts->tokens[i]->type - 1], ts->tokens[i]->str_len,\
-               ts->tokens[i]->str_allocated);
+        printf("num: '%ld', ", i);
+        token_t_print(ts->tokens[i]);
+        printf("\n");
     }
 }
 
-bool bool_in_list(bool *list, size_t len, bool item)
-{
-    for (size_t i = 0; i < len; i++) {
-        if (list[i] == item)
-            return true;
-    }
-    return false;
-}
-
-int occurence_in_list(bool *list, size_t len, bool item)
-{
-    int s = 0;
-    for (size_t i = 0; i < len; i++) {
-        if (list[i] == item)
-            s++;
-    }
-    return s;
-}
-
-/* returns first delim, therefore will not work if multiple delims are valid */
-// jank but werks
-operands_t which_delim(bool list[TOTAL_OPERANDS])
+operands_t which_operand(bool candidates[TOTAL_OPERANDS])
 {
     for (int i = 0; i < TOTAL_OPERANDS; i++) {
-        if (list[i] == true)
+        if (candidates[i] == true)
             return operands[i];
     }
     return O_NONE;
 }
 
-
-bool possible_delims(char c, size_t pos, bool pd[TOTAL_OPERANDS])
+int update_candidates(char c, size_t pos, bool candidates[TOTAL_OPERANDS], int *total_candidates)
 {
     for (int i = 0; i < TOTAL_OPERANDS; i++) {
-        if (!bool_in_list(pd, TOTAL_OPERANDS, true))
-            return false;
+        if (*total_candidates == 0)
+            return 0;
 
-        if (operands_str[i][pos] != c) {
-            pd[i] = false;
+        if (candidates[i] == true && operands_str[i][pos] != c) {
+            candidates[i] = false;
+            *total_candidates -= 1;
         }
     }
-
-    return bool_in_list(pd, TOTAL_OPERANDS, true);
+    return *total_candidates;
 }
 
 void print_syntax_error(const char *buf_start, char *buf_err)
@@ -239,34 +223,46 @@ void print_syntax_error(const char *buf_start, char *buf_err)
 int tokenize(struct tokenized_str_t *ts, char *buffer)
 {
     char c;
-    const char *buf_p = buffer; /* always pointing to beginning of buffer */
-    bool pd[TOTAL_OPERANDS];    /* values representing if operand is a possible delimeter */
-    int total_pd;
-    size_t delim_token_len = 0; /* keeps track of length of tokens that are delims */
+    /* always points to first address of buffer */
+    const char *buf_p = buffer;
+    /*
+     * keys in list are operands_t integral constants.
+     * values in list representing if token can be a possible operand for the given key.
+     */
+    bool candidates[TOTAL_OPERANDS];
+    /* amount of values in candidates set to true */
+    int total_candidates;
+    size_t candidate_len = 0;                  /* keeps track of length of tokens that are possible operands */
+    token_t *t = ts->tokens[ts->total_tokens]; /* the current token we are modifying */
 
     while ((c = *buffer++) != 0) {
-        /* reset possible delims to all be true */
-        memset(pd, true, TOTAL_OPERANDS);
+        /* reset possible candidates to all be true */
+        memset(candidates, true, TOTAL_OPERANDS);
+        total_candidates = TOTAL_OPERANDS;
 
-        if (possible_delims(c, 0, pd)) {
-            /* is this too much of a black box for our purposes? */
-            if (ts->tokens[ts->total_tokens]->str_len != 0)
-                tokenized_str_t_finalize_token(ts);
-            tokenized_str_t_append_char(ts, c);
+        if (update_candidates(c, 0, candidates, &total_candidates)) {
+            /* as the current char can be an operand, the current token is done and can be finalized */
+            if (t->str_len != 0) {
+                /* add sentinel value to finalize string */
+                token_t_append_char(t, 0);
+                /* returns a pointer to the next token_t in ts->tokens */
+                t = tokenized_str_t_next(ts);
+            }
+
+            token_t_append_char(t, c);
 
             while ((c = *buffer++) != 0) {
-                tokenized_str_t_append_char(ts, c);
-                possible_delims(c, delim_token_len++, pd);
-                total_pd = occurence_in_list(pd, TOTAL_OPERANDS, true);
+                token_t_append_char(t, c);
+                update_candidates(c, candidate_len++, candidates, &total_candidates);
 
                 /* operand is determined, add it and continue */
-                if (total_pd == 1) {
-                    ts->tokens[ts->total_tokens]->type = which_delim(pd);
+                if (total_candidates == 1) {
+                    t->type = which_operand(candidates);
                     break;
                 }
 
                 /*
-                 * if total_pd is 0 then there is either a syntax error or token[:-1] is valid .
+                 * if total_candidates is 0 then there is either a syntax error or token[:-1] is valid .
                  * f.ex: buffer = "ls | grep .c".
                  * first token will be "ls ".
                  * second token will then first be "|", which is indeterminate as operand can be
@@ -274,46 +270,39 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
                  * after adding next char, token is now "| ". This is an invalid token, so remove previous char,
                  * and we get that the token is "|" which is a valid operand.
                  */
-                if (total_pd == 0) {
+                if (total_candidates == 0) {
                     /* remove prev char */
-                    token_t_pop_char(ts->tokens[ts->total_tokens]);
+                    token_t_pop_char(t);
                     buffer--;
 
-                    bool found = false;
                     for (int i = 0; i < TOTAL_OPERANDS; i++) {
-                        if (strcmp(operands_str[i], ts->tokens[ts->total_tokens]->str) == 0) {
-                            ts->tokens[ts->total_tokens]->type = operands[i];
-                            found = true;
-                            break;
+                        if (strcmp(operands_str[i], t->str) == 0) {
+                            t->type = operands[i];
+                            goto finished_op;
                         }
                     }
 
-                    if (found) {
-                        break;
-                    } else {
-                        print_syntax_error(buf_p, buffer);
-                        return -1;
-                    }
+                    /* execution enters here means operand was expected, but not found, i.e syntax error */
+                    print_syntax_error(buf_p, buffer);
+                    return -1;
                 }
-                /* total_pd is greater than 1, and the operand is ambigious so we continue */
             }
 
+        finished_op:
             /* only finalize token if we broke out of the loop (i.e operand was found and buffer not ended) */
-            if (*buffer != 0)
-                tokenized_str_t_finalize_token(ts);
-            delim_token_len = 0;
+            if (*buffer != 0) {
+                token_t_append_char(t, 0);
+                t = tokenized_str_t_next(ts);
+            }
+            candidate_len = 0;
 
-        } else {
-            tokenized_str_t_append_char(ts, c);
-        }
+        } else
+            token_t_append_char(t, c);
     }
+
     /* finalize last token. if it has O_NONE type then it has not been finalized */
-    if (ts->tokens[ts->total_tokens]->type == O_NONE) {
-        /* increments total tokens */
-        tokenized_str_t_finalize_token(ts);
-        /* revert incrementation; no more tokens will be added */
-        ts->total_tokens--;
-    }
+    if (t->type == O_NONE)
+        token_t_append_char(t, 0);
 
     return 0;
 }

@@ -1,7 +1,7 @@
 # valery
-Unix like interactive shell. Only for educational purposes and not meant to serve practical use. Everything written by and me (Nicolai Brand, https://lytix.dev) and licensed under GPL v3.
+Unix like interactive shell. Only for educational purposes and not meant to serve practical use. Everything written by me (Nicolai Brand, https://lytix.dev) and licensed under GPL v3.
 
-## Installtion and set up
+## Installation and set up
 Dependencies: `gcc`
 
 ```shell
@@ -12,7 +12,7 @@ $ git clone git@github.com:LytixDev/valery.git
 $ cd valery/
 ```
 
-Modify, or keep the default `.valeryrc`, and move it to `$HOME`
+Modify or keep the default `.valeryrc`, and move it to `$HOME`
 ```shell
 $ cp .valeryrc ~/
 ```
@@ -27,8 +27,8 @@ $ ./valery
 ```
 
 ## Goals
-- Usuable shell. POSIX compliancy would be cool, but it would probably be too much work.
-- Memory efficient and safe.
+- Usuable shell without aiming for POSIX compliancy.
+- Memory efficient and memory safe.
 - Fast.
-- No third part libraries.
+- No third party libraries.
 - No soydevery or too much voodoo.

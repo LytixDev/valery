@@ -132,8 +132,7 @@ void print_syntax_error(const char *buf_start, char *buf_err, char *msg);
  */
 int tokenize(struct tokenized_str_t *ts, char *buffer);
 
-// TODO: temporary solution
-void trim_spaces(struct tokenized_str_t *ts);
+char *trim_edge(char *str, char c);
 
 
 #endif

@@ -309,7 +309,7 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
     /*
      * finalize last token.
      * if it has O_NONE type then it has not been already finalized.
-     * if skip flag is set then there were no endeing qoutation mark, and therefore throw syntax error 
+     * if skip flag is set then there was no closing qoutation mark, so throw syntax error 
      */
     if (skip) {
         print_syntax_error(buf_p, buffer, "expected \"");
@@ -321,56 +321,22 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
     return 0;
 }
 
-void trim_spaces(struct tokenized_str_t *ts)
+char *trim_edge(char *str, char c)
 {
-    /* removes any leading and trailing spaces from the tokens */
-    // TODO: this is janky
-    char *str_ptr;
+    char *str_cpy = str;
     char *str_start;
-    char *str_end;
-    char str_cpy[1024];
-    char c;
-    /* not memory safe */
-    for (int i = 0; i < ts->total_tokens + 1; i++) {
-        /* only do if type is O_NONE ? */
-        str_ptr = ts->tokens[i]->str;
-        str_start = str_ptr;
-        str_end = NULL;
 
-        /* if first char is space, set str start to first char that is not space */
-        if ((c = *str_ptr++) == ' ') {
-            while ((c = *str_ptr) != 0) {
-                if (c != ' ') {
-                    str_start = str_ptr;
-                    break;
-                }
-                str_ptr++;
-            }
-        }
-        /* move str_ptr to end of str */
-        while ((c = *str_ptr++) != 0) continue;
-        str_ptr--;
-        str_ptr--;
+    /* trim all chars from start of string */
+    while (*str_cpy == c) str_cpy++;
+    str_start = str_cpy;
 
-        if ((c = *str_ptr--) == ' ') {
-            //printf("TRUE");
-            while ((c = *str_ptr--) != 0) {
-                if (c != ' ') {
-                    str_end = str_ptr + 2;
-                    break;
-                }
-            }
-        }
+    /* move pointer to end of str */
+    while (*str_cpy != 0) str_cpy++;
 
-        /* SUPER JANK */
-        size_t pos = 0;
-        while ((c = *str_start++) != 0) {
-            str_cpy[pos++] = c;
-            if (str_start == str_end)
-                break;
-        }
-        str_cpy[pos] = 0;
-        strcpy(ts->tokens[i]->str, str_cpy);
-        ts->tokens[i]->str_len = strlen(str_cpy);
-    }
+    /* trim all chars from end of string */
+    while (*--str_cpy == c && str_cpy != str);
+    /* terminate string after on match */
+    *(++str_cpy) = 0;
+
+    return str_start;
 }

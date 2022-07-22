@@ -187,49 +187,27 @@ void tokenized_str_t_print(struct tokenized_str_t *ts)
     }
 }
 
-bool bool_in_list(bool *list, size_t len, bool item)
-{
-    for (size_t i = 0; i < len; i++) {
-        if (list[i] == item)
-            return true;
-    }
-    return false;
-}
-
-int occurence_in_list(bool *list, size_t len, bool item)
-{
-    int s = 0;
-    for (size_t i = 0; i < len; i++) {
-        if (list[i] == item)
-            s++;
-    }
-    return s;
-}
-
-/* returns first delim, therefore will not work if multiple delims are valid */
-// jank but werks
-operands_t which_delim(bool list[TOTAL_OPERANDS])
+operands_t which_operand(bool candidates[TOTAL_OPERANDS])
 {
     for (int i = 0; i < TOTAL_OPERANDS; i++) {
-        if (list[i] == true)
+        if (candidates[i] == true)
             return operands[i];
     }
     return O_NONE;
 }
 
-
-bool possible_delims(char c, size_t pos, bool pd[TOTAL_OPERANDS])
+int update_candidates(char c, size_t pos, bool candidates[TOTAL_OPERANDS], int *total_candidates)
 {
     for (int i = 0; i < TOTAL_OPERANDS; i++) {
-        if (!bool_in_list(pd, TOTAL_OPERANDS, true))
-            return false;
+        if (*total_candidates == 0)
+            return 0;
 
-        if (operands_str[i][pos] != c) {
-            pd[i] = false;
+        if (candidates[i] == true && operands_str[i][pos] != c) {
+            candidates[i] = false;
+            *total_candidates -= 1;
         }
     }
-
-    return bool_in_list(pd, TOTAL_OPERANDS, true);
+    return *total_candidates;
 }
 
 void print_syntax_error(const char *buf_start, char *buf_err)
@@ -245,17 +223,24 @@ void print_syntax_error(const char *buf_start, char *buf_err)
 int tokenize(struct tokenized_str_t *ts, char *buffer)
 {
     char c;
-    const char *buf_p = buffer;                /* always pointing to beginning of buffer */
-    bool pd[TOTAL_OPERANDS];                   /* values representing if operand is a possible delimeter */
-    int total_pd;
-    size_t delim_token_len = 0;                /* keeps track of length of tokens that are delims */
+    /* always points to first address of buffer */
+    const char *buf_p = buffer;
+    /*
+     * keys in list are operands_t integral constants.
+     * values in list representing if token can be a possible operand for the given key.
+     */
+    bool candidates[TOTAL_OPERANDS];
+    /* amount of values in candidates set to true */
+    int total_candidates;
+    size_t candidate_len = 0;                  /* keeps track of length of tokens that are possible operands */
     token_t *t = ts->tokens[ts->total_tokens]; /* the current token we are modifying */
 
     while ((c = *buffer++) != 0) {
-        /* reset possible delims to all be true */
-        memset(pd, true, TOTAL_OPERANDS);
+        /* reset possible candidates to all be true */
+        memset(candidates, true, TOTAL_OPERANDS);
+        total_candidates = TOTAL_OPERANDS;
 
-        if (possible_delims(c, 0, pd)) {
+        if (update_candidates(c, 0, candidates, &total_candidates)) {
             /* as the current char can be an operand, the current token is done and can be finalized */
             if (t->str_len != 0) {
                 /* add sentinel value to finalize string */
@@ -268,17 +253,16 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
 
             while ((c = *buffer++) != 0) {
                 token_t_append_char(t, c);
-                possible_delims(c, delim_token_len++, pd);
-                total_pd = occurence_in_list(pd, TOTAL_OPERANDS, true);
+                update_candidates(c, candidate_len++, candidates, &total_candidates);
 
                 /* operand is determined, add it and continue */
-                if (total_pd == 1) {
-                    t->type = which_delim(pd);
+                if (total_candidates == 1) {
+                    t->type = which_operand(candidates);
                     break;
                 }
 
                 /*
-                 * if total_pd is 0 then there is either a syntax error or token[:-1] is valid .
+                 * if total_candidates is 0 then there is either a syntax error or token[:-1] is valid .
                  * f.ex: buffer = "ls | grep .c".
                  * first token will be "ls ".
                  * second token will then first be "|", which is indeterminate as operand can be
@@ -286,7 +270,7 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
                  * after adding next char, token is now "| ". This is an invalid token, so remove previous char,
                  * and we get that the token is "|" which is a valid operand.
                  */
-                if (total_pd == 0) {
+                if (total_candidates == 0) {
                     /* remove prev char */
                     token_t_pop_char(t);
                     buffer--;
@@ -310,7 +294,7 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
                 token_t_append_char(t, 0);
                 t = tokenized_str_t_next(ts);
             }
-            delim_token_len = 0;
+            candidate_len = 0;
 
         } else
             token_t_append_char(t, c);

@@ -106,21 +106,23 @@ void tokenized_str_t_append_char(struct tokenized_str_t *ts, char c);
  */
 struct token_t *tokenized_str_t_next(struct tokenized_str_t *ts);
 
-/* just for debugging purpsos */
+/* just for debugging */
 void tokenized_str_t_print(struct tokenized_str_t *ts);
 
-// TODO: this is ugly
-bool bool_in_list(bool *list, size_t len, bool item);
+/*
+ * goes through each operand and checks if the char at the 'pos' input parameter matches 
+ * the char 'c' input parameter. If they don't match, the candidate for that operand
+ * is set to false if it was true and decrements total_candidates.
+ *
+ * returns the value of total_candidates.
+ */
+int update_candidates(char c, size_t pos, bool candidates[TOTAL_OPERANDS], int *total_candidates);
 
-// TODO: this is ugly
-int occurence_in_list(bool *list, size_t len, bool item);
-
-// TODO: this is ugly
-/* returns which delim is set to true in the list */
-operands_t which_delim(bool list[TOTAL_OPERANDS]);
-
-// TODO: this is ugly
-bool possible_delims(char c, size_t pos, bool pd[TOTAL_OPERANDS]);
+/*
+ * returns the first operand set to true in the list
+ * returns O_NONE if no operand is set to true
+ */
+operands_t which_operand(bool candidates[TOTAL_OPERANDS]);
 
 /* prints a nice syntax error to stderr */
 void print_syntax_error(const char *buf_start, char *buf_err);

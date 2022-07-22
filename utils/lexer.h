@@ -127,7 +127,9 @@ operands_t which_operand(bool candidates[TOTAL_OPERANDS]);
 /* prints a nice syntax error to stderr */
 void print_syntax_error(const char *buf_start, char *buf_err);
 
-// TODO: add short explanation
+/*
+ * splits the input buffer into tokens based using operands in operands_str as delimeters.
+ */
 int tokenize(struct tokenized_str_t *ts, char *buffer);
 
 // TODO: temporary solution

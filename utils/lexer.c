@@ -143,6 +143,14 @@ void token_t_append_char(struct token_t *t, char c)
     t->str[t->str_len++] = c;
 }
 
+void token_t_done(struct token_t *t)
+{
+    /* terminate string */
+    token_t_append_char(t, 0);
+    /* remove leading and trailing spaces */
+    t->str = trim_edge(t->str, ' ');
+}
+
 void token_t_pop_char(struct token_t *t)
 {
     if (t->str_len > 0)
@@ -249,8 +257,7 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
         if (!skip && update_candidates(c, 0, candidates, &total_candidates)) {
             /* as the current char can be an operand, the current token is done and can be finalized */
             if (t->str_len != 0) {
-                /* add sentinel value to finalize string */
-                token_t_append_char(t, 0);
+                token_t_done(t);
                 /* returns a pointer to the next token_t in ts->tokens */
                 t = tokenized_str_t_next(ts);
             }
@@ -297,7 +304,7 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
         finished_op:
             /* only finalize token if we broke out of the loop (i.e operand was found and buffer not ended) */
             if (*buffer != 0) {
-                token_t_append_char(t, 0);
+                token_t_done(t);
                 t = tokenized_str_t_next(ts);
             }
             candidate_len = 0;
@@ -316,7 +323,7 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
         return -1;
     }
     if (t->type == O_NONE)
-        token_t_append_char(t, 0);
+        token_t_done(t);
 
     return 0;
 }

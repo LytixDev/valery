@@ -125,7 +125,7 @@ int update_candidates(char c, size_t pos, bool candidates[TOTAL_OPERANDS], int *
 operands_t which_operand(bool candidates[TOTAL_OPERANDS]);
 
 /* prints a nice syntax error to stderr */
-void print_syntax_error(const char *buf_start, char *buf_err);
+void print_syntax_error(const char *buf_start, char *buf_err, char *msg);
 
 /*
  * splits the input buffer into tokens based using operands in operands_str as delimeters.

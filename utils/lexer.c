@@ -210,14 +210,15 @@ int update_candidates(char c, size_t pos, bool candidates[TOTAL_OPERANDS], int *
     return *total_candidates;
 }
 
-void print_syntax_error(const char *buf_start, char *buf_err)
+void print_syntax_error(const char *buf_start, char *buf_err, char *msg)
 {
     fprintf(stderr, "valery: syntax error near: '%c'\n", *buf_err);
     fprintf(stderr, "%s\n", buf_start);
 
-    for (int i = 0; i < buf_err - buf_start; i++)
+    int offset = buf_err - buf_start - 1 > 0 ? buf_err - buf_start - 1: 0;
+    for (int i = 0; i < offset; i++)
         fprintf(stderr, " ");
-    fprintf(stderr, "^ unexpected token\n");
+    fprintf(stderr, "^ %s\n", msg);
 }
 
 int tokenize(struct tokenized_str_t *ts, char *buffer)
@@ -234,13 +235,18 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
     int total_candidates;
     size_t candidate_len = 0;                  /* keeps track of length of tokens that are possible operands */
     token_t *t = ts->tokens[ts->total_tokens]; /* the current token we are modifying */
+    bool skip = false;
 
     while ((c = *buffer++) != 0) {
         /* reset possible candidates to all be true */
         memset(candidates, true, TOTAL_OPERANDS);
         total_candidates = TOTAL_OPERANDS;
 
-        if (update_candidates(c, 0, candidates, &total_candidates)) {
+        /* do not parse chars inside qoutation marks, without expection */
+        if (c == '"')
+            skip = !skip;
+
+        if (!skip && update_candidates(c, 0, candidates, &total_candidates)) {
             /* as the current char can be an operand, the current token is done and can be finalized */
             if (t->str_len != 0) {
                 /* add sentinel value to finalize string */
@@ -283,7 +289,7 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
                     }
 
                     /* execution enters here means operand was expected, but not found, i.e syntax error */
-                    print_syntax_error(buf_p, buffer);
+                    print_syntax_error(buf_p, buffer, "unexpected token");
                     return -1;
                 }
             }
@@ -300,7 +306,15 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
             token_t_append_char(t, c);
     }
 
-    /* finalize last token. if it has O_NONE type then it has not been finalized */
+    /*
+     * finalize last token.
+     * if it has O_NONE type then it has not been already finalized.
+     * if skip flag is set then there were no endeing qoutation mark, and therefore throw syntax error 
+     */
+    if (skip) {
+        print_syntax_error(buf_p, buffer, "expected \"");
+        return -1;
+    }
     if (t->type == O_NONE)
         token_t_append_char(t, 0);
 

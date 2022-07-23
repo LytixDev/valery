@@ -233,7 +233,7 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
 {
     char c;
     /* always points to first address of buffer */
-    const char *buf_p = buffer;
+    const char *buf_start = buffer;
     /*
      * keys in list are operands_t integral constants.
      * values in list representing if token can be a possible operand for the given key.
@@ -250,11 +250,11 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
         memset(candidates, true, TOTAL_OPERANDS);
         total_candidates = TOTAL_OPERANDS;
 
-        /* do not parse chars inside qoutation marks, without expection */
+        /* do not parse chars inside qoutation marks, unless qoutation mark is escaped with backslash */
         if (c == '"')
             skip = !skip;
 
-        if (!skip && update_candidates(c, 0, candidates, &total_candidates)) {
+        else if (!skip && update_candidates(c, 0, candidates, &total_candidates)) {
             /* as the current char can be an operand, the current token is done and can be finalized */
             if (t->str_len != 0) {
                 token_t_done(t);
@@ -296,7 +296,7 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
                     }
 
                     /* execution enters here means operand was expected, but not found, i.e syntax error */
-                    print_syntax_error(buf_p, buffer, "unexpected token");
+                    print_syntax_error(buf_start, buffer, "unexpected token");
                     return -1;
                 }
             }
@@ -319,7 +319,7 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
      * if skip flag is set then there was no closing qoutation mark, so throw syntax error 
      */
     if (skip) {
-        print_syntax_error(buf_p, buffer, "expected \"");
+        print_syntax_error(buf_start, buffer, "expected \"");
         return -1;
     }
     if (t->type == O_NONE)

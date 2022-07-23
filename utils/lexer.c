@@ -143,6 +143,14 @@ void token_t_append_char(struct token_t *t, char c)
     t->str[t->str_len++] = c;
 }
 
+void token_t_done(struct token_t *t)
+{
+    /* terminate string */
+    token_t_append_char(t, 0);
+    /* remove leading and trailing spaces */
+    t->str = trim_edge(t->str, ' ');
+}
+
 void token_t_pop_char(struct token_t *t)
 {
     if (t->str_len > 0)
@@ -210,21 +218,22 @@ int update_candidates(char c, size_t pos, bool candidates[TOTAL_OPERANDS], int *
     return *total_candidates;
 }
 
-void print_syntax_error(const char *buf_start, char *buf_err)
+void print_syntax_error(const char *buf_start, char *buf_err, char *msg)
 {
     fprintf(stderr, "valery: syntax error near: '%c'\n", *buf_err);
     fprintf(stderr, "%s\n", buf_start);
 
-    for (int i = 0; i < buf_err - buf_start; i++)
+    int offset = buf_err - buf_start - 1 > 0 ? buf_err - buf_start - 1: 0;
+    for (int i = 0; i < offset; i++)
         fprintf(stderr, " ");
-    fprintf(stderr, "^ unexpected token\n");
+    fprintf(stderr, "^ %s\n", msg);
 }
 
 int tokenize(struct tokenized_str_t *ts, char *buffer)
 {
     char c;
     /* always points to first address of buffer */
-    const char *buf_p = buffer;
+    const char *buf_start = buffer;
     /*
      * keys in list are operands_t integral constants.
      * values in list representing if token can be a possible operand for the given key.
@@ -234,17 +243,21 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
     int total_candidates;
     size_t candidate_len = 0;                  /* keeps track of length of tokens that are possible operands */
     token_t *t = ts->tokens[ts->total_tokens]; /* the current token we are modifying */
+    bool skip = false;
 
     while ((c = *buffer++) != 0) {
         /* reset possible candidates to all be true */
         memset(candidates, true, TOTAL_OPERANDS);
         total_candidates = TOTAL_OPERANDS;
 
-        if (update_candidates(c, 0, candidates, &total_candidates)) {
+        /* do not parse chars inside qoutation marks, unless qoutation mark is escaped with backslash */
+        if (c == '"')
+            skip = !skip;
+
+        else if (!skip && update_candidates(c, 0, candidates, &total_candidates)) {
             /* as the current char can be an operand, the current token is done and can be finalized */
             if (t->str_len != 0) {
-                /* add sentinel value to finalize string */
-                token_t_append_char(t, 0);
+                token_t_done(t);
                 /* returns a pointer to the next token_t in ts->tokens */
                 t = tokenized_str_t_next(ts);
             }
@@ -283,7 +296,7 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
                     }
 
                     /* execution enters here means operand was expected, but not found, i.e syntax error */
-                    print_syntax_error(buf_p, buffer);
+                    print_syntax_error(buf_start, buffer, "unexpected token");
                     return -1;
                 }
             }
@@ -291,7 +304,7 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
         finished_op:
             /* only finalize token if we broke out of the loop (i.e operand was found and buffer not ended) */
             if (*buffer != 0) {
-                token_t_append_char(t, 0);
+                token_t_done(t);
                 t = tokenized_str_t_next(ts);
             }
             candidate_len = 0;
@@ -300,63 +313,37 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
             token_t_append_char(t, c);
     }
 
-    /* finalize last token. if it has O_NONE type then it has not been finalized */
+    /*
+     * finalize last token.
+     * if it has O_NONE type then it has not been already finalized.
+     * if skip flag is set then there was no closing qoutation mark, so throw syntax error 
+     */
+    if (skip) {
+        print_syntax_error(buf_start, buffer, "expected \"");
+        return -1;
+    }
     if (t->type == O_NONE)
-        token_t_append_char(t, 0);
+        token_t_done(t);
 
     return 0;
 }
 
-void trim_spaces(struct tokenized_str_t *ts)
+char *trim_edge(char *str, char c)
 {
-    /* removes any leading and trailing spaces from the tokens */
-    // TODO: this is janky
-    char *str_ptr;
+    char *str_cpy = str;
     char *str_start;
-    char *str_end;
-    char str_cpy[1024];
-    char c;
-    /* not memory safe */
-    for (int i = 0; i < ts->total_tokens + 1; i++) {
-        /* only do if type is O_NONE ? */
-        str_ptr = ts->tokens[i]->str;
-        str_start = str_ptr;
-        str_end = NULL;
 
-        /* if first char is space, set str start to first char that is not space */
-        if ((c = *str_ptr++) == ' ') {
-            while ((c = *str_ptr) != 0) {
-                if (c != ' ') {
-                    str_start = str_ptr;
-                    break;
-                }
-                str_ptr++;
-            }
-        }
-        /* move str_ptr to end of str */
-        while ((c = *str_ptr++) != 0) continue;
-        str_ptr--;
-        str_ptr--;
+    /* trim all chars from start of string */
+    while (*str_cpy == c) str_cpy++;
+    str_start = str_cpy;
 
-        if ((c = *str_ptr--) == ' ') {
-            //printf("TRUE");
-            while ((c = *str_ptr--) != 0) {
-                if (c != ' ') {
-                    str_end = str_ptr + 2;
-                    break;
-                }
-            }
-        }
+    /* move pointer to end of str */
+    while (*str_cpy != 0) str_cpy++;
 
-        /* SUPER JANK */
-        size_t pos = 0;
-        while ((c = *str_start++) != 0) {
-            str_cpy[pos++] = c;
-            if (str_start == str_end)
-                break;
-        }
-        str_cpy[pos] = 0;
-        strcpy(ts->tokens[i]->str, str_cpy);
-        ts->tokens[i]->str_len = strlen(str_cpy);
-    }
+    /* trim all chars from end of string */
+    while (*--str_cpy == c && str_cpy != str);
+    /* terminate string after on match */
+    *(++str_cpy) = 0;
+
+    return str_start;
 }

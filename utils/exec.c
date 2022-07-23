@@ -96,14 +96,16 @@ int valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *
 
 int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hist_t *hist)
 {
-    trim_spaces(ts);
     int rc;
-
-    // TODO: refactor? at least make memory safe
     char *argv[8];
     int argc = 0;
     char *str_cpy = ts->tokens[0]->str;
 
+    //for (size_t i = 0; i < ts->total_tokens + 1; i++)
+    //    ts->tokens[i]->str = trim_edge(ts->tokens[i]->str, ' ');
+
+
+    // TODO: refactor? at least make memory safe
     while (*str_cpy != 0) {
         if (*str_cpy == ' ') {
             *str_cpy = 0;
@@ -112,6 +114,9 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
             str_cpy++;
         }
     }
+
+    for (int i = 0; i < argc; i++)
+        argv[i] = trim_edge(argv[i], '"');
 
     rc = valery_eval_token(ts->tokens[0]->str, argv, argc, env, hist);
     if (rc == 1)

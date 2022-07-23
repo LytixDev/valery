@@ -94,16 +94,43 @@ int valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *
     return rc;
 }
 
+int str_to_argv(char *str, char **argv, int argv_m)
+{
+    int argc = 0;
+    bool skip = false;
+    while (*str != 0) {
+        if (*str == '"')
+            skip = !skip;
+
+        if (!skip && *str == ' ') {
+            *str = 0;
+            argv[argc++] = ++str;
+            if (argc >= argv_m) {
+                argv_m += 32;
+                argv = (char **) realloc(argv, argv_m * sizeof(char *));
+            }
+        } else {
+            str++;
+        }
+    }
+
+    for (int i = 0; i < argc; i++) {
+        argv[i] = trim_edge(argv[i], '"');
+    }
+
+    return argc;
+}
+
 int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hist_t *hist)
 {
     int rc;
-    char *argv[8];
+    char **argv = (char **) malloc(8 * sizeof(char *));
+    int argc = str_to_argv(ts->tokens[0]->str, argv, 8);
+
+
+    /*
     int argc = 0;
     char *str_cpy = ts->tokens[0]->str;
-
-    //for (size_t i = 0; i < ts->total_tokens + 1; i++)
-    //    ts->tokens[i]->str = trim_edge(ts->tokens[i]->str, ' ');
-
 
     // TODO: refactor? at least make memory safe
     while (*str_cpy != 0) {
@@ -114,13 +141,13 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
             str_cpy++;
         }
     }
-
-    for (int i = 0; i < argc; i++)
-        argv[i] = trim_edge(argv[i], '"');
+    */
 
     rc = valery_eval_token(ts->tokens[0]->str, argv, argc, env, hist);
     if (rc == 1)
         printf("valery: command not found '%s'\n", ts->tokens[0]->str);
+
+    free(argv);
     return 0;
 
     /* TODO: parse buffer, handle operands and handle different pipes/streams */

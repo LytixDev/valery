@@ -254,7 +254,7 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
         if (c == '"')
             skip = !skip;
 
-        else if (!skip && update_candidates(c, 0, candidates, &total_candidates)) {
+        if (!skip && update_candidates(c, 0, candidates, &total_candidates)) {
             /* as the current char can be an operand, the current token is done and can be finalized */
             if (t->str_len != 0) {
                 token_t_done(t);

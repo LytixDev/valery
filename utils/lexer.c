@@ -83,6 +83,7 @@ void token_t_free(struct token_t *t)
 
 void token_t_resize(struct token_t *t, size_t new_size)
 {
+    //TODO: only works when INCREASING size
     t->str = (char *) realloc(t->str, new_size * sizeof(char));
     t->str_allocated = new_size;
 }
@@ -112,6 +113,7 @@ void tokenized_str_t_free(struct tokenized_str_t *ts)
 
 void tokenized_str_t_resize(struct tokenized_str_t *ts, size_t new_size)
 {
+    //TODO: only works when INCREASING size
     ts->tokens = (struct token_t **) realloc(ts->tokens, new_size * sizeof(struct token_t *));
     for (size_t i = ts->tokens_allocated; i < new_size; i++)
         ts->tokens[i] = token_t_malloc();

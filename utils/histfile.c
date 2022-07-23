@@ -30,7 +30,6 @@
 struct hist_t *malloc_history(char *full_path_to_hist_file)
 {
     struct hist_t *hist = (hist_t *) malloc(sizeof(hist_t));
-    hist->fp = (FILE *) malloc(sizeof(FILE));
     hist->s_len = 0;
     hist->stored_commands = malloc(MAX_COMMANDS_BEFORE_WRITE * sizeof(char *));
 

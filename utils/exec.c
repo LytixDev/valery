@@ -40,7 +40,7 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     // TODO: add environment variables
     char *environ[] = {NULL, NULL, NULL};
 
-    rc = which(program_name, env->paths, env->total_paths, &found_path);
+    rc = which(program_name, env->paths, env->current_path, &found_path);
     if (rc != COMMAND_IN_PATH)
         return 1;
 
@@ -79,7 +79,7 @@ int valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *
     /* check if program is shell builtin */
     if (strcmp(program_name, "which") == 0) {
         // TODO: use all args
-        rc = which(argv[0], env->paths, env->total_paths, NULL);
+        rc = which(argv[0], env->paths, env->current_path, NULL);
     } else if (strcmp(program_name, "cd") == 0) {
         // TODO: use all args
         rc = cd(argv[0]);

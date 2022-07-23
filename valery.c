@@ -177,6 +177,7 @@ int main(int argc, char *argv[])
     write_commands_to_hist_file(hist);
     free_env(env);
     free_history(hist);
+    tokenized_str_t_free(ts);
 
     printf("Exiting ...\n");
     enable_term_flags();

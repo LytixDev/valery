@@ -77,9 +77,6 @@ struct token_t *token_t_malloc()
 
 void token_t_free(struct token_t *t)
 {
-    if (t == NULL)
-        return;
-
     free(t->str);
     free(t);
 }
@@ -106,12 +103,10 @@ struct tokenized_str_t *tokenized_str_t_malloc()
 
 void tokenized_str_t_free(struct tokenized_str_t *ts)
 {
-    if (ts == NULL)
-        return;
-
     for (size_t i = 0; i < ts->tokens_allocated; i++)
         token_t_free(ts->tokens[i]);
 
+    free(ts->tokens);
     free(ts);
 }
 

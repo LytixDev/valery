@@ -68,6 +68,7 @@ struct token_t *token_t_malloc()
 {
     struct token_t *t = (struct token_t *) malloc(sizeof(struct token_t));
     t->str = (char *) malloc(DEFAULT_TOKEN_SIZE * sizeof(char));
+    t->str_start = t->str;
     t->type = O_NONE;  /* set default type to none i.e, token is a program name */
     t->str_len = 0;
     t->str_allocated = DEFAULT_TOKEN_SIZE;
@@ -145,7 +146,7 @@ void token_t_done(struct token_t *t)
     /* terminate string */
     token_t_append_char(t, 0);
     /* remove leading and trailing spaces */
-    t->str = trim_edge(t->str, ' ');
+    t->str_start = trim_edge(t->str, ' ');
 }
 
 void token_t_pop_char(struct token_t *t)

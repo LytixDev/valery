@@ -99,7 +99,7 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
     int rc;
     char *argv[8];
     int argc = 0;
-    char *str_cpy = ts->tokens[0]->str;
+    char *str_cpy = ts->tokens[0]->str_start;
 
     //for (size_t i = 0; i < ts->total_tokens + 1; i++)
     //    ts->tokens[i]->str = trim_edge(ts->tokens[i]->str, ' ');
@@ -120,7 +120,7 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
 
     rc = valery_eval_token(ts->tokens[0]->str, argv, argc, env, hist);
     if (rc == 1)
-        printf("valery: command not found '%s'\n", ts->tokens[0]->str);
+        printf("valery: command not found '%s'\n", ts->tokens[0]->str_start);
     return 0;
 
     /* TODO: parse buffer, handle operands and handle different pipes/streams */

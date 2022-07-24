@@ -118,7 +118,7 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
     for (int i = 0; i < argc; i++)
         argv[i] = trim_edge(argv[i], '"');
 
-    rc = valery_eval_token(ts->tokens[0]->str, argv, argc, env, hist);
+    rc = valery_eval_token(ts->tokens[0]->str_start, argv, argc, env, hist);
     if (rc == 1)
         printf("valery: command not found '%s'\n", ts->tokens[0]->str_start);
     return 0;

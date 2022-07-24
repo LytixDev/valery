@@ -101,9 +101,6 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
     int argc = 0;
     char *str_cpy = ts->tokens[0]->str_start;
 
-    //for (size_t i = 0; i < ts->total_tokens + 1; i++)
-    //    ts->tokens[i]->str = trim_edge(ts->tokens[i]->str, ' ');
-
 
     // TODO: refactor? at least make memory safe
     while (*str_cpy != 0) {

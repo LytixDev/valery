@@ -46,6 +46,8 @@ int which(char *program_name, char **paths, int total_paths, char **path_result)
     for (int i = 0; i < total_paths; i++) {
         char *path = paths[i];
         d = opendir(path);
+        if (d == NULL)
+            continue;
 
         while ((dir = readdir(d)) != NULL) {
             /* check for name equality */

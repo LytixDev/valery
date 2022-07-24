@@ -48,6 +48,7 @@ typedef enum operands_t {
 
 typedef struct token_t {
     char *str;                /* the actual token string */
+    char *str_start;
     enum operands_t type;     /* the semantic intepretation of the token */
     size_t str_len;           /* the current len of the token string without counting terminating null byte */
     size_t str_allocated;     /* the allocated size of the token string */

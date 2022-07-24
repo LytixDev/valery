@@ -40,7 +40,7 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     // TODO: add environment variables
     char *environ[] = {NULL, NULL, NULL};
 
-    rc = which(program_name, env->paths, env->total_paths, &found_path);
+    rc = which(program_name, env->paths, env->current_path, &found_path);
     if (rc != COMMAND_IN_PATH)
         return 1;
 
@@ -79,7 +79,7 @@ int valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *
     /* check if program is shell builtin */
     if (strcmp(program_name, "which") == 0) {
         // TODO: use all args
-        rc = which(argv[0], env->paths, env->total_paths, NULL);
+        rc = which(argv[0], env->paths, env->current_path, NULL);
     } else if (strcmp(program_name, "cd") == 0) {
         // TODO: use all args
         rc = cd(argv[0]);
@@ -127,7 +127,6 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
     char **argv = (char **) malloc(8 * sizeof(char *));
     int argc = str_to_argv(ts->tokens[0]->str, argv, 8);
 
-
     /*
     int argc = 0;
     char *str_cpy = ts->tokens[0]->str;
@@ -143,11 +142,12 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
     }
     */
 
-    rc = valery_eval_token(ts->tokens[0]->str, argv, argc, env, hist);
+    rc = valery_eval_token(ts->tokens[0]->str_start, argv, argc, env, hist);
     if (rc == 1)
-        printf("valery: command not found '%s'\n", ts->tokens[0]->str);
+        printf("valery: command not found '%s'\n", ts->tokens[0]->str_start);
 
     free(argv);
+
     return 0;
 
     /* TODO: parse buffer, handle operands and handle different pipes/streams */

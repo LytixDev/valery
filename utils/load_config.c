@@ -125,6 +125,7 @@ int parse_config(struct env_t *env)
         }
 
     }
+    fclose(fp);
     unwrap_paths(env);
     return 0;
 }

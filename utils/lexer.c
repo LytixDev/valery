@@ -68,6 +68,7 @@ struct token_t *token_t_malloc()
 {
     struct token_t *t = (struct token_t *) malloc(sizeof(struct token_t));
     t->str = (char *) malloc(DEFAULT_TOKEN_SIZE * sizeof(char));
+    t->str_start = t->str;
     t->type = O_NONE;  /* set default type to none i.e, token is a program name */
     t->str_len = 0;
     t->str_allocated = DEFAULT_TOKEN_SIZE;
@@ -77,15 +78,13 @@ struct token_t *token_t_malloc()
 
 void token_t_free(struct token_t *t)
 {
-    if (t == NULL)
-        return;
-
     free(t->str);
     free(t);
 }
 
 void token_t_resize(struct token_t *t, size_t new_size)
 {
+    //TODO: only works when INCREASING size
     t->str = (char *) realloc(t->str, new_size * sizeof(char));
     t->str_allocated = new_size;
 }
@@ -106,17 +105,16 @@ struct tokenized_str_t *tokenized_str_t_malloc()
 
 void tokenized_str_t_free(struct tokenized_str_t *ts)
 {
-    if (ts == NULL)
-        return;
-
     for (size_t i = 0; i < ts->tokens_allocated; i++)
         token_t_free(ts->tokens[i]);
 
+    free(ts->tokens);
     free(ts);
 }
 
 void tokenized_str_t_resize(struct tokenized_str_t *ts, size_t new_size)
 {
+    //TODO: only works when INCREASING size
     ts->tokens = (struct token_t **) realloc(ts->tokens, new_size * sizeof(struct token_t *));
     for (size_t i = ts->tokens_allocated; i < new_size; i++)
         ts->tokens[i] = token_t_malloc();
@@ -148,7 +146,7 @@ void token_t_done(struct token_t *t)
     /* terminate string */
     token_t_append_char(t, 0);
     /* remove leading and trailing spaces */
-    t->str = trim_edge(t->str, ' ');
+    t->str_start = trim_edge(t->str, ' ');
 }
 
 void token_t_pop_char(struct token_t *t)

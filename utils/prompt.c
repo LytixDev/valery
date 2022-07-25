@@ -106,7 +106,7 @@ int prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN])
 
     print_prompt(ps1, buf);
     /* reset position in history to bottom of queue */
-    reset_hist_pos(hist);
+    hist_t_reset_pos(hist);
 
     while (EOF != (ch = getchar()) && ch != '\n') {
         /* return if buffer cannot store more chars */

@@ -19,15 +19,14 @@ jobs:
           sudo apt-get update -qyy
           sudo apt-get install valgrind
 
+      - name: Build
+        run: ./build.sh debug
+
       - name: Test   
         if: startswith(matrix.os, 'ubuntu-')
         run: |
           cp .valeryrc ~/
-          ./build.sh debug
           ./tests/memory_leak_test.sh
-
-      - name: Build
-        run: ./build.sh
 
       - name: Run
         run: ./valery --help

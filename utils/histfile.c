@@ -27,7 +27,7 @@
 #include "../valery.h"
 
 
-struct hist_t *malloc_history(char *full_path_to_hist_file)
+struct hist_t *hist_t_malloc(char *full_path_to_hist_file)
 {
     struct hist_t *hist = (hist_t *) malloc(sizeof(hist_t));
     hist->s_len = 0;
@@ -37,7 +37,7 @@ struct hist_t *malloc_history(char *full_path_to_hist_file)
     for (int i = 0; i < MAX_COMMANDS_BEFORE_WRITE; i++)
         hist->stored_commands[i] = malloc(COMMAND_LEN * sizeof(char));
 
-    int rc = open_hist_file(hist, full_path_to_hist_file);
+    int rc = hist_t_open(hist, full_path_to_hist_file);
     /* if no connection could be made to the hist file, set the pointer to null */
     if (rc == 1)
         hist->fp = NULL;
@@ -51,7 +51,7 @@ struct hist_t *malloc_history(char *full_path_to_hist_file)
     return hist;
 }
 
-void free_history(struct hist_t *hist)
+void hist_t_free(struct hist_t *hist)
 {
     if (hist == NULL)
         return;
@@ -78,14 +78,14 @@ int out_of_bounds(struct hist_t *hist, histaction_t action)
     return 0;
 }
 
-void save_command(struct hist_t *hist, char buf[COMMAND_LEN])
+void hist_t_save(struct hist_t *hist, char buf[COMMAND_LEN])
 {
     if (hist->s_len == MAX_COMMANDS_BEFORE_WRITE)
-        write_commands_to_hist_file(hist);
+        hist_t_write(hist);
     strncpy(hist->stored_commands[hist->s_len++], buf, COMMAND_LEN);
 }
 
-void write_commands_to_hist_file(struct hist_t *hist)
+void hist_t_write(struct hist_t *hist)
 {
     for (int i = 0; i < hist->s_len; i++) {
         if (strcmp(hist->stored_commands[i], "") != 0) {
@@ -98,7 +98,7 @@ void write_commands_to_hist_file(struct hist_t *hist)
     fseek(hist->fp, 0, SEEK_END);
 }
 
-void count_hist_lines(struct hist_t *hist)
+void hist_t_count(struct hist_t *hist)
 {
     size_t len = 0;
     size_t chars = 0;
@@ -113,13 +113,13 @@ void count_hist_lines(struct hist_t *hist)
     hist->f_chars = chars;
 }
 
-int open_hist_file(struct hist_t *hist, char *path)
+int hist_t_open(struct hist_t *hist, char *path)
 {
     hist->fp = fopen(path, "a+");
 
     if (hist->fp != NULL) {
-        /* count_hist_lines() moves file pointer to end of file */
-        count_hist_lines(hist);
+        /* hist_t_count() moves file pointer to end of file */
+        hist_t_count(hist);
         hist->f_pos = hist->f_len;
         return 0;
     }
@@ -127,7 +127,7 @@ int open_hist_file(struct hist_t *hist, char *path)
     return 1;
 }
 
-long traverse_hist(struct hist_t *hist, histaction_t direction)
+long hist_t_traverse(struct hist_t *hist, histaction_t direction)
 {
     direction == HIST_UP ? hist->pos-- : hist->pos++;
 
@@ -158,7 +158,7 @@ long traverse_hist(struct hist_t *hist, histaction_t direction)
     return position_in_file;
 }
 
-void read_hist_line_from_file(struct hist_t *hist, char buf[COMMAND_LEN], long offset, histaction_t action)
+void hist_t_read_line_f(struct hist_t *hist, char buf[COMMAND_LEN], long offset, histaction_t action)
 {
     if (offset == -1)
         offset = ftell(hist->fp);
@@ -168,7 +168,7 @@ void read_hist_line_from_file(struct hist_t *hist, char buf[COMMAND_LEN], long o
     fseek(hist->fp, offset, SEEK_SET);
 }
 
-void reset_hist_pos(struct hist_t *hist)
+void hist_t_reset_pos(struct hist_t *hist)
 {
     /* move file pointer to end of file */
     fseek(hist->fp, 0, SEEK_END);
@@ -177,12 +177,12 @@ void reset_hist_pos(struct hist_t *hist)
     hist->pos = hist->f_len + hist->s_len;
 }
 
-readfrom_t get_hist_line(struct hist_t *hist, char buf[COMMAND_LEN], histaction_t action)
+readfrom_t hist_t_get_line(struct hist_t *hist, char buf[COMMAND_LEN], histaction_t action)
 {
     if (out_of_bounds(hist, action))
         return DID_NOT_READ;
 
-    long rc = traverse_hist(hist, action);
+    long rc = hist_t_traverse(hist, action);
     if (rc == READ_FROM_MEMORY) {
         int index = hist->pos - hist->f_len;
         strncpy(buf, hist->stored_commands[index], COMMAND_LEN);
@@ -190,6 +190,6 @@ readfrom_t get_hist_line(struct hist_t *hist, char buf[COMMAND_LEN], histaction_
     }
 
     /* read from hist file, rc is the offset of the file pointer */
-    read_hist_line_from_file(hist, buf, rc, action);
+    hist_t_read_line_f(hist, buf, rc, action);
     return READ_FROM_HIST;
 }

@@ -51,14 +51,14 @@ typedef struct token_t {
     char *str_start;          /* points to the start of the string */
     enum operands_t type;     /* the semantic intepretation of the token */
     size_t str_len;           /* the current len of the token string without counting terminating null byte */
-    size_t str_allocated;     /* the allocated size of the token string */
+    size_t str_capacity;      /* the allocated capcity of the token string */
 } token_t;
 
 
 typedef struct tokenized_str_t {
     struct token_t **tokens;  /* list of the tokens */
-    size_t total_tokens;      /* actual total tokens in the token list */
-    size_t tokens_allocated;  /* totoal allocated tokens */
+    size_t size;              /* total blocks of tokens occupied / in use */
+    size_t capacity;          /* total blocks of tokens allocated */
 } tokenized_str_t;
 
 
@@ -73,14 +73,14 @@ struct token_t *token_t_malloc();
 
 void token_t_free(struct token_t *t);
 
-void token_t_resize(struct token_t *t, size_t new_size);
+void token_t_resize(struct token_t *t, size_t new_capacity);
 
 /* returns a pointer to a malloced tokenized_str_t object with STARTING_TOKENS amount of token_t */
 struct tokenized_str_t *tokenized_str_t_malloc();
 
 void tokenized_str_t_free(struct tokenized_str_t *ts);
 
-void tokenized_str_t_resize(struct tokenized_str_t *ts, size_t new_size);
+void tokenized_str_t_resize(struct tokenized_str_t *ts, size_t new_capacity);
 
 /*
  * 'cleans' the object and makes it act as though it has just been malloced.
@@ -102,7 +102,7 @@ void token_t_pop_char(struct token_t *t);
 void tokenized_str_t_append_char(struct tokenized_str_t *ts, char c);
 
 /* 
- * increments total_tokens and returns a pointer to the next token_t
+ * increments size and returns a pointer to the next token_t
  * calls tokenized_str_t_resize() if necessary.
  */
 struct token_t *tokenized_str_t_next(struct tokenized_str_t *ts);

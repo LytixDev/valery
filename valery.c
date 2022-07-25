@@ -102,16 +102,41 @@ void free_env(struct env_t *env)
     free(env);
 }
 
-int main(int argc, char *argv[])
+int exclusive(char *arg)
 {
-    if (argc > 1) {
-        printf("%s\n", argv[1]);
-        if (strcmp(argv[1], "--help") == 0) {
-            help();
-            return 0;
-        }
+    struct env_t *env = malloc_env();
+    struct hist_t *hist;
+    struct tokenized_str_t *ts;
+    char hist_file_path[MAX_ENV_LEN];
+    int rc;
+    int rc_env;
+
+    rc = parse_config(env);
+    if (rc == 1) {
+        fprintf(stderr, "error parsing .valeryrc");
+        free_env(env);
+        return 1;
     }
 
+    snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env->HOME, HISTFILE_NAME);
+    hist = malloc_history(hist_file_path);
+
+    ts = tokenized_str_t_malloc();
+    rc = tokenize(ts, arg);
+    if (rc == 0) {
+        rc_env = valery_parse_tokens(ts, env, hist);
+        env->exit_code = rc_env;
+    }
+
+    free_env(env);
+    free_history(hist);
+    tokenized_str_t_free(ts);
+
+    return rc_env;
+}
+
+int interactive()
+{
     struct env_t *env = malloc_env();
     struct hist_t *hist;
     struct tokenized_str_t *ts;
@@ -177,5 +202,26 @@ int main(int argc, char *argv[])
 
     printf("Exiting ...\n");
     enable_term_flags();
-    return 0;
+    return rc;
+}
+
+int main(int argc, char *argv[])
+{
+    if (argc > 1) {
+        if (strcmp(argv[1], "--help") == 0) {
+            help();
+            return 0;
+        }
+
+        if (strcmp(argv[1], "-c") == 0) {
+            if (argc == 2) {
+                printf("valery: '-c' option requires an argument\n");
+                return 1;
+            }
+            return exclusive(argv[2]);
+        }
+
+    }
+
+    return interactive();
 }

@@ -33,6 +33,8 @@ int help()
         printf("%s  ", builtin_names[i]);
     }
 
+    printf("\n\nUse the -c option to execute a command directly when envoking valery. Example: './valery -c \"ls\"'\n");
+
     printf("\n");
     return 0;
 }

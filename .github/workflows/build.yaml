@@ -22,7 +22,7 @@ jobs:
       - name: Test   
         if: startswith(matrix.os, 'ubuntu-')
         run: |
-          cp .valeryc ~/
+          cp .valeryrc ~/
           ./build.sh debug
           ./tests/memory_leak_test.sh
 

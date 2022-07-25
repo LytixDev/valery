@@ -15,13 +15,15 @@ jobs:
 
       - name: Dependencies
         if: startswith(matrix.os, 'ubuntu-')
-        run: sudo apt-get update -qyy \
-              sudo apt-get install valgrind
+        run: |
+          sudo apt-get update -qyy
+          sudo apt-get install valgrind
 
       - name: Test   
         if: startswith(matrix.os, 'ubuntu-')
-        run: ./build.sh test \
-              ./tests/memory_leak_test.sh
+        run: |
+          ./build.sh test
+          ./tests/memory_leak_test.sh
 
       - name: Build
         run: ./build.sh

@@ -26,7 +26,7 @@
 #include "exec.h"
 #include "histfile.h"
 #include "../valery.h"
-#include "../builtin/builtins.h"
+#include "../builtins/builtins.h"
 
 
 int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t *env)
@@ -104,6 +104,8 @@ int str_to_argv(char *str, char **argv, int argv_m)
 
         if (!skip && *str == ' ') {
             *str = 0;
+            // TODO: find next non backspace instead of assuming there is always only one backspace
+            // example: '  -la' should be evaluated to 'la' and not ' ' and '-la'
             argv[argc++] = ++str;
             if (argc >= argv_m) {
                 argv_m += 32;

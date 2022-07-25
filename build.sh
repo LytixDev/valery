@@ -6,12 +6,24 @@ then
 fi
 
 name="valery"
-compile="gcc -o $name -std=c11 valery.c utils/prompt.c utils/load_config.c utils/histfile.c utils/exec.c utils/lexer.c builtin/which.c builtin/cd.c builtin/history.c builtin/builtins.c builtin/help.c"
+include="valery.c utils/prompt.c utils/load_config.c utils/histfile.c utils/exec.c utils/lexer.c \
+         builtins/which.c builtins/cd.c builtins/history.c builtins/builtins.c builtins/help.c"
+compile="gcc -o $name -std=c11 $include"
+
+name_test="valery_test"
+include_test="tests/memory_leak_test.c utils/load_config.c utils/histfile.c utils/exec.c utils/lexer.c \
+         builtins/which.c builtins/cd.c builtins/history.c builtins/builtins.c builtins/help.c"
+compile_test="gcc -o $name_test -std=c11 $include_test -g"
+
 
 if [ "$1" = "debug" ]
 then
     $compile -g
     echo "compiled executable $name with -g flag"
+elif [ "$1" = "test" ]
+then
+    $compile_test
+    echo "compiled test $name_test"
 else
     $compile
     echo "compiled executable $name"

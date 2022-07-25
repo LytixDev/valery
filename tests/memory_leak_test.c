@@ -1,6 +1,4 @@
 /*
- *  Experimental interactive UNIX-like shell
- *   
  *  Copyright (C) 2022 Nicolai Brand 
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -17,50 +15,15 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
-#include <unistd.h>
-#include <signal.h>
-#include <termios.h>
-#include <memory.h>
 
-#include "valery.h"
-#include "utils/load_config.h"
-#include "utils/prompt.h"
-#include "utils/histfile.h"
-#include "utils/exec.h"
-#include "utils/lexer.h"
-#include "builtins/builtins.h"
-
-
-static volatile int received_sigint = 0;
-static struct termios originalt, newt;
-
-
-void disable_term_flags()
-{
-    tcgetattr(STDIN_FILENO, &originalt);
-    newt = originalt;
-    /* change so buffer don't require new line or similar to return */
-    newt.c_lflag &= ~ICANON;          
-    newt.c_cc[VTIME] = 0;
-    newt.c_cc[VMIN] = 1;
-    /* turn of echo */
-    newt.c_lflag &= ~ECHO;
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-}
-
-void enable_term_flags()
-{
-    tcsetattr(STDIN_FILENO, TCSANOW, &originalt);
-}
-
-static inline void catch_exit_signal(int signal)
-{
-    received_sigint = 1;
-}
+#include "../utils/lexer.h"
+#include "../valery.h"
+#include "../utils/load_config.h"
+#include "../utils/histfile.h"
+#include "../utils/exec.h"
+#include "../utils/lexer.h"
 
 struct env_t *malloc_env()
 {
@@ -102,32 +65,20 @@ void free_env(struct env_t *env)
     free(env);
 }
 
-int main(int argc, char *argv[])
-{
-    if (argc > 1) {
-        printf("%s\n", argv[1]);
-        if (strcmp(argv[1], "--help") == 0) {
-            help();
-            return 0;
-        }
-    }
 
+int main()
+{
     struct env_t *env = malloc_env();
     struct hist_t *hist;
     struct tokenized_str_t *ts;
     char hist_file_path[MAX_ENV_LEN];
-    char input_buffer[COMMAND_LEN];
     int rc;
     int rc_env;
-
-    signal(SIGINT, catch_exit_signal);
-    disable_term_flags();
 
     rc = parse_config(env);
     if (rc == 1) {
         fprintf(stderr, "error parsing .valeryrc");
         free_env(env);
-        enable_term_flags();
         return 1;
     }
 
@@ -137,45 +88,23 @@ int main(int argc, char *argv[])
 
     /* create tokenized_str_t object. Will reused same object every loop. */
     ts = tokenized_str_t_malloc();
+    
 
-    /* main loop */
-    while (1) {
-        prompt(hist, env->PS1, input_buffer);
+    char input_buffer[COMMAND_LEN] = "ls -la && echo \"hello world || ignore\" && exit 0";
 
-        /* skip exec if ctrl+c is caught */
-        if (received_sigint) {
-            received_sigint = 0;
-            signal(SIGINT, catch_exit_signal);
-            goto end_loop;
-        }
-
-        save_command(hist, input_buffer);
-
-        if (strcmp(input_buffer, "") == 0)
-            goto end_loop;
-        else if (strcmp(input_buffer, "exit") == 0)
-            break;
-
-        /* loop enters here means ordinary command was typed in */
-        rc = tokenize(ts, input_buffer);
-        if (rc == 0) {
-            rc_env = valery_parse_tokens(ts, env, hist);
-            env->exit_code = rc_env;
-        }
-
-    /* clears all buffers */
-    end_loop:
-        tokenized_str_t_clear(ts);
-        memset(input_buffer, 0, COMMAND_LEN);
+    save_command(hist, input_buffer);
+    /* loop enters here means ordinary command was typed in */
+    rc = tokenize(ts, input_buffer);
+    if (rc == 0) {
+        rc_env = valery_parse_tokens(ts, env, hist);
+        env->exit_code = rc_env;
     }
 
+    tokenized_str_t_clear(ts);
     /* free and write to file before exiting */
     write_commands_to_hist_file(hist);
     free_env(env);
     free_history(hist);
     tokenized_str_t_free(ts);
-
-    printf("Exiting ...\n");
-    enable_term_flags();
     return 0;
 }

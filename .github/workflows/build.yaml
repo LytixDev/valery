@@ -7,7 +7,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-20.04, macos-12]
-        cc: [gcc, clang]
+        cc: [gcc]
     runs-on: ${{matrix.os}}
     steps:
       - name: Checkout
@@ -15,7 +15,16 @@ jobs:
 
       - name: Dependencies
         if: startswith(matrix.os, 'ubuntu-')
-        run: sudo apt-get update -qyy
+        run: |
+          sudo apt-get update -qyy
+          sudo apt-get install valgrind
+
+      - name: Test   
+        if: startswith(matrix.os, 'ubuntu-')
+        run: |
+          cp .valeryrc ~/
+          ./build.sh debug
+          ./tests/memory_leak_test.sh
 
       - name: Build
         run: ./build.sh

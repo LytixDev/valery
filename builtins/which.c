@@ -71,6 +71,7 @@ int which(char *program_name, char **paths, int total_paths, char **path_result)
                 }
             }
         }
+        closedir(d);
     }
 
     if (path_result == NULL)

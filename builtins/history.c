@@ -38,14 +38,14 @@ int history(struct hist_t *hist)
     if (histlines == 0)
         return 1;
 
-    reset_hist_pos(hist);
+    hist_t_reset_pos(hist);
     /* only read valid amount of histlines */
     len = histlines >= LINES ? LINES : histlines;
     for (i = len; i > 0; i--)
-        traverse_hist(hist, HIST_UP); 
+        hist_t_traverse(hist, HIST_UP); 
 
     for (i = len; i > 1; i--) {
-        rc = get_hist_line(hist, buf, HIST_DOWN);
+        rc = hist_t_get_line(hist, buf, HIST_DOWN);
         /* chop off new line character */
         if (rc == READ_FROM_HIST)
             buf[strlen(buf) - 1] = 0;

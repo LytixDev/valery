@@ -106,7 +106,7 @@ int prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN])
 
     print_prompt(ps1, buf);
     /* reset position in history to bottom of queue */
-    reset_hist_pos(hist);
+    hist_t_reset_pos(hist);
 
     while (EOF != (ch = getchar()) && ch != '\n') {
         /* return if buffer cannot store more chars */
@@ -134,7 +134,7 @@ int prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN])
                 /* execution enters here means either arrow up or down was pressed */
                 /* store hist line inside buf */
                 action = (arrow_type == ARROW_UP) ? HIST_UP : HIST_DOWN;
-                rc = get_hist_line(hist, buf, action);
+                rc = hist_t_get_line(hist, buf, action);
 
                 if (rc == DID_NOT_READ && action == HIST_DOWN) {
                     /* clear buffer when no hist line was read */

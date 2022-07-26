@@ -71,7 +71,7 @@ struct token_t *token_t_malloc()
     t->str_start = t->str;
     t->type = O_NONE;  /* set default type to none i.e, token is a program name */
     t->str_len = 0;
-    t->str_allocated = DEFAULT_TOKEN_SIZE;
+    t->str_capacity = DEFAULT_TOKEN_SIZE;
 
     return t;
 }
@@ -82,11 +82,11 @@ void token_t_free(struct token_t *t)
     free(t);
 }
 
-void token_t_resize(struct token_t *t, size_t new_size)
+void token_t_resize(struct token_t *t, size_t new_capacity)
 {
     //TODO: only works when INCREASING size
-    t->str = (char *) realloc(t->str, new_size * sizeof(char));
-    t->str_allocated = new_size;
+    t->str = (char *) realloc(t->str, new_capacity * sizeof(char));
+    t->str_capacity = new_capacity;
 }
 
 struct tokenized_str_t *tokenized_str_t_malloc() 
@@ -97,46 +97,46 @@ struct tokenized_str_t *tokenized_str_t_malloc()
     for (int i = 0; i < STARTING_TOKENS; i++)
         ts->tokens[i] = token_t_malloc();
 
-    ts->total_tokens = 0;
-    ts->tokens_allocated = STARTING_TOKENS;
+    ts->size = 0;
+    ts->capacity = STARTING_TOKENS;
 
     return ts;
 }
 
 void tokenized_str_t_free(struct tokenized_str_t *ts)
 {
-    for (size_t i = 0; i < ts->tokens_allocated; i++)
+    for (size_t i = 0; i < ts->capacity; i++)
         token_t_free(ts->tokens[i]);
 
     free(ts->tokens);
     free(ts);
 }
 
-void tokenized_str_t_resize(struct tokenized_str_t *ts, size_t new_size)
+void tokenized_str_t_resize(struct tokenized_str_t *ts, size_t new_capacity)
 {
     //TODO: only works when INCREASING size
-    ts->tokens = (struct token_t **) realloc(ts->tokens, new_size * sizeof(struct token_t *));
-    for (size_t i = ts->tokens_allocated; i < new_size; i++)
+    ts->tokens = (struct token_t **) realloc(ts->tokens, new_capacity * sizeof(struct token_t *));
+    for (size_t i = ts->capacity; i < new_capacity; i++)
         ts->tokens[i] = token_t_malloc();
 
-    ts->tokens_allocated = new_size;
+    ts->capacity = new_capacity;
 }
 
 /* clears the object and prepares it for a new loop */
 void tokenized_str_t_clear(struct tokenized_str_t *ts)
 {
-    for (size_t i = 0; i < ts->total_tokens + 1; i++) {
+    for (size_t i = 0; i < ts->size + 1; i++) {
         ts->tokens[i]->str_len = 0;
         ts->tokens[i]->type = O_NONE;
     }
 
-    ts->total_tokens = 0;
+    ts->size = 0;
 }
 
 void token_t_append_char(struct token_t *t, char c)
 {
-    if (t->str_len >= t->str_allocated)
-        token_t_resize(t, t->str_allocated + 32);
+    if (t->str_len >= t->str_capacity)
+        token_t_resize(t, t->str_capacity + 32);
 
     t->str[t->str_len++] = c;
 }
@@ -157,15 +157,15 @@ void token_t_pop_char(struct token_t *t)
 
 void tokenized_str_t_append_char(struct tokenized_str_t *ts, char c)
 {
-    token_t_append_char(ts->tokens[ts->total_tokens], c);
+    token_t_append_char(ts->tokens[ts->size], c);
 }
 
 struct token_t *tokenized_str_t_next(struct tokenized_str_t *ts)
 {
-    if (++(ts->total_tokens) >= ts->tokens_allocated)
-        tokenized_str_t_resize(ts, ts->tokens_allocated + 32);
+    if (++(ts->size) >= ts->capacity)
+        tokenized_str_t_resize(ts, ts->capacity + 32);
 
-    return ts->tokens[ts->total_tokens];
+    return ts->tokens[ts->size];
 }
 
 void token_t_print(struct token_t *t)
@@ -176,17 +176,17 @@ void token_t_print(struct token_t *t)
     else
         strcpy(type, operands_str[t->type]);
 
-    printf("TOKEN_T: str: '%s', type: '%s', str_len: '%ld', str_allocated: '%ld'",\
-           t->str, type, t->str_len, t->str_allocated);
+    printf("TOKEN_T: str: '%s', type: '%s', str_len: '%ld', str_capacity: '%ld'",\
+           t->str, type, t->str_len, t->str_capacity);
 }
 
 /* just for debugging */
 void tokenized_str_t_print(struct tokenized_str_t *ts)
 {
     int type;
-    printf("metadata: total tokens: %ld, total tokens allocated: %ld\n\n", ts->total_tokens + 1, ts->tokens_allocated);
+    printf("metadata: total tokens: %ld, total tokens allocated: %ld\n\n", ts->size + 1, ts->capacity);
 
-    for (size_t i = 0; i < ts->total_tokens + 1; i++) {
+    for (size_t i = 0; i < ts->size + 1; i++) {
         printf("num: '%ld', ", i);
         token_t_print(ts->tokens[i]);
         printf("\n");
@@ -240,7 +240,7 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
     /* amount of values in candidates set to true */
     int total_candidates;
     size_t candidate_len = 0;                  /* keeps track of length of tokens that are possible operands */
-    token_t *t = ts->tokens[ts->total_tokens]; /* the current token we are modifying */
+    token_t *t = ts->tokens[ts->size]; /* the current token we are modifying */
     bool skip = false;
 
     while ((c = *buffer++) != 0) {

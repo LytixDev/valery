@@ -119,17 +119,17 @@ int exclusive(char *arg)
     }
 
     snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env->HOME, HISTFILE_NAME);
-    hist = malloc_history(hist_file_path);
+    hist = hist_t_malloc(hist_file_path);
 
     ts = tokenized_str_t_malloc();
     rc = tokenize(ts, arg);
     if (rc == 0) {
         rc_env = valery_parse_tokens(ts, env, hist);
-        env->exit_code = rc_env;
+        //env->exit_code = rc_env;
     }
 
     free_env(env);
-    free_history(hist);
+    hist_t_free(hist);
     tokenized_str_t_free(ts);
 
     return rc_env;
@@ -158,7 +158,7 @@ int interactive()
 
     /* establish a connection to the hist file */
     snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env->HOME, HISTFILE_NAME);
-    hist = malloc_history(hist_file_path);
+    hist = hist_t_malloc(hist_file_path);
 
     /* create tokenized_str_t object. Will reused same object every loop. */
     ts = tokenized_str_t_malloc();
@@ -174,7 +174,7 @@ int interactive()
             goto end_loop;
         }
 
-        save_command(hist, input_buffer);
+        hist_t_save(hist, input_buffer);
 
         if (strcmp(input_buffer, "") == 0)
             goto end_loop;
@@ -185,7 +185,7 @@ int interactive()
         rc = tokenize(ts, input_buffer);
         if (rc == 0) {
             rc_env = valery_parse_tokens(ts, env, hist);
-            env->exit_code = rc_env;
+            //env->exit_code = rc_env;
         }
 
     /* clears all buffers */
@@ -195,9 +195,9 @@ int interactive()
     }
 
     /* free and write to file before exiting */
-    write_commands_to_hist_file(hist);
+    hist_t_write(hist);
     free_env(env);
-    free_history(hist);
+    hist_t_free(hist);
     tokenized_str_t_free(ts);
 
     printf("Exiting ...\n");

@@ -24,6 +24,31 @@
 #include "../valery.h"
 
 #define CHILD_PID 0
+#define READ_END 0
+#define WRITE_END 1
+
+/* types */
+typedef enum stream_flags {
+    STREAM1_VACANT      = 1 << 0,
+    STREAM1_CLOSE       = 1 << 1,
+    STREAM2_VACANT      = 1 << 2,
+    STREAM2_CLOSE       = 1 << 3,
+    NEXT_IS_PIPE        = 1 << 4,
+    CAME_FROM_PIPE      = 1 << 5,
+    NEXT_IS_REDIRECT    = 1 << 6,
+    CAME_FROM_REDIRECT  = 1 << 7
+} stream_flags;
+
+
+/*
+ * keeps track of stream flags that determine where input and output is directed.
+ */
+typedef struct exec_ctx {
+    int stream1[2];
+    int stream2[2];
+    int flags;
+} exec_ctx;
+
 
 /* functions */
 /*

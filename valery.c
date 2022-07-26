@@ -125,7 +125,7 @@ int exclusive(char *arg)
     rc = tokenize(ts, arg);
     if (rc == 0) {
         rc_env = valery_parse_tokens(ts, env, hist);
-        env->exit_code = rc_env;
+        //env->exit_code = rc_env;
     }
 
     free_env(env);
@@ -185,7 +185,7 @@ int interactive()
         rc = tokenize(ts, input_buffer);
         if (rc == 0) {
             rc_env = valery_parse_tokens(ts, env, hist);
-            env->exit_code = rc_env;
+            //env->exit_code = rc_env;
         }
 
     /* clears all buffers */

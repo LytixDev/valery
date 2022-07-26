@@ -29,8 +29,18 @@
 #include "../builtins/builtins.h"
 
 
+#define DEBUG
+
 int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t *env)
 {
+#ifdef DEBUG
+    printf("'%s' ", program_name);
+    for (int i = 0; i < argc; i++)
+        printf("'%s' ", argv[i]);
+
+    printf("\n");
+#endif
+
     int status;
     int rc;
     int return_code = 0;
@@ -41,12 +51,14 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     char *environ[] = {NULL, NULL, NULL};
 
     rc = which(program_name, env->paths, env->current_path, &found_path);
-    if (rc != COMMAND_IN_PATH)
+    if (rc != COMMAND_IN_PATH) {
+        fprintf(stderr, "valery: command not found '%s'\n", program_name);
+        env->exit_code = 1;
         return 1;
+    }
 
     /* command has been found in path and found_path should poit to the address containg the string */
     snprintf(command_with_path, 1024, "%s/%s", found_path, program_name);
-
 
     /*
      * full must contain program name and an argument.
@@ -65,6 +77,8 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     pid_t new_pid = fork();
     if (new_pid == CHILD_PID) {
         return_code = execve(command_with_path, full, environ);
+        env->exit_code = return_code;
+        //TODO: is this necessary?
         return_code == -1 ? exit(EXIT_FAILURE) : exit(EXIT_SUCCESS);
     }
 
@@ -94,7 +108,7 @@ int valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *
     return rc;
 }
 
-int str_to_argv(char *str, char **argv, int argv_m)
+int str_to_argv(char *str, char **argv, int *argv_cap)
 {
     int argc = 0;
     bool skip = false;
@@ -107,9 +121,9 @@ int str_to_argv(char *str, char **argv, int argv_m)
             // TODO: find next non backspace instead of assuming there is always only one backspace
             // example: '  -la' should be evaluated to 'la' and not ' ' and '-la'
             argv[argc++] = ++str;
-            if (argc >= argv_m) {
-                argv_m += 32;
-                argv = (char **) realloc(argv, argv_m * sizeof(char *));
+            if (argc >= *argv_cap) {
+                *argv_cap += 8;
+                argv = (char **) realloc(argv, *argv_cap * sizeof(char *));
             }
         } else {
             str++;
@@ -120,6 +134,7 @@ int str_to_argv(char *str, char **argv, int argv_m)
         argv[i] = trim_edge(argv[i], '"');
     }
 
+
     return argc;
 }
 
@@ -127,26 +142,45 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
 {
     int rc;
     char **argv = (char **) malloc(8 * sizeof(char *));
-    int argc = str_to_argv(ts->tokens[0]->str, argv, 8);
-
-    /*
+    int argv_cap = 8;
     int argc = 0;
-    char *str_cpy = ts->tokens[0]->str;
+    size_t i = 0;
+    int stream_in = STDIN_FILENO;
+    int stream_out = STDOUT_FILENO;
+    token_t *t;
 
-    // TODO: refactor? at least make memory safe
-    while (*str_cpy != 0) {
-        if (*str_cpy == ' ') {
-            *str_cpy = 0;
-            argv[argc++] = ++str_cpy;
-        } else {
-            str_cpy++;
+    /* flags. should this be a struct? */
+    bool pipe = false;
+    
+    do { 
+        t = ts->tokens[i];
+
+        /* previous token was pipe, therefore read input and input from pipe */
+        if (pipe) {
+
         }
-    }
-    */
 
-    rc = valery_eval_token(ts->tokens[0]->str_start, argv, argc, env, hist);
-    if (rc == 1)
-        printf("valery: command not found '%s'\n", ts->tokens[0]->str_start);
+        /* check if next token is pipe */
+        if (i + 1 <= ts->size)
+            pipe = ts->tokens[i + 1]->type == O_PIPE;
+
+
+
+        /* set_flag(type) */
+        if (t->type == O_NONE) {
+            argc = str_to_argv(t->str_start, argv, &argv_cap);
+            rc = valery_eval_token(t->str_start, argv, argc, env, hist);
+
+        } else if (t->type == O_AND) {
+            if (env->exit_code != 0)
+                break;
+
+        } else if (t->type == O_OR) {
+            if (env->exit_code == 0)
+                break;
+        }
+
+    } while (i++ < ts->size);
 
     free(argv);
 

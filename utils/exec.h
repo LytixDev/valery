@@ -47,6 +47,8 @@ typedef struct exec_ctx {
     int stream1[2];
     int stream2[2];
     int flags;
+    int *read_end;
+    int *write_end;
 } exec_ctx;
 
 

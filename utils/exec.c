@@ -29,9 +29,9 @@
 #include "../builtins/builtins.h"
 
 
-#define DEBUG
+//#define DEBUG
 
-int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t *env)
+int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t *env, struct exec_ctx *e_ctx)
 {
 #ifdef DEBUG
     printf("'%s' ", program_name);
@@ -76,17 +76,32 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
 
     pid_t new_pid = fork();
     if (new_pid == CHILD_PID) {
+        if (e_ctx->flags & NEXT_IS_PIPE) {
+            dup2(e_ctx->stream1[WRITE_END], STDOUT_FILENO);
+            close(e_ctx->stream1[READ_END]);
+            close(e_ctx->stream1[WRITE_END]);
+        }
+
+        if (e_ctx->flags & CAME_FROM_PIPE) {
+            dup2(e_ctx->stream1[READ_END], STDIN_FILENO);
+            close(e_ctx->stream1[READ_END]);
+            close(e_ctx->stream1[WRITE_END]);
+        }
+
         return_code = execve(command_with_path, full, environ);
         env->exit_code = return_code;
-        //TODO: is this necessary?
-        return_code == -1 ? exit(EXIT_FAILURE) : exit(EXIT_SUCCESS);
     }
 
+    if (e_ctx->flags & STREAM1_CLOSE) {
+        close(e_ctx->stream1[READ_END]);
+        close(e_ctx->stream1[WRITE_END]);
+        e_ctx->flags ^= STREAM1_CLOSE;
+    }
     waitpid(new_pid, &status, 0);
     return status != 0;
 }
 
-int valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *env, struct hist_t *hist)
+int valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *env, struct hist_t *hist, struct exec_ctx *e_ctx)
 {
     int rc;
     //TODO: there has to be a cleaner way?
@@ -103,70 +118,43 @@ int valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *
         rc = help();
     } else {
         /* attempt to execute program from path */
-        rc = valery_exec_program(program_name, argv, argc, env);
+        rc = valery_exec_program(program_name, argv, argc, env, e_ctx);
     }
     return rc;
-}
-
-int str_to_argv(char *str, char **argv, int *argv_cap)
-{
-    int argc = 0;
-    bool skip = false;
-    while (*str != 0) {
-        if (*str == '"')
-            skip = !skip;
-
-        if (!skip && *str == ' ') {
-            *str = 0;
-            // TODO: find next non backspace instead of assuming there is always only one backspace
-            // example: '  -la' should be evaluated to 'la' and not ' ' and '-la'
-            argv[argc++] = ++str;
-            if (argc >= *argv_cap) {
-                *argv_cap += 8;
-                argv = (char **) realloc(argv, *argv_cap * sizeof(char *));
-            }
-        } else {
-            str++;
-        }
-    }
-
-    for (int i = 0; i < argc; i++) {
-        argv[i] = trim_edge(argv[i], '"');
-    }
-
-
-    return argc;
 }
 
 int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hist_t *hist)
 {
     int rc;
-    char **argv = (char **) malloc(8 * sizeof(char *));
+    token_t *t;
+    operands_t next_type;
     int argv_cap = 8;
     int argc = 0;
-    size_t i = 0;
-    int stream_in = STDIN_FILENO;
-    int stream_out = STDOUT_FILENO;
-    token_t *t;
+    char **argv = (char **) malloc(8 * sizeof(char *));
+    exec_ctx e_ctx = { .flags = STREAM1_VACANT | STREAM2_VACANT };
 
-    /* flags. should this be a struct? */
-    bool pipe = false;
-    
-    do { 
+    for (size_t i = 0; i <= ts->size; i++) {
         t = ts->tokens[i];
 
-        /* previous token was pipe, therefore read input and input from pipe */
-        if (pipe) {
+        /* only look ahead in if it is not the last token */
+        if (i != ts->size)
+            next_type = ts->tokens[i + 1]->type;
+        else
+            next_type = O_NONE;
 
+        update_exec_flags(&e_ctx, t->type, next_type);
+
+        if (t->type == O_NONE) {
+            argc = str_to_argv(t->str_start, argv, &argv_cap);
+            valery_eval_token(t->str_start, argv, argc, env, hist, &e_ctx);
         }
-
-        /* check if next token is pipe */
-        if (i + 1 <= ts->size)
-            pipe = ts->tokens[i + 1]->type == O_PIPE;
+    }
 
 
+    free(argv);
 
-        /* set_flag(type) */
+    return 0;
+    /*
         if (t->type == O_NONE) {
             argc = str_to_argv(t->str_start, argv, &argv_cap);
             rc = valery_eval_token(t->str_start, argv, argc, env, hist);
@@ -179,12 +167,7 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
             if (env->exit_code == 0)
                 break;
         }
-
-    } while (i++ < ts->size);
-
-    free(argv);
-
-    return 0;
+    */
 
     /* TODO: parse buffer, handle operands and handle different pipes/streams */
     //int no_more_operands;
@@ -234,4 +217,66 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
     //free(cmd);
     //free(args);
     //return rc;
+}
+
+int str_to_argv(char *str, char **argv, int *argv_cap)
+{
+    int argc = 0;
+    bool skip = false;
+    while (*str != 0) {
+        if (*str == '"')
+            skip = !skip;
+
+        if (!skip && *str == ' ') {
+            *str = 0;
+            // TODO: find next non backspace instead of assuming there is always only one backspace
+            // example: '  -la' should be evaluated to 'la' and not ' ' and '-la'
+            argv[argc++] = ++str;
+            if (argc >= *argv_cap) {
+                *argv_cap += 8;
+                argv = (char **) realloc(argv, *argv_cap * sizeof(char *));
+            }
+        } else {
+            str++;
+        }
+    }
+
+    for (int i = 0; i < argc; i++) {
+        argv[i] = trim_edge(argv[i], '"');
+    }
+
+
+    return argc;
+}
+
+void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_type)
+{
+    /* check if next token wants to redirect output */
+    // TODO: currently only look ahead for pipe. add: O_OUTP '>',O_OUPP '>>', O_INP '<' and O_INPP '<<'
+    if (next_type == O_PIPE) {
+        e_ctx->flags |= NEXT_IS_PIPE;
+        /* dup first non vacant stream */
+        if (e_ctx->flags & STREAM1_VACANT) {
+            pipe(e_ctx->stream1);
+            e_ctx->flags ^= STREAM1_VACANT;
+        }
+        // TODO: add second file descriptors so pipes can be chained
+        /* else {
+            pipe(e_ctx.stream2);
+            e_ctx.flags ^= STREAM2_VACANT;
+        }
+        */
+    }
+    
+    if (e_ctx->flags & CAME_FROM_PIPE) {
+        if (!(e_ctx->flags & STREAM1_VACANT)) {
+            e_ctx->flags |= STREAM1_CLOSE;
+        }
+    }
+
+    // TODO: currently assumes inputted tokens are valid.
+    if (type == O_PIPE) {
+        e_ctx->flags ^= NEXT_IS_PIPE;
+        e_ctx->flags |= CAME_FROM_PIPE;
+    }
 }

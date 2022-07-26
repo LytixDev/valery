@@ -108,6 +108,9 @@ void tokenized_str_t_append_char(struct tokenized_str_t *ts, char c);
 struct token_t *tokenized_str_t_next(struct tokenized_str_t *ts);
 
 /* just for debugging */
+void token_t_print(struct token_t *t);
+
+/* just for debugging */
 void tokenized_str_t_print(struct tokenized_str_t *ts);
 
 /*

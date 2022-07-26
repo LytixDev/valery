@@ -56,13 +56,18 @@ typedef struct exec_ctx {
  * calls the builtin 'which' (builtin/which.c) to get the full program path.
  * returns 0 if succesfull, else 1.
  */
-int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t *env);
+int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t *env, struct exec_ctx *e_ctx);
 
+//TODO THIS IS STUPID AND I #hateit
 /* evalutes how the tokens should be executed */
-int valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *env, struct hist_t *hist);
+int valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *env, struct hist_t *hist, struct exec_ctx *e_ctx);
 
 /* parses the tokens and calls eval on them accordingly */
 int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hist_t *hist);
+
+int str_to_argv(char *str, char **argv, int *argv_cap);
+
+void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_type);
 
 /*
  * how the three aformentioned functions relate to each other:

@@ -29,18 +29,8 @@
 #include "../builtins/builtins.h"
 
 
-//#define DEBUG
-
 int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t *env, struct exec_ctx *e_ctx)
 {
-#ifdef DEBUG
-    printf("'%s' ", program_name);
-    for (int i = 0; i < argc; i++)
-        printf("'%s' ", argv[i]);
-
-    printf("\n");
-#endif
-
     int status;
     int rc;
     int return_code = 0;
@@ -76,27 +66,31 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
 
     pid_t new_pid = fork();
     if (new_pid == CHILD_PID) {
-        if (e_ctx->flags & NEXT_IS_PIPE) {
-            dup2(e_ctx->stream1[WRITE_END], STDOUT_FILENO);
-            close(e_ctx->stream1[READ_END]);
-            close(e_ctx->stream1[WRITE_END]);
+        /* dup read end */
+        if (e_ctx->read_stream != ST_NONE) {
+            dup2(e_ctx->streams[e_ctx->read_stream][READ_END], STDIN_FILENO);
+        }
+        /* dup write end */
+        if (e_ctx->write_stream != ST_NONE) {
+            dup2(e_ctx->streams[e_ctx->write_stream][WRITE_END], STDOUT_FILENO);
         }
 
-        if (e_ctx->flags & CAME_FROM_PIPE) {
-            dup2(e_ctx->stream1[READ_END], STDIN_FILENO);
-            close(e_ctx->stream1[READ_END]);
-            close(e_ctx->stream1[WRITE_END]);
+        /* close all open file descriptors */
+        if (!(e_ctx->flags & SF_ADAM_VACANT)) {
+            close(e_ctx->streams[ST_ADAM][READ_END]);
+            close(e_ctx->streams[ST_ADAM][WRITE_END]);
+        }
+        if (!(e_ctx->flags & SF_SETH_VACANT)) {
+            close(e_ctx->streams[ST_SETH][READ_END]);
+            close(e_ctx->streams[ST_SETH][WRITE_END]);
         }
 
         return_code = execve(command_with_path, full, environ);
         env->exit_code = return_code;
     }
 
-    if (e_ctx->flags & STREAM1_CLOSE) {
-        close(e_ctx->stream1[READ_END]);
-        close(e_ctx->stream1[WRITE_END]);
-        e_ctx->flags ^= STREAM1_CLOSE;
-    }
+    terminate_pipe(e_ctx);
+
     waitpid(new_pid, &status, 0);
     return status != 0;
 }
@@ -131,7 +125,8 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
     int argv_cap = 8;
     int argc = 0;
     char **argv = (char **) malloc(8 * sizeof(char *));
-    exec_ctx e_ctx = { .flags = STREAM1_VACANT | STREAM2_VACANT };
+    /* initialize exec_ctx to have vacant streams */
+    exec_ctx e_ctx = { .flags = SF_ADAM_VACANT | SF_SETH_VACANT, .read_stream = ST_NONE, .write_stream = ST_NONE };
 
     for (size_t i = 0; i <= ts->size; i++) {
         t = ts->tokens[i];
@@ -150,7 +145,6 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
         }
     }
 
-
     free(argv);
 
     return 0;
@@ -168,55 +162,73 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
                 break;
         }
     */
+}
 
-    /* TODO: parse buffer, handle operands and handle different pipes/streams */
-    //int no_more_operands;
-    //int pos = 0;
-    //int rc = 0;
+void new_pipe(struct exec_ctx *e_ctx)
+{
+    int rc;
+    stream_t st;
+    /* pipe first non vacant stream */
+    if (e_ctx->flags & SF_ADAM_VACANT) {
+        st = ST_ADAM;
+        e_ctx->flags ^= SF_ADAM_VACANT;
+    } else if (e_ctx->flags & SF_SETH_VACANT) {
+        st = ST_SETH;
+        e_ctx->flags ^= SF_SETH_VACANT;
+    } else {
+        fprintf(stderr, "valery internal error: both streams occupied\n");
+        exit(EXIT_FAILURE);
+    }
 
-    //// todo: realloc when necessar
-    //char *cmd = (char *) malloc(1024 * sizeof(char));
-    //char *args = (char *) malloc(1024 * sizeof(char));
+    rc = pipe(e_ctx->streams[st]);
+    if (rc == -1) {
+        // TODO: better error handling
+        fprintf(stderr, "valery error: could not create pipe\n");
+        exit(EXIT_FAILURE);
+    }
 
-    //while (1) {
-    //    no_more_operands = 1;
-    //    memset(cmd, 0, 1024);
-    //    memset(args, 0, 1024);
+    /* creating a new pipe will always override the current write end */
+    e_ctx->write_stream = st;
+}
 
-    //    if (tokens->token_type[pos] != O_NONE) {
-    //        fprintf(stderr, "valery: invalid starting token '%s'\n", tokens->token_arr[pos]);
-    //        rc = 2;
-    //        break;
-    //    }
+void terminate_pipe(struct exec_ctx *e_ctx)
+{
+    stream_t st = ST_NONE;
+    if (e_ctx->flags & SF_ADAM_CLOSE) {
+        e_ctx->flags ^= SF_ADAM_CLOSE;
+        st = ST_ADAM;
+    } else if (e_ctx->flags & SF_SETH_CLOSE) {
+        e_ctx->flags ^= SF_SETH_CLOSE;
+        st = ST_SETH;
+    }
 
-    //    /* set cmd to be first token */
-    //    snprintf(cmd, 1024, "%s", tokens->token_arr[pos++]);
+    //TODO: can call to close() fail?
+    if (st != ST_NONE) {
+        close(e_ctx->streams[st][READ_END]);
+        close(e_ctx->streams[st][WRITE_END]);
+        st == ST_ADAM ? (e_ctx->flags |= SF_ADAM_VACANT) : (e_ctx->flags |= SF_SETH_VACANT);
+    }
+}
 
-    //    /* check if there are no more operands */
-    //    for (int i = pos; i < tokens->i; i++) {
-    //        if (tokens->token_type[i] != O_NONE) {
-    //            no_more_operands = 0;
-    //            break;
-    //        }
-    //    }
-    //    
-    //    /* copy subsequent tokens until next operand into args */
-    //    while (tokens->token_type[pos] == O_NONE && pos < tokens->i) {
-    //        // TODO: ensure memory safety and seperation of args by whitespace
-    //        strcat(args, tokens->token_arr[pos++]);
-    //    }
+void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_type)
+{
+    // TODO: currently assumes inputted tokens are valid.
+    if (type == O_PIPE) {
+        /* write stream was set in previous call */
+        e_ctx->read_stream = e_ctx->write_stream;
+        e_ctx->write_stream = ST_NONE;
 
-    //    rc = valery_eval_tokens(cmd, args, env, hist);
+        if (e_ctx->read_stream == ST_ADAM)
+            e_ctx->flags |= SF_ADAM_CLOSE;
+        else
+            e_ctx->flags |= SF_SETH_CLOSE;
+    }
 
-    //    /* move past operand */
-    //    pos++;
-    //    if (pos >= tokens->i)
-    //        break;
-    //}
-
-    //free(cmd);
-    //free(args);
-    //return rc;
+    /* check if next token wants to redirect output */
+    // TODO: currently only look ahead for pipe. add: O_OUTP '>',O_OUPP '>>', O_INP '<' and O_INPP '<<'
+    if (next_type == O_PIPE) {
+        new_pipe(e_ctx);
+    }
 }
 
 int str_to_argv(char *str, char **argv, int *argv_cap)
@@ -245,38 +257,6 @@ int str_to_argv(char *str, char **argv, int *argv_cap)
         argv[i] = trim_edge(argv[i], '"');
     }
 
-
     return argc;
 }
 
-void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_type)
-{
-    /* check if next token wants to redirect output */
-    // TODO: currently only look ahead for pipe. add: O_OUTP '>',O_OUPP '>>', O_INP '<' and O_INPP '<<'
-    if (next_type == O_PIPE) {
-        e_ctx->flags |= NEXT_IS_PIPE;
-        /* dup first non vacant stream */
-        if (e_ctx->flags & STREAM1_VACANT) {
-            pipe(e_ctx->stream1);
-            e_ctx->flags ^= STREAM1_VACANT;
-        }
-        // TODO: add second file descriptors so pipes can be chained
-        /* else {
-            pipe(e_ctx.stream2);
-            e_ctx.flags ^= STREAM2_VACANT;
-        }
-        */
-    }
-    
-    if (e_ctx->flags & CAME_FROM_PIPE) {
-        if (!(e_ctx->flags & STREAM1_VACANT)) {
-            e_ctx->flags |= STREAM1_CLOSE;
-        }
-    }
-
-    // TODO: currently assumes inputted tokens are valid.
-    if (type == O_PIPE) {
-        e_ctx->flags ^= NEXT_IS_PIPE;
-        e_ctx->flags |= CAME_FROM_PIPE;
-    }
-}

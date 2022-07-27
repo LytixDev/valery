@@ -46,7 +46,7 @@
  * 9. program D reads from adam and writes to stdout.
  */
 typedef enum stream_t {
-    S_NOT_IN_USE = -1,
+    S_NONE = -1,
     S_ADAM = 0,
     S_SETH = 1
 } stream_t;
@@ -56,11 +56,11 @@ typedef enum stream_flags {
     ADAM_VACANT         = 1 << 0,
     ADAM_CLOSE          = 1 << 1,
     SETH_VACANT         = 1 << 2,
-    SETH_CLOSE          = 1 << 3,
-    NEXT_IS_PIPE        = 1 << 4,
-    CAME_FROM_PIPE      = 1 << 5,
-    NEXT_IS_REDIRECT    = 1 << 6,
-    CAME_FROM_REDIRECT  = 1 << 7
+    SETH_CLOSE          = 1 << 3
+    //NEXT_IS_PIPE        = 1 << 4,
+    //CAME_FROM_PIPE      = 1 << 5,
+    //NEXT_IS_REDIRECT    = 1 << 6,
+    //CAME_FROM_REDIRECT  = 1 << 7
 } stream_flags;
 
 
@@ -98,7 +98,7 @@ int str_to_argv(char *str, char **argv, int *argv_cap);
 
 void new_pipe(struct exec_ctx *e_ctx);
 
-void terminate_pipe(struct exec_ctx *e_ctx, stream_t st);
+void terminate_pipe(struct exec_ctx *e_ctx);
 
 void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_type);
 

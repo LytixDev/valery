@@ -29,18 +29,8 @@
 #include "../builtins/builtins.h"
 
 
-//#define DEBUG
-
 int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t *env, struct exec_ctx *e_ctx)
 {
-#ifdef DEBUG
-    printf("'%s' ", program_name);
-    for (int i = 0; i < argc; i++)
-        printf("'%s' ", argv[i]);
-
-    printf("\n");
-#endif
-
     int status;
     int rc;
     int return_code = 0;
@@ -77,11 +67,11 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     pid_t new_pid = fork();
     if (new_pid == CHILD_PID) {
         /* dup read end */
-        if (e_ctx->read_stream != S_NOT_IN_USE) {
+        if (e_ctx->read_stream != S_NONE) {
             dup2(e_ctx->streams[e_ctx->read_stream][READ_END], STDIN_FILENO);
         }
         /* dup write end */
-        if (e_ctx->write_stream != S_NOT_IN_USE) {
+        if (e_ctx->write_stream != S_NONE) {
             dup2(e_ctx->streams[e_ctx->write_stream][WRITE_END], STDOUT_FILENO);
         }
 
@@ -99,22 +89,8 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
         env->exit_code = return_code;
     }
 
-    /* terminate file descriptors */
-    if (e_ctx->flags & ADAM_CLOSE) {
-        e_ctx->flags ^= ADAM_CLOSE;
-        terminate_pipe(e_ctx, S_ADAM);
-    }
+    terminate_pipe(e_ctx);
 
-    if (e_ctx->flags & SETH_CLOSE) {
-        e_ctx->flags ^= SETH_CLOSE;
-        terminate_pipe(e_ctx, S_SETH);
-    }
-    //if (e_ctx->flags & STREAM1_CLOSE) {
-    //    close(e_ctx->stream1[READ_END]);
-    //    close(e_ctx->stream1[WRITE_END]);
-    //    e_ctx->flags ^= STREAM1_CLOSE;
-    //    /* */
-    //}
     waitpid(new_pid, &status, 0);
     return status != 0;
 }
@@ -150,7 +126,7 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
     int argc = 0;
     char **argv = (char **) malloc(8 * sizeof(char *));
     /* initialize exec_ctx to have vacant streams */
-    exec_ctx e_ctx = { .flags = ADAM_VACANT | SETH_VACANT, .read_stream = S_NOT_IN_USE, .write_stream = S_NOT_IN_USE };
+    exec_ctx e_ctx = { .flags = ADAM_VACANT | SETH_VACANT, .read_stream = S_NONE, .write_stream = S_NONE };
 
     for (size_t i = 0; i <= ts->size; i++) {
         t = ts->tokens[i];
@@ -191,6 +167,7 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
 
 void new_pipe(struct exec_ctx *e_ctx)
 {
+    int rc;
     stream_t st;
     /* pipe first non vacant stream */
     if (e_ctx->flags & ADAM_VACANT) {
@@ -200,26 +177,37 @@ void new_pipe(struct exec_ctx *e_ctx)
         st = S_SETH;
         e_ctx->flags ^= SETH_VACANT;
     } else {
-        fprintf(stderr, "BOTH STREAMS OCCUPIED, ERROR\n");
+        fprintf(stderr, "valery internal error: both streams occupied\n");
         exit(EXIT_FAILURE);
     }
 
-    pipe(e_ctx->streams[st]);
+    rc = pipe(e_ctx->streams[st]);
+    if (rc == -1) {
+        // TODO: better error handling
+        fprintf(stderr, "valery error: could not create pipe\n");
+        exit(EXIT_FAILURE);
+    }
+
     /* creating a new pipe will always override the current write end */
     e_ctx->write_stream = st;
 }
 
-void terminate_pipe(struct exec_ctx *e_ctx, stream_t st)
+void terminate_pipe(struct exec_ctx *e_ctx)
 {
+    stream_t st = S_NONE;
+    if (e_ctx->flags & ADAM_CLOSE) {
+        e_ctx->flags ^= ADAM_CLOSE;
+        st = S_ADAM;
+    } else if (e_ctx->flags & SETH_CLOSE) {
+        e_ctx->flags ^= SETH_CLOSE;
+        st = S_SETH;
+    }
+
     //TODO: can call to close() fail?
-    close(e_ctx->streams[st][READ_END]);
-    close(e_ctx->streams[st][WRITE_END]);
-    if (st == S_ADAM) {
-        //e_ctx->flags ^= ADAM_CLOSE;
-        e_ctx->flags |= ADAM_VACANT;
-    } else {
-        //e_ctx->flags ^= SETH_CLOSE;
-        e_ctx->flags |= SETH_VACANT;
+    if (st != S_NONE) {
+        close(e_ctx->streams[st][READ_END]);
+        close(e_ctx->streams[st][WRITE_END]);
+        st == S_ADAM ? (e_ctx->flags |= ADAM_VACANT) : (e_ctx->flags |= SETH_VACANT);
     }
 }
 
@@ -227,11 +215,9 @@ void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_
 {
     // TODO: currently assumes inputted tokens are valid.
     if (type == O_PIPE) {
-        e_ctx->flags ^= NEXT_IS_PIPE;
-        e_ctx->flags |= CAME_FROM_PIPE;
         /* write stream was set in previous call */
         e_ctx->read_stream = e_ctx->write_stream;
-        e_ctx->write_stream = S_NOT_IN_USE;
+        e_ctx->write_stream = S_NONE;
 
         if (e_ctx->read_stream == S_ADAM)
             e_ctx->flags |= ADAM_CLOSE;
@@ -242,14 +228,7 @@ void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_
     /* check if next token wants to redirect output */
     // TODO: currently only look ahead for pipe. add: O_OUTP '>',O_OUPP '>>', O_INP '<' and O_INPP '<<'
     if (next_type == O_PIPE) {
-        e_ctx->flags |= NEXT_IS_PIPE;
         new_pipe(e_ctx);
-    }
-    
-    if (e_ctx->flags & CAME_FROM_PIPE) {
-        //if (!(e_ctx->flags & STREAM1_VACANT)) {
-        //    e_ctx->flags |= STREAM1_CLOSE;
-        //}
     }
 }
 
@@ -278,7 +257,6 @@ int str_to_argv(char *str, char **argv, int *argv_cap)
     for (int i = 0; i < argc; i++) {
         argv[i] = trim_edge(argv[i], '"');
     }
-
 
     return argc;
 }

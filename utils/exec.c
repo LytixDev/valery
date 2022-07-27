@@ -67,22 +67,22 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     pid_t new_pid = fork();
     if (new_pid == CHILD_PID) {
         /* dup read end */
-        if (e_ctx->read_stream != S_NONE) {
+        if (e_ctx->read_stream != ST_NONE) {
             dup2(e_ctx->streams[e_ctx->read_stream][READ_END], STDIN_FILENO);
         }
         /* dup write end */
-        if (e_ctx->write_stream != S_NONE) {
+        if (e_ctx->write_stream != ST_NONE) {
             dup2(e_ctx->streams[e_ctx->write_stream][WRITE_END], STDOUT_FILENO);
         }
 
         /* close all open file descriptors */
-        if (!(e_ctx->flags & ADAM_VACANT)) {
-            close(e_ctx->streams[S_ADAM][READ_END]);
-            close(e_ctx->streams[S_ADAM][WRITE_END]);
+        if (!(e_ctx->flags & SF_ADAM_VACANT)) {
+            close(e_ctx->streams[ST_ADAM][READ_END]);
+            close(e_ctx->streams[ST_ADAM][WRITE_END]);
         }
-        if (!(e_ctx->flags & SETH_VACANT)) {
-            close(e_ctx->streams[S_SETH][READ_END]);
-            close(e_ctx->streams[S_SETH][WRITE_END]);
+        if (!(e_ctx->flags & SF_SETH_VACANT)) {
+            close(e_ctx->streams[ST_SETH][READ_END]);
+            close(e_ctx->streams[ST_SETH][WRITE_END]);
         }
 
         return_code = execve(command_with_path, full, environ);
@@ -126,7 +126,7 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
     int argc = 0;
     char **argv = (char **) malloc(8 * sizeof(char *));
     /* initialize exec_ctx to have vacant streams */
-    exec_ctx e_ctx = { .flags = ADAM_VACANT | SETH_VACANT, .read_stream = S_NONE, .write_stream = S_NONE };
+    exec_ctx e_ctx = { .flags = SF_ADAM_VACANT | SF_SETH_VACANT, .read_stream = ST_NONE, .write_stream = ST_NONE };
 
     for (size_t i = 0; i <= ts->size; i++) {
         t = ts->tokens[i];
@@ -144,7 +144,6 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
             valery_eval_token(t->str_start, argv, argc, env, hist, &e_ctx);
         }
     }
-
 
     free(argv);
 
@@ -170,12 +169,12 @@ void new_pipe(struct exec_ctx *e_ctx)
     int rc;
     stream_t st;
     /* pipe first non vacant stream */
-    if (e_ctx->flags & ADAM_VACANT) {
-        st = S_ADAM;
-        e_ctx->flags ^= ADAM_VACANT;
-    } else if (e_ctx->flags & SETH_VACANT) {
-        st = S_SETH;
-        e_ctx->flags ^= SETH_VACANT;
+    if (e_ctx->flags & SF_ADAM_VACANT) {
+        st = ST_ADAM;
+        e_ctx->flags ^= SF_ADAM_VACANT;
+    } else if (e_ctx->flags & SF_SETH_VACANT) {
+        st = ST_SETH;
+        e_ctx->flags ^= SF_SETH_VACANT;
     } else {
         fprintf(stderr, "valery internal error: both streams occupied\n");
         exit(EXIT_FAILURE);
@@ -194,20 +193,20 @@ void new_pipe(struct exec_ctx *e_ctx)
 
 void terminate_pipe(struct exec_ctx *e_ctx)
 {
-    stream_t st = S_NONE;
-    if (e_ctx->flags & ADAM_CLOSE) {
-        e_ctx->flags ^= ADAM_CLOSE;
-        st = S_ADAM;
-    } else if (e_ctx->flags & SETH_CLOSE) {
-        e_ctx->flags ^= SETH_CLOSE;
-        st = S_SETH;
+    stream_t st = ST_NONE;
+    if (e_ctx->flags & SF_ADAM_CLOSE) {
+        e_ctx->flags ^= SF_ADAM_CLOSE;
+        st = ST_ADAM;
+    } else if (e_ctx->flags & SF_SETH_CLOSE) {
+        e_ctx->flags ^= SF_SETH_CLOSE;
+        st = ST_SETH;
     }
 
     //TODO: can call to close() fail?
-    if (st != S_NONE) {
+    if (st != ST_NONE) {
         close(e_ctx->streams[st][READ_END]);
         close(e_ctx->streams[st][WRITE_END]);
-        st == S_ADAM ? (e_ctx->flags |= ADAM_VACANT) : (e_ctx->flags |= SETH_VACANT);
+        st == ST_ADAM ? (e_ctx->flags |= SF_ADAM_VACANT) : (e_ctx->flags |= SF_SETH_VACANT);
     }
 }
 
@@ -217,12 +216,12 @@ void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_
     if (type == O_PIPE) {
         /* write stream was set in previous call */
         e_ctx->read_stream = e_ctx->write_stream;
-        e_ctx->write_stream = S_NONE;
+        e_ctx->write_stream = ST_NONE;
 
-        if (e_ctx->read_stream == S_ADAM)
-            e_ctx->flags |= ADAM_CLOSE;
+        if (e_ctx->read_stream == ST_ADAM)
+            e_ctx->flags |= SF_ADAM_CLOSE;
         else
-            e_ctx->flags |= SETH_CLOSE;
+            e_ctx->flags |= SF_SETH_CLOSE;
     }
 
     /* check if next token wants to redirect output */

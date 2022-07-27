@@ -46,17 +46,17 @@
  * 9. program D reads from adam and writes to stdout.
  */
 typedef enum stream_t {
-    S_NONE = -1,
-    S_ADAM = 0,
-    S_SETH = 1
+    ST_NONE = -1,
+    ST_ADAM = 0,
+    ST_SETH = 1
 } stream_t;
 
 
 typedef enum stream_flags {
-    ADAM_VACANT         = 1 << 0,
-    ADAM_CLOSE          = 1 << 1,
-    SETH_VACANT         = 1 << 2,
-    SETH_CLOSE          = 1 << 3
+    SF_ADAM_VACANT         = 1 << 0,
+    SF_ADAM_CLOSE          = 1 << 1,
+    SF_SETH_VACANT         = 1 << 2,
+    SF_SETH_CLOSE          = 1 << 3
     //NEXT_IS_PIPE        = 1 << 4,
     //CAME_FROM_PIPE      = 1 << 5,
     //NEXT_IS_REDIRECT    = 1 << 6,
@@ -69,8 +69,6 @@ typedef enum stream_flags {
  * keeps track of flags that determine what streams are active and will be active, and will close.
  */
 typedef struct exec_ctx {
-    //int stream1[2];
-    //int stream2[2];
     int streams[2][2];
     int flags;
     stream_t read_stream;

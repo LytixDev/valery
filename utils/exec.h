@@ -21,7 +21,7 @@
 
 #include "lexer.h"
 #include "histfile.h"
-#include "../valery.h"
+#include "env.h"
 
 #define CHILD_PID 0
 #define READ_END 0

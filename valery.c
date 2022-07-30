@@ -28,6 +28,7 @@
 
 #include "valery.h"
 #include "utils/load_config.h"
+#include "utils/env.h"
 #include "utils/prompt.h"
 #include "utils/histfile.h"
 #include "utils/exec.h"
@@ -62,49 +63,9 @@ static inline void catch_exit_signal(int signal)
     received_sigint = 1;
 }
 
-struct env_t *malloc_env()
-{
-    struct env_t *env = (env_t *) malloc(sizeof(env_t));
-    env->paths = (char **) malloc(STARTING_PATHS * sizeof(char *));
-    for (int i = 0; i < STARTING_PATHS; i++)
-        env->paths[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
-
-    env->total_paths = STARTING_PATHS;
-    env->current_path = 0;
-    env->PATH = (char *) malloc(MAX_ENV_LEN * sizeof(char));
-    env->exit_code = 0;
-    env->PS1 = (char *) malloc(MAX_ENV_LEN * sizeof(char));
-    env->HOME = (char *) malloc(MAX_ENV_LEN * sizeof(char));
-    return env;
-}
-
-void resize_path_len(struct env_t *env, int new_len) {
-    env->paths = (char **) realloc(env->paths, new_len * sizeof(char *));
-    for (int i = env->total_paths; i < new_len; i++)
-        env->paths[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
-
-    env->total_paths = new_len;
-    return;
-}
-
-void free_env(struct env_t *env)
-{
-    if (env == NULL)
-        return;
-    
-    for (int i = 0; i < env->total_paths; i++)
-        free(env->paths[i]);
-
-    free(env->paths);
-    free(env->PATH);
-    free(env->PS1);
-    free(env->HOME);
-    free(env);
-}
-
 int exclusive(char *arg)
 {
-    struct env_t *env = malloc_env();
+    struct env_t *env = env_t_malloc();
     struct hist_t *hist;
     struct tokenized_str_t *ts;
     char hist_file_path[MAX_ENV_LEN];
@@ -114,7 +75,7 @@ int exclusive(char *arg)
     rc = parse_config(env);
     if (rc == 1) {
         fprintf(stderr, "error parsing .valeryrc");
-        free_env(env);
+        env_t_free(env);
         return 1;
     }
 
@@ -128,7 +89,7 @@ int exclusive(char *arg)
         //env->exit_code = rc_env;
     }
 
-    free_env(env);
+    env_t_free(env);
     hist_t_free(hist);
     tokenized_str_t_free(ts);
 
@@ -137,7 +98,7 @@ int exclusive(char *arg)
 
 int interactive()
 {
-    struct env_t *env = malloc_env();
+    struct env_t *env = env_t_malloc();
     struct hist_t *hist;
     struct tokenized_str_t *ts;
     char hist_file_path[MAX_ENV_LEN];
@@ -151,7 +112,7 @@ int interactive()
     rc = parse_config(env);
     if (rc == 1) {
         fprintf(stderr, "error parsing .valeryrc");
-        free_env(env);
+        env_t_free(env);
         enable_term_flags();
         return 1;
     }
@@ -196,7 +157,7 @@ int interactive()
 
     /* free and write to file before exiting */
     hist_t_write(hist);
-    free_env(env);
+    env_t_free(env);
     hist_t_free(hist);
     tokenized_str_t_free(ts);
 

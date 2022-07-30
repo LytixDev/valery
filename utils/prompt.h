@@ -18,6 +18,7 @@
  */
 
 #include "histfile.h"
+#include "env.h"
 #include "../valery.h"
 
 #ifndef PROMPT

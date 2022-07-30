@@ -26,7 +26,8 @@
 #include <stdlib.h>
 
 #include "load_config.h"
-#include "../valery.h"
+#include "env.h"
+
 
 int set_home_dir(struct env_t *env)
 {
@@ -67,10 +68,10 @@ void unwrap_paths(struct env_t *env)
     char *path = strtok(env->PATH, delim);
     
     while (path != NULL) {
-        if (env->current_path == env->total_paths - 1)
-            resize_path_len(env, env->total_paths + 5);
+        if (env->path_size == env->path_capacity - 1)
+            env_t_path_increase(env, env->path_capacity + 5);
        
-        strcpy(env->paths[env->current_path++], path);
+        strcpy(env->paths[env->path_size++], path);
         path = strtok(NULL, delim);
     }
 }

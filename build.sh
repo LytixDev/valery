@@ -6,7 +6,7 @@ then
 fi
 
 name="valery"
-include="valery.c utils/prompt.c utils/load_config.c utils/histfile.c utils/exec.c utils/lexer.c \
+include="valery.c utils/prompt.c utils/load_config.c utils/histfile.c utils/exec.c utils/lexer.c utils/env.c \
          builtins/which.c builtins/cd.c builtins/history.c builtins/builtins.c builtins/help.c"
 compile="gcc -o $name -std=c11 $include"
 

@@ -15,21 +15,35 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
+#ifndef ENV
+#define ENV
 
-#include "env.h"
 
-#ifndef LOAD_CONFIG
-#define LOAD_CONFIG
+/* variables */
+#define MAX_ENV_LEN 1024
+#define CONFIG_NAME ".valeryrc"
+#define HISTFILE_NAME ".valery_hist"
+#define STARTING_PATHS 5
+
+
+/* types */
+typedef struct env_t {
+    char *PATH;
+    char **paths;
+    int path_size;
+    int path_capacity;
+    int exit_code;
+    /* environment variables */
+    char *PS1;
+    char *HOME;
+} env_t;
+
 
 /* functions */
+struct env_t *env_t_malloc();
 
-int set_home_dir(struct env_t *env);
+void env_t_free(struct env_t *env);
 
-int get_config_path(struct env_t *env, char config_path[MAX_ENV_LEN]);
-
-void unwrap_paths(struct env_t *env);
-
-int parse_config(struct env_t *env);
+void env_t_path_increase(struct env_t *env, int new_len);
 
 #endif

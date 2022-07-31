@@ -15,13 +15,12 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-
 #ifndef EXEC
 #define EXEC
 
-#include "lexer.h"
-#include "histfile.h"
-#include "env.h"
+#include "valery/lexer.h"
+#include "valery/histfile.h"
+#include "valery/env.h"
 
 #define CHILD_PID 0
 #define READ_END 0

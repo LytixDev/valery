@@ -27,12 +27,12 @@
 #include <memory.h>
 
 #include "valery.h"
-#include "utils/load_config.h"
-#include "utils/env.h"
-#include "utils/prompt.h"
-#include "utils/histfile.h"
-#include "utils/exec.h"
-#include "utils/lexer.h"
+#include "valery/load_config.h"
+#include "valery/env.h"
+#include "valery/prompt.h"
+#include "valery/histfile.h"
+#include "valery/exec.h"
+#include "valery/lexer.h"
 #include "builtins/builtins.h"
 
 

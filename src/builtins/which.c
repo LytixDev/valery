@@ -24,7 +24,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "builtins.h"
+#include "builtins/builtins.h"
 
 
 int which(char *program_name, char **paths, int path_capacity, char **path_result)

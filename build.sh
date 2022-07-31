@@ -6,17 +6,17 @@ then
 fi
 
 name="valery"
-include="valery.c utils/prompt.c utils/load_config.c utils/histfile.c utils/exec.c utils/lexer.c utils/env.c \
-         builtins/which.c builtins/cd.c builtins/history.c builtins/builtins.c builtins/help.c"
-compile="gcc -o $name -std=c11 $include"
+include="src/valery.c src/builtins/* src/valery/*"
+compile="gcc -o $name -std=c11 -I include/ $include"
 
 if [ "$1" = "debug" ]
 then
     $compile -g
     echo "compiled executable $name with -g flag"
-elif [ "$1" = "bear" ]
+elif [ "$1" = "dev" ]
 then
     bear -- $compile
+    ctags -R
     echo "generated compilation database for clangd"
 else
     $compile

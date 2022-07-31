@@ -15,10 +15,10 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "../utils/histfile.h"
-
 #ifndef BUILTINS
 #define BUILTINS
+
+#include "valery/histfile.h"
 
 #define COMMAND_IN_PATH 0
 #define COMMAND_NOT_FOUND 1

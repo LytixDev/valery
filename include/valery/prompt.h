@@ -17,12 +17,13 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "histfile.h"
-#include "env.h"
-#include "../valery.h"
-
 #ifndef PROMPT
 #define PROMPT
+
+#include "valery/histfile.h"
+#include "valery/env.h"
+#include "valery.h"
+
 
 
 /* macros for moving the cursor horizontally */

@@ -22,12 +22,12 @@
 #include <string.h>
 #include "sys/wait.h"
 
-#include "lexer.h"
-#include "exec.h"
-#include "histfile.h"
-#include "env.h"
-#include "../valery.h"
-#include "../builtins/builtins.h"
+#include "valery/lexer.h"
+#include "valery/exec.h"
+#include "valery/histfile.h"
+#include "valery/env.h"
+#include "valery.h"
+#include "builtins/builtins.h"
 
 
 int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t *env, struct exec_ctx *e_ctx)

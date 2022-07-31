@@ -25,8 +25,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "load_config.h"
-#include "env.h"
+#include "valery/load_config.h"
+#include "valery/env.h"
 
 
 int set_home_dir(struct env_t *env)

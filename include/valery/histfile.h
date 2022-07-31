@@ -15,12 +15,12 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
-
-#include "../valery.h"
-
 #ifndef HISTFILE
 #define HISTFILE
+
+#include <stdio.h>
+
+#include "valery.h"
 
 #define MAX_COMMANDS_BEFORE_WRITE 50
 

@@ -22,11 +22,12 @@
 #include <string.h>
 #include "sys/wait.h"
 
-#include "lexer.h"
-#include "exec.h"
-#include "histfile.h"
-#include "../valery.h"
-#include "../builtins/builtins.h"
+#include "valery/lexer.h"
+#include "valery/exec.h"
+#include "valery/histfile.h"
+#include "valery/env.h"
+#include "valery.h"
+#include "builtins/builtins.h"
 
 
 int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t *env, struct exec_ctx *e_ctx)
@@ -38,9 +39,11 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     // TODO: make memory robust
     char command_with_path[1024];
     // TODO: add environment variables
-    char *environ[] = {NULL, NULL, NULL};
+    char *environ[] = {
+        NULL
+    };
 
-    rc = which(program_name, env->paths, env->current_path, &found_path);
+    rc = which(program_name, env->paths, env->path_size, &found_path);
     if (rc != COMMAND_IN_PATH) {
         fprintf(stderr, "valery: command not found '%s'\n", program_name);
         env->exit_code = 1;
@@ -102,7 +105,7 @@ int valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *
     /* check if program is shell builtin */
     if (strcmp(program_name, "which") == 0) {
         // TODO: use all args
-        rc = which(argv[0], env->paths, env->current_path, NULL);
+        rc = which(argv[0], env->paths, env->path_size, NULL);
     } else if (strcmp(program_name, "cd") == 0) {
         // TODO: use all args
         rc = cd(argv[0]);

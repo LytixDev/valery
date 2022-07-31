@@ -23,7 +23,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "lexer.h"
+#include "valery/lexer.h"
 
 /*
  * enum representation is found in lexer.h.

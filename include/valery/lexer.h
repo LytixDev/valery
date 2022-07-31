@@ -14,12 +14,12 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <stddef.h>
-#include <stdbool.h>
-
 
 #ifndef LEXER
 #define LEXER
+
+#include <stddef.h>
+#include <stdbool.h>
 
 #define DEFAULT_TOKEN_SIZE 128
 #define STARTING_TOKENS 8

@@ -15,41 +15,43 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
-
-#ifndef VALERY
-#define VALERY
+#ifndef ENV
+#define ENV
 
 
 /* variables */
-#define COMMAND_LEN 1024
 #define MAX_ENV_LEN 1024
 #define CONFIG_NAME ".valeryrc"
 #define HISTFILE_NAME ".valery_hist"
 #define STARTING_PATHS 5
 
+
 /* types */
+typedef struct env_var_t {
+    char *name;
+    char *val;
+} env_var_t;
+
+
 typedef struct env_t {
     char *PATH;
     char **paths;
-    int current_path;
-    int total_paths;
+    int path_size;
+    int path_capacity;
     int exit_code;
+    /* environment variables */
     char *PS1;
     char *HOME;
+    // char **env_full;
+    // struct env_var_t PS1;
 } env_t;
 
+
 /* functions */
-void disable_term_flags();
+struct env_t *env_t_malloc();
 
-void enable_term_flags();
+void env_t_free(struct env_t *env);
 
-static inline void catch_exit_signal(int signal);
-
-struct env_t *malloc_env();
-
-void resize_path_len(struct env_t *env, int new_len);
-
-void free_env(struct env_t *env);
+void env_t_path_increase(struct env_t *env, int new_len);
 
 #endif

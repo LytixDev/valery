@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../utils/histfile.h"
+#include "valery/histfile.h"
 
 #define LINES 15
 

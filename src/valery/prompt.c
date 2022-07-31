@@ -22,9 +22,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "prompt.h"
-#include "histfile.h"
-#include "../valery.h"
+#include "valery/prompt.h"
+#include "valery/histfile.h"
+#include "valery.h"
 
 
 int get_arrow_type()

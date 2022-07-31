@@ -15,12 +15,12 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
-
-#include "../valery.h"
-
 #ifndef LOAD_CONFIG
 #define LOAD_CONFIG
+
+#include <stdint.h>
+
+#include "valery/env.h"
 
 /* functions */
 

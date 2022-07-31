@@ -40,32 +40,6 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     char command_with_path[1024];
     // TODO: add environment variables
     char *environ[] = {
-"SHELL=/usr/bin/zsh",
-"I3SOCK=/run/user/1000/i3/ipc-socket.1124",
-"SPACESHIP_ROOT=/usr/lib/spaceship-prompt",
-"EDITOR=nvim",
-"PWD=/home/nic",
-"LOGNAME=nic",
-"XAUTHORITY=/home/nic/.Xauthority",
-"TERMINAL=st",
-"WINDOWPATH=1",
-"MOTD_SHOWN=pam",
-"HOME=/home/nic",
-"LANG=en_US.UTF-8",
-"KEYTIMEOUT=1",
-"TERM=st-256color",
-"USER=nic",
-"DISPLAY=:0",
-"SHLVL=3",
-"MOZ_USE_XINPUT2=1",
-"XDG_VTNR=1",
-"XDG_SESSION_ID=1",
-"SPACESHIP_VERSION=3.16.7",
-"XDG_RUNTIME_DIR=/run/user/1000",
-"DEBUGINFOD_URLS=https://debuginfod.archlinux.org",
-"BROWSER=firefox",
-"PATH=/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/lib/jvm/default/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl:/home/nic/Scripts:/home/nic/Scripts",
-"MAIL=/var/spool/mail/nic",
         NULL
     };
 

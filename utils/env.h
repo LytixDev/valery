@@ -27,6 +27,12 @@
 
 
 /* types */
+typedef struct env_var_t {
+    char *name;
+    char *val;
+} env_var_t;
+
+
 typedef struct env_t {
     char *PATH;
     char **paths;
@@ -36,6 +42,8 @@ typedef struct env_t {
     /* environment variables */
     char *PS1;
     char *HOME;
+    // char **env_full;
+    // struct env_var_t PS1;
 } env_t;
 
 

@@ -58,7 +58,7 @@ void enable_term_flags()
     tcsetattr(STDIN_FILENO, TCSANOW, &originalt);
 }
 
-static inline void catch_exit_signal(int signal)
+static void catch_exit_signal(int signal)
 {
     received_sigint = 1;
 }
@@ -104,7 +104,6 @@ int interactive()
     char hist_file_path[MAX_ENV_LEN];
     char input_buffer[COMMAND_LEN];
     int rc;
-    int rc_env;
 
     signal(SIGINT, catch_exit_signal);
     disable_term_flags();
@@ -145,7 +144,7 @@ int interactive()
         /* loop enters here means ordinary command was typed in */
         rc = tokenize(ts, input_buffer);
         if (rc == 0) {
-            rc_env = valery_parse_tokens(ts, env, hist);
+            valery_parse_tokens(ts, env, hist);
             //env->exit_code = rc_env;
         }
 

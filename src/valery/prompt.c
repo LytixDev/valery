@@ -96,7 +96,6 @@ int prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN])
 {
     int ch;
     int arrow_type;
-    size_t new_buf_len;
     size_t max_len = COMMAND_LEN;
     readfrom_t rc;
     histaction_t action;

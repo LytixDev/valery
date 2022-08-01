@@ -122,7 +122,6 @@ int valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *
 
 int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hist_t *hist)
 {
-    int rc;
     token_t *t;
     operands_t next_type;
     int argv_cap = 8;

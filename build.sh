@@ -7,7 +7,8 @@ fi
 
 name="valery"
 include="src/valery.c src/builtins/* src/valery/*"
-compile="gcc -o $name -std=c11 -I include/ $include"
+cflags="-o $name -Wall -Wpedantic -std=c99 -I include/"
+compile="gcc $cflags $include"
 
 if [ "$1" = "debug" ]
 then
@@ -18,6 +19,11 @@ then
     bear -- $compile
     ctags -R
     echo "generated compilation database for clangd"
+elif [ "$1" = "optimized" ]
+then
+    compile="gcc $cflags -O3 $include"
+    $compile
+    echo "compiled executable $name with aggressive optmization"
 else
     $compile
     echo "compiled executable $name"

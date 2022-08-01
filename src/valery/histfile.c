@@ -87,7 +87,7 @@ void hist_t_save(struct hist_t *hist, char buf[COMMAND_LEN])
 
 void hist_t_write(struct hist_t *hist)
 {
-    for (int i = 0; i < hist->s_len; i++) {
+    for (size_t i = 0; i < hist->s_len; i++) {
         if (strcmp(hist->stored_commands[i], "") != 0) {
             fputs(hist->stored_commands[i], hist->fp);
             fputs("\n", hist->fp);
@@ -158,7 +158,7 @@ long hist_t_traverse(struct hist_t *hist, histaction_t direction)
     return position_in_file;
 }
 
-void hist_t_read_line_f(struct hist_t *hist, char buf[COMMAND_LEN], long offset, histaction_t action)
+void hist_t_read_line_f(struct hist_t *hist, char buf[COMMAND_LEN], long offset)
 {
     if (offset == -1)
         offset = ftell(hist->fp);
@@ -190,6 +190,6 @@ readfrom_t hist_t_get_line(struct hist_t *hist, char buf[COMMAND_LEN], histactio
     }
 
     /* read from hist file, rc is the offset of the file pointer */
-    hist_t_read_line_f(hist, buf, rc, action);
+    hist_t_read_line_f(hist, buf, rc);
     return READ_FROM_HIST;
 }

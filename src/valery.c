@@ -58,7 +58,7 @@ void enable_term_flags()
     tcsetattr(STDIN_FILENO, TCSANOW, &originalt);
 }
 
-static void catch_exit_signal(int signal)
+static void catch_exit_signal()
 {
     received_sigint = 1;
 }

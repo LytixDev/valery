@@ -7,7 +7,7 @@ fi
 
 name="valery"
 include="src/valery.c src/builtins/* src/valery/*"
-cflags="-o $name -Wall -Wpedantic -Wextra -std=c99 -I include/"
+cflags="-o $name -Wall -Wpedantic -Wextra -Wshadow -std=c99 -I include/"
 compile="gcc $cflags $include"
 
 if [ "$1" = "debug" ]
@@ -24,6 +24,11 @@ then
     compile="gcc $cflags -O3 $include"
     $compile
     echo "compiled executable $name with aggressive optmization"
+elif [ "$1" = "profile" ]
+then
+    compile="gcc $cflags -pg -D PROFILE $include"
+    $compile
+    echo "compiled executable $name for profiling"
 else
     $compile
     echo "compiled executable $name"

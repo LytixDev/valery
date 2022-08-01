@@ -4,3 +4,5 @@ compile_commands.json
 .cache/*
 valery
 !src/valery
+
+idea

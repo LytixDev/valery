@@ -63,13 +63,10 @@ char *ht_get(struct ht_t *ht, char *key);
 
 void ht_rm(struct ht_t *ht, char *key);
 
-void ht_dump(struct ht_t *ht);
-
 /*
  * static functions:
  * hasher()
  * ht_item_malloc()
  */
-
 
 #endif /* LIB_HASHTABLE */

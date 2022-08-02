@@ -18,6 +18,8 @@
 #ifndef ENV
 #define ENV
 
+#include <stdbool.h>
+
 #include "lib/hashtable.h"
 
 
@@ -41,11 +43,12 @@ typedef struct env_t {
     int path_size;
     int path_capacity;
     int exit_code;
-    struct ht_t *env_vars;
 
-    //TODO: deprecate this
-    char *PS1;
-    char *HOME;
+    struct ht_t *env_vars;
+    char **environ;   /* list of environment variables on the form: ["KEY=VALUE", ... ] */
+    bool env_update;  /* set to true if a env_var has changed, and environ is not updated */
+    int env_size;
+    int env_capacity;
 } env_t;
 
 

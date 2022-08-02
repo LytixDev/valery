@@ -38,10 +38,7 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     char *found_path;
     // TODO: make memory robust
     char command_with_path[1024];
-    // TODO: add environment variables
-    char *environ[] = {
-        NULL
-    };
+    env->environ[env->env_size] = NULL;
 
     rc = which(program_name, env->paths, env->path_size, &found_path);
     if (rc != COMMAND_IN_PATH) {
@@ -88,7 +85,7 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
             close(e_ctx->streams[ST_SETH][WRITE_END]);
         }
 
-        return_code = execve(command_with_path, full, environ);
+        return_code = execve(command_with_path, full, env->environ);
         env->exit_code = return_code;
     }
 

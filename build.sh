@@ -6,7 +6,7 @@ then
 fi
 
 name="valery"
-include="src/valery.c src/builtins/* src/valery/*"
+include="src/valery.c src/builtins/* src/valery/* src/lib/*"
 cflags="-o $name -Wall -Wpedantic -Wextra -Wshadow -std=c99 -I include/"
 compile="gcc $cflags $include"
 

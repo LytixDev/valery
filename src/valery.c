@@ -125,7 +125,7 @@ int interactive()
 
     /* main loop */
     while (1) {
-        prompt(hist, env->PS1, input_buffer);
+        prompt(hist, env_get(env, "PS1"), input_buffer);
 
         /* skip exec if ctrl+c is caught */
         if (received_sigint) {

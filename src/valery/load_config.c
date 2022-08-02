@@ -38,7 +38,6 @@ int set_home_dir(struct env_t *env)
         return 1;
     
     env_set(env, "HOME", homedir);
-    //strncpy(env->HOME, homedir, MAX_ENV_LEN);
     return 0;
 }
 
@@ -54,7 +53,7 @@ int get_config_path(struct env_t *env, char config_path[MAX_ENV_LEN])
     }
 }
 
-static int _find_pos(char look_for, char *str)
+static int find_pos(char look_for, char *str)
 {
     int found_pos = 0;
 
@@ -90,10 +89,9 @@ int parse_config(struct env_t *env)
 
     FILE *fp;
     char config_path[MAX_ENV_LEN];
-    size_t buf_len = MAX_ENV_LEN;
-    char buf[buf_len];
-    char key[buf_len];
-    char val[buf_len];
+    char buf[MAX_ENV_LEN];
+    char key[MAX_ENV_LEN];
+    char val[MAX_ENV_LEN];
     int found_pos;
     int rc;
 
@@ -109,12 +107,12 @@ int parse_config(struct env_t *env)
     if (fp == NULL)
         return 1;
 
-    while (fgets(buf, buf_len, fp)) {
+    while (fgets(buf, MAX_ENV_LEN, fp)) {
         /* parse line */
         if (buf[0] == '#')
             continue;
 
-        found_pos = _find_pos('=', buf);
+        found_pos = find_pos('=', buf);
         if (found_pos != -1) {
             /*TODO: improve this */
             unsigned long str_len = strlen(buf);
@@ -123,11 +121,10 @@ int parse_config(struct env_t *env)
             key[found_pos] = '\0';
             val[str_len - found_pos - 2] = '\0';
 
-            if (strcmp(key, "PS1") == 0)
-                strcpy(env->PS1, val);
-
             if (strcmp(key, "PATH") == 0)
                 strcpy(env->PATH, val);
+            else
+                env_set(env, key, val);
         }
 
     }

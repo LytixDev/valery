@@ -172,3 +172,28 @@ void ht_rm(struct ht_t *ht, char *key)
         i++;
     }
 }
+
+void ht_dump(struct ht_t *ht)
+{
+    for (int i = 0; i < TABLE_SIZE; ++i) {
+        struct ht_item_t *ht_item = ht->items[i];
+
+        if (ht_item == NULL) {
+            continue;
+        }
+
+        printf("slot[%4d]:", i);
+
+        while (true) {
+            printf("%s=%s", ht_item->key, ht_item->value);
+
+            if (ht_item->next == NULL) {
+                break;
+            }
+
+            ht_item = ht_item->next;
+        }
+
+        printf("\n");
+    }
+}

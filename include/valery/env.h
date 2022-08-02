@@ -18,6 +18,8 @@
 #ifndef ENV
 #define ENV
 
+#include "lib/hashtable.h"
+
 
 /* variables */
 #define MAX_ENV_LEN 1024
@@ -34,16 +36,16 @@ typedef struct env_var_t {
 
 
 typedef struct env_t {
-    char *PATH;
+    char *PATH; /* colon seperated string of all paths */
     char **paths;
     int path_size;
     int path_capacity;
     int exit_code;
-    /* environment variables */
+    struct ht_t *env_vars;
+
+    //TODO: deprecate this
     char *PS1;
     char *HOME;
-    // char **env_full;
-    // struct env_var_t PS1;
 } env_t;
 
 
@@ -53,5 +55,9 @@ struct env_t *env_t_malloc();
 void env_t_free(struct env_t *env);
 
 void env_t_path_increase(struct env_t *env, int new_len);
+
+char *env_get(struct env_t *env, char *key);
+
+void env_set(struct env_t *env, char *key, char *value);
 
 #endif

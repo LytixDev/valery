@@ -37,16 +37,21 @@ int set_home_dir(struct env_t *env)
     if (homedir == NULL)
         return 1;
     
-    strncpy(env->HOME, homedir, MAX_ENV_LEN);
+    env_set(env, "HOME", homedir);
+    //strncpy(env->HOME, homedir, MAX_ENV_LEN);
     return 0;
 }
 
 int get_config_path(struct env_t *env, char config_path[MAX_ENV_LEN])
 {
-
-    snprintf(config_path, MAX_ENV_LEN, "%s/%s", env->HOME, CONFIG_NAME);
-
-    return 0;
+    char *HOME = env_get(env, "HOME");
+    if (HOME != NULL) {
+        snprintf(config_path, MAX_ENV_LEN, "%s/%s", HOME, CONFIG_NAME);
+        return 0;
+    } else {
+        fprintf(stderr, "VALERY ERROR: could not find HOME environment variable\n");
+        return 1;
+    }
 }
 
 static int _find_pos(char look_for, char *str)

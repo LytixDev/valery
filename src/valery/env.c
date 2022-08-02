@@ -18,6 +18,7 @@
 #include <stdlib.h>
 
 #include "valery/env.h"
+#include "lib/hashtable.h"
 
 
 struct env_t *env_t_malloc()
@@ -31,6 +32,10 @@ struct env_t *env_t_malloc()
     env->path_size = 0;
     env->PATH = (char *) malloc(MAX_ENV_LEN * sizeof(char));
     env->exit_code = 0;
+
+    env->env_vars = ht_malloc();
+
+    //TODO: deprecate this
     env->PS1 = (char *) malloc(MAX_ENV_LEN * sizeof(char));
     env->HOME = (char *) malloc(MAX_ENV_LEN * sizeof(char));
     return env;
@@ -46,9 +51,24 @@ void env_t_free(struct env_t *env)
 
     free(env->paths);
     free(env->PATH);
+
+    ht_free(env->env_vars);
+
+    //TODO: deprecate this
     free(env->PS1);
     free(env->HOME);
+
     free(env);
+}
+
+char *env_get(struct env_t *env, char *key)
+{
+    return ht_get(env->env_vars, key);
+}
+
+void env_set(struct env_t *env, char *key, char *value)
+{
+    ht_set(env->env_vars, key, value);
 }
 
 

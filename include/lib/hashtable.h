@@ -38,7 +38,8 @@
 /* types */
 typedef struct ht_item_t {
     char *key;
-    void *value;
+    //TODO: use void pointer ?
+    char *value;
     //void (*free_func)(void *);
     struct ht_item_t *next;
 } ht_item_t;
@@ -46,6 +47,7 @@ typedef struct ht_item_t {
 
 typedef struct ht_t {
     ht_item_t **items;
+    // TODO: dynamic size
     //size_t capacity;
 } ht_t;
 
@@ -60,6 +62,8 @@ void ht_set(struct ht_t *ht, char *key, char *value);
 char *ht_get(struct ht_t *ht, char *key);
 
 void ht_rm(struct ht_t *ht, char *key);
+
+void ht_dump(struct ht_t *ht);
 
 /*
  * static functions:

@@ -79,7 +79,7 @@ int exclusive(char *arg)
         return 1;
     }
 
-    snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env->HOME, HISTFILE_NAME);
+    snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env_get(env, "HOME"), HISTFILE_NAME);
     hist = hist_t_malloc(hist_file_path);
 
     ts = tokenized_str_t_malloc();
@@ -117,7 +117,7 @@ int interactive()
     }
 
     /* establish a connection to the hist file */
-    snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env->HOME, HISTFILE_NAME);
+    snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env_get(env, "HOME"), HISTFILE_NAME);
     hist = hist_t_malloc(hist_file_path);
 
     /* create tokenized_str_t object. Will reused same object every loop. */

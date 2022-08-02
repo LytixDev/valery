@@ -45,8 +45,8 @@ typedef struct env_t {
     int exit_code;
 
     struct ht_t *env_vars;
-    char **environ;   /* list of environment variables on the form: ["KEY=VALUE", ... ] */
-    bool env_update;  /* set to true if a env_var has changed, and environ is not updated */
+    char **environ;     /* list of environment variables on the form: ["KEY=VALUE", ... ] */
+    bool env_update;    /* set to true if a env_var has changed, and environ is not updated */
     int env_size;
     int env_capacity;
 } env_t;

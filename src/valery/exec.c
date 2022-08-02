@@ -38,10 +38,12 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     char *found_path;
     // TODO: make memory robust
     char command_with_path[1024];
-    // TODO: add environment variables
-    char *environ[] = {
-        NULL
-    };
+
+    /* create NULL terminated list of environment variables */
+    char *environ[env->env_size];
+    for (int i = 0; i < env->env_size; i++)
+        environ[i] = env->environ[i];
+    environ[env->env_size] = NULL;
 
     rc = which(program_name, env->paths, env->path_size, &found_path);
     if (rc != COMMAND_IN_PATH) {
@@ -98,31 +100,28 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     return status != 0;
 }
 
-int valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *env, struct hist_t *hist, struct exec_ctx *e_ctx)
+bool valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *env, struct hist_t *hist)
 {
     int rc;
-    //TODO: there has to be a cleaner way?
     /* check if program is shell builtin */
-    if (strcmp(program_name, "which") == 0) {
-        // TODO: use all args
+    if (strcmp(program_name, "which") == 0)
+        //TODO: make which take in all argv
         rc = which(argv[0], env->paths, env->path_size, NULL);
-    } else if (strcmp(program_name, "cd") == 0) {
-        // TODO: use all args
+    else if (strcmp(program_name, "cd") == 0)
         rc = cd(argv[0]);
-    } else if (strcmp(program_name, "history") == 0) {
+    else if (strcmp(program_name, "history") == 0)
         rc = history(hist);
-    } else if (strcmp(program_name, "help") == 0) {
+    else if (strcmp(program_name, "help") == 0)
         rc = help();
-    } else {
-        /* attempt to execute program from path */
-        rc = valery_exec_program(program_name, argv, argc, env, e_ctx);
-    }
-    return rc;
+    else
+        return false;
+
+    env->exit_code = rc;
+    return true;
 }
 
 int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hist_t *hist)
 {
-    int rc;
     token_t *t;
     operands_t next_type;
     int argv_cap = 8;
@@ -144,7 +143,8 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
 
         if (t->type == O_NONE) {
             argc = str_to_argv(t->str_start, argv, &argv_cap);
-            valery_eval_token(t->str_start, argv, argc, env, hist, &e_ctx);
+            if (!valery_eval_token(t->str_start, argv, argc, env, hist))
+                valery_exec_program(t->str_start, argv, argc, env, &e_ctx);
         }
     }
 

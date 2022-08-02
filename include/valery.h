@@ -29,6 +29,4 @@ void disable_term_flags();
 
 void enable_term_flags();
 
-static inline void catch_exit_signal(int signal);
-
 #endif

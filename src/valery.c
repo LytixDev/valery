@@ -58,7 +58,7 @@ void enable_term_flags()
     tcsetattr(STDIN_FILENO, TCSANOW, &originalt);
 }
 
-static inline void catch_exit_signal(int signal)
+static void catch_exit_signal()
 {
     received_sigint = 1;
 }
@@ -79,7 +79,7 @@ int exclusive(char *arg)
         return 1;
     }
 
-    snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env->HOME, HISTFILE_NAME);
+    snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env_get(env, "HOME"), HISTFILE_NAME);
     hist = hist_t_malloc(hist_file_path);
 
     ts = tokenized_str_t_malloc();
@@ -104,7 +104,6 @@ int interactive()
     char hist_file_path[MAX_ENV_LEN];
     char input_buffer[COMMAND_LEN];
     int rc;
-    int rc_env;
 
     signal(SIGINT, catch_exit_signal);
     disable_term_flags();
@@ -118,7 +117,7 @@ int interactive()
     }
 
     /* establish a connection to the hist file */
-    snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env->HOME, HISTFILE_NAME);
+    snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env_get(env, "HOME"), HISTFILE_NAME);
     hist = hist_t_malloc(hist_file_path);
 
     /* create tokenized_str_t object. Will reused same object every loop. */
@@ -126,7 +125,7 @@ int interactive()
 
     /* main loop */
     while (1) {
-        prompt(hist, env->PS1, input_buffer);
+        prompt(hist, env_get(env, "PS1"), input_buffer);
 
         /* skip exec if ctrl+c is caught */
         if (received_sigint) {
@@ -145,7 +144,7 @@ int interactive()
         /* loop enters here means ordinary command was typed in */
         rc = tokenize(ts, input_buffer);
         if (rc == 0) {
-            rc_env = valery_parse_tokens(ts, env, hist);
+            valery_parse_tokens(ts, env, hist);
             //env->exit_code = rc_env;
         }
 

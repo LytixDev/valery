@@ -57,7 +57,7 @@ typedef struct hist_t {
     size_t pos;             /* absolute position in history queue */
     size_t f_pos;           /* position of file pointer in history queue */
     size_t f_len;           /* amount of lines in hist file */
-    size_t f_chars;         /* amount of chars in hist file */
+    long f_chars;           /* amount of chars in hist file */
 } hist_t;
 
 
@@ -110,7 +110,7 @@ int hist_t_open(struct hist_t *hist, char *path);
  * reads one line of the hist file and moves the file pointer back to the given offset.
  * if offset is -1, it uses ftell(hist->fp) to get the offset
  */
-void hist_t_read_line_f(struct hist_t *hist, char buf[COMMAND_LEN], long offset, histaction_t action);
+void hist_t_read_line_f(struct hist_t *hist, char buf[COMMAND_LEN], long offset);
 
 /*
  * puts the current hist line into the buf argument.

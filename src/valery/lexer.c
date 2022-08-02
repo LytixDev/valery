@@ -171,7 +171,7 @@ struct token_t *tokenized_str_t_next(struct tokenized_str_t *ts)
 void token_t_print(struct token_t *t)
 {
     char type[32];
-    if (t->type == -1)
+    if (t->type == O_NONE)
         strcpy(type, "O_NONE");
     else
         strcpy(type, operands_str[t->type]);
@@ -183,7 +183,6 @@ void token_t_print(struct token_t *t)
 /* just for debugging */
 void tokenized_str_t_print(struct tokenized_str_t *ts)
 {
-    int type;
     printf("metadata: total tokens: %ld, total tokens allocated: %ld\n\n", ts->size + 1, ts->capacity);
 
     for (size_t i = 0; i < ts->size + 1; i++) {

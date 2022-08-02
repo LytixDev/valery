@@ -16,8 +16,10 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "valery/env.h"
+#include "lib/hashtable.h"
 
 
 struct env_t *env_t_malloc()
@@ -31,8 +33,16 @@ struct env_t *env_t_malloc()
     env->path_size = 0;
     env->PATH = (char *) malloc(MAX_ENV_LEN * sizeof(char));
     env->exit_code = 0;
-    env->PS1 = (char *) malloc(MAX_ENV_LEN * sizeof(char));
-    env->HOME = (char *) malloc(MAX_ENV_LEN * sizeof(char));
+    env->env_vars = ht_malloc();
+
+    env->env_capacity = TABLE_SIZE;
+    env->env_size = 0;
+    env->environ = (char **) malloc(env->env_capacity * sizeof(char *));
+    for (int i = 0; i < env->env_capacity; i++)
+        env->environ[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
+
+    //env->environ[0] = NULL;
+
     return env;
 }
 
@@ -46,11 +56,26 @@ void env_t_free(struct env_t *env)
 
     free(env->paths);
     free(env->PATH);
-    free(env->PS1);
-    free(env->HOME);
+
+    for (int i = 0; i < env->env_capacity; i++)
+        free(env->environ[i]);
+
+    free(env->environ);
+    ht_free(env->env_vars);
     free(env);
 }
 
+char *env_get(struct env_t *env, char *key)
+{
+    return ht_get(env->env_vars, key);
+}
+
+void env_set(struct env_t *env, char *key, char *value)
+{
+    ht_set(env->env_vars, key, value);
+    // TODO: not memory safe, not robus, not good. Just for testing. 
+    snprintf(env->environ[env->env_size++], MAX_ENV_LEN, "%s=%s", key, value);
+}
 
 void env_t_path_increase(struct env_t *env, int new_len) {
     env->paths = (char **) realloc(env->paths, new_len * sizeof(char *));

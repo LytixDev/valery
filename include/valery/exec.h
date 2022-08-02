@@ -83,15 +83,16 @@ typedef struct exec_ctx {
  */
 int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t *env, struct exec_ctx *e_ctx);
 
-//TODO THIS IS STUPID AND I #hateit
-/* evalutes how the tokens should be executed */
-int valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *env, struct hist_t *hist, struct exec_ctx *e_ctx);
+/*
+ * if program_name is builtin, executes matching builtin, and returns true.
+ * else returns false.
+ */
+bool valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *env, struct hist_t *hist);
 
 /* parses the tokens and calls eval on them accordingly */
 int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hist_t *hist);
 
 int str_to_argv(char *str, char **argv, int *argv_cap);
-
 
 void new_pipe(struct exec_ctx *e_ctx);
 

@@ -1,6 +1,6 @@
 # ignore object files, binaries and caches
 *.out
-obj/
+.obj/
 .cache/*
 
 # used for enhanced development

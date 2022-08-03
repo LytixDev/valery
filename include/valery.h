@@ -24,6 +24,15 @@
 /* variables */
 #define COMMAND_LEN 1024
 
+/* macros */
+#ifdef DEBUG
+#define print_debug(...) \
+    do { printf("\033[0;31mDEBUG:\n"); fprintf(stderr, __VA_ARGS__); \
+        printf("\033[0m\n"); } while (0);
+#else
+#define print_debug(...) ((void) 0)
+#endif
+
 /* functions */
 void disable_term_flags();
 

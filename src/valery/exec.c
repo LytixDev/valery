@@ -71,7 +71,7 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
 
     #ifdef DEBUG
     for (int i = 0; i < argc + 1; i++)
-        printf("argv['%d'] = '%s'\n", i, full[i]);
+        print_debug("argv['%d'] = '%s'\n", i, full[i]);
     #endif /* DEBUG */
 
     pid_t new_pid = fork();
@@ -226,9 +226,7 @@ void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_
 
 int str_to_argv(char *str, char **argv, int *argv_cap)
 {
-    #ifdef DEBUG
-    printf("DEBUG: converting '%s' into argv\n", str);
-    #endif /* DEBUG */
+    print_debug("converting '%s' into argv\n", str);
 
     int argc = 0;
     while (*str != 0) {

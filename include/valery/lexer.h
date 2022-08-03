@@ -101,6 +101,8 @@ void tokenized_str_t_resize(struct tokenized_str_t *ts, size_t new_capacity);
  */
 void tokenized_str_t_clear(struct tokenized_str_t *ts);
 
+void token_t_append_str(struct token_t *t, char *str);
+
 /*
  * adds the char parameter to the end of the str.
  * calls token_t_resize() if str is not large enough.
@@ -109,6 +111,7 @@ void token_t_append_char(struct token_t *t, char c);
 
 /* replaces the last char in the char array with the sentinel null byte */
 void token_t_pop_char(struct token_t *t);
+
 
 /* calls token_t_append_char() using the endmost token */
 void tokenized_str_t_append_char(struct tokenized_str_t *ts, char c);
@@ -147,6 +150,12 @@ void print_syntax_error(const char *buf_start, char *buf_err, char *msg);
  * splits the input buffer into tokens based using operands in operands_str as delimeters.
  */
 int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer);
+
+/*
+ * checks if the given char c parameter is a special char, and deals with it accordingly.
+ * returns true if char is special and was dealt with, else false.
+ */
+bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, unsigned int *p_flags);
 
 char *trim_edge(char *str, char c);
 

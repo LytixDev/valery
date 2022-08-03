@@ -134,12 +134,19 @@ void tokenized_str_t_clear(struct tokenized_str_t *ts)
     ts->size = 0;
 }
 
+
 void token_t_append_char(struct token_t *t, char c)
 {
     if (t->str_len >= t->str_capacity)
         token_t_resize(t, t->str_capacity + 32);
 
     t->str[t->str_len++] = c;
+}
+
+void token_t_append_str(struct token_t *t, char *str)
+{
+    while (*str != 0)
+        token_t_append_char(t, *str++);
 }
 
 void token_t_done(struct token_t *t)
@@ -232,8 +239,6 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
     char c;
     /* always points to first address of buffer */
     const char *buf_start = buffer;
-    char env_key[MAX_ENV_LEN];
-    int env_key_i;
     /*
      * keys in list are operands_t integral constants.
      * values in list representing if token can be a possible operand for the given key.
@@ -244,13 +249,11 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
     size_t candidate_len = 0;                  /* keeps track of length of tokens that are possible operands */
     token_t *t = ts->tokens[ts->size]; /* the current token we are modifying */
     unsigned int p_flags = 0;
-    bool norm;
 
     while ((c = *buffer++) != 0) {
         /* reset possible candidates to all be true */
         memset(candidates, true, TOTAL_OPERANDS);
         total_candidates = TOTAL_OPERANDS;
-        norm = false;
 
         /* always add escaped character to token, no exception */
         if (p_flags & PF_ESCAPE) {
@@ -259,48 +262,7 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
             continue;
         }
 
-        switch (c) {
-            /* do not parse chars inside qoutation marks, unless qoutation mark is escaped with backslash */
-            case '"':
-                if (p_flags & PF_QOUTE)
-                    p_flags ^= PF_QOUTE;
-                else
-                    p_flags |= PF_QOUTE;
-                break;
-
-            /* add flag that will*/
-            case '\\':
-                p_flags |= PF_ESCAPE;
-                break;
-
-            /* replace with environment variable value */
-            case '$':
-                env_key_i = 0;
-                while ((c = *buffer) != 0) {
-                    /* environment keys can only contain uppercase letters, and underscores */
-                    if ((c >= ASCII_A && c <= ASCII_Z) || c == ASCII_UNDERSCORE) {
-                        env_key[env_key_i++] = c;
-                        buffer++;
-                    } else {
-                        break;
-                    }
-                }
-                env_key[env_key_i] = 0;
-                char *env_value = env_get(env, env_key);
-
-                if (env_value != NULL) {
-                    //TODO: fix this
-                    while (*env_value != 0)
-                        token_t_append_char(t, *env_value++);
-                }
-                break;
-
-            default:
-                norm = true;
-                break;
-        }
-
-        if (!norm)
+        if (!special_char(env, t, c, &buffer, &p_flags))
             continue;
 
         if (!(p_flags & PF_QOUTE) && update_candidates(c, 0, candidates, &total_candidates)) {
@@ -380,6 +342,49 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
         token_t_done(t);
 
     return 0;
+}
+
+bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, unsigned int *p_flags)
+{
+    char env_key[MAX_ENV_LEN];
+    int pos = 0;
+    switch (c) {
+        /* do not parse chars inside qoutation marks, unless qoutation mark is escaped with backslash */
+        case '"':
+            if (*p_flags & PF_QOUTE)
+                *p_flags ^= PF_QOUTE;
+            else
+                *p_flags |= PF_QOUTE;
+            break;
+
+        /* add flag that will*/
+        case '\\':
+            *p_flags |= PF_ESCAPE;
+            break;
+
+        /* replace with environment variable value */
+        case '$':
+            while ((c = **buffer) != 0) {
+                /* environment keys can only contain uppercase letters, and underscores */
+                if ((c >= ASCII_A && c <= ASCII_Z) || c == ASCII_UNDERSCORE) {
+                    env_key[pos++] = c;
+                    (*buffer)++;
+                } else {
+                    break;
+                }
+            }
+            env_key[pos] = 0;
+            char *env_value = env_get(env, env_key);
+
+            if (env_value != NULL)
+                token_t_append_str(t, env_value);
+            break;
+
+        default:
+            return true;
+    }
+
+    return false;
 }
 
 char *trim_edge(char *str, char c)

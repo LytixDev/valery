@@ -1,4 +1,5 @@
 #!/bin/sh
+# DEPRECATED, use Makefile instead
 
 if [ "$(uname)" != "Linux" ]
 then

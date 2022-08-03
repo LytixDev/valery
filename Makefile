@@ -10,17 +10,21 @@ OBJS := $(SRCS:%.c=$(OBJDIR)/%.o)
 CC = gcc
 CFLAGS = -I include -Wall -Wpedantic -Wextra -Wshadow -std=c99
 
-.PHONY: clean
+.PHONY: clean $(OBJDIR)
 TARGET = valery
 
 
-$(OBJDIR)/%.o: %.c | $(OBJDIR)
+$(OBJDIR)/%.o: %.c Makefile | $(OBJDIR)
 	@echo [CC] $@
-	@$(CC) -c $(CFLAGS) -o $@ $<
+	@$(CC) -c $(CFLAGS) -c $< -o $@
 
 $(TARGET): $(OBJS)
 	@echo [LD] $@
 	@$(CC) -o $@ $^
+
+debug: CFLAGS += -g -DDEBUG
+debug: clean
+debug: $(TARGET)
 
 clean:
 	@rm -rf $(OBJDIR) $(TARGET)

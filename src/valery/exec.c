@@ -69,6 +69,11 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     /* last pointer always NULL */
     full[1 + argc] = NULL;
 
+    #ifdef DEBUG
+    for (int i = 0; i < argc + 1; i++)
+        printf("argv['%d'] = '%s'\n", i, full[i]);
+    #endif /* DEBUG */
+
     pid_t new_pid = fork();
     if (new_pid == CHILD_PID) {
         /* dup read end */
@@ -149,22 +154,7 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
     }
 
     free(argv);
-
     return 0;
-    /*
-        if (t->type == O_NONE) {
-            argc = str_to_argv(t->str_start, argv, &argv_cap);
-            rc = valery_eval_token(t->str_start, argv, argc, env, hist);
-
-        } else if (t->type == O_AND) {
-            if (env->exit_code != 0)
-                break;
-
-        } else if (t->type == O_OR) {
-            if (env->exit_code == 0)
-                break;
-        }
-    */
 }
 
 void new_pipe(struct exec_ctx *e_ctx)
@@ -234,6 +224,7 @@ void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_
     }
 }
 
+//TODO: improve this
 int str_to_argv(char *str, char **argv, int *argv_cap)
 {
     int argc = 0;

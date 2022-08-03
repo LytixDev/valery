@@ -24,6 +24,7 @@
 #include <stdbool.h>
 
 #include "valery/lexer.h"
+#include "valery/env.h"
 
 /*
  * enum representation is found in lexer.h.
@@ -226,11 +227,13 @@ void print_syntax_error(const char *buf_start, char *buf_err, char *msg)
     fprintf(stderr, "^ %s\n", msg);
 }
 
-int tokenize(struct tokenized_str_t *ts, char *buffer)
+int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
 {
     char c;
     /* always points to first address of buffer */
     const char *buf_start = buffer;
+    char env_key[MAX_ENV_LEN];
+    int env_key_i;
     /*
      * keys in list are operands_t integral constants.
      * values in list representing if token can be a possible operand for the given key.
@@ -240,18 +243,67 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
     int total_candidates;
     size_t candidate_len = 0;                  /* keeps track of length of tokens that are possible operands */
     token_t *t = ts->tokens[ts->size]; /* the current token we are modifying */
-    bool skip = false;
+    unsigned int p_flags = 0;
+    bool norm;
 
     while ((c = *buffer++) != 0) {
         /* reset possible candidates to all be true */
         memset(candidates, true, TOTAL_OPERANDS);
         total_candidates = TOTAL_OPERANDS;
+        norm = false;
 
-        /* do not parse chars inside qoutation marks, unless qoutation mark is escaped with backslash */
-        if (c == '"')
-            skip = !skip;
+        /* always add escaped character to token, no exception */
+        if (p_flags & PF_ESCAPE) {
+            p_flags ^= PF_ESCAPE;
+            token_t_append_char(t, c);
+            continue;
+        }
 
-        if (!skip && update_candidates(c, 0, candidates, &total_candidates)) {
+        switch (c) {
+            /* do not parse chars inside qoutation marks, unless qoutation mark is escaped with backslash */
+            case '"':
+                if (p_flags & PF_QOUTE)
+                    p_flags ^= PF_QOUTE;
+                else
+                    p_flags |= PF_QOUTE;
+                break;
+
+            /* add flag that will*/
+            case '\\':
+                p_flags |= PF_ESCAPE;
+                break;
+
+            /* replace with environment variable value */
+            case '$':
+                env_key_i = 0;
+                while ((c = *buffer) != 0) {
+                    /* environment keys can only contain uppercase letters, and underscores */
+                    if ((c >= ASCII_A && c <= ASCII_Z) || c == ASCII_UNDERSCORE) {
+                        env_key[env_key_i++] = c;
+                        buffer++;
+                    } else {
+                        break;
+                    }
+                }
+                env_key[env_key_i] = 0;
+                char *env_value = env_get(env, env_key);
+
+                if (env_value != NULL) {
+                    //TODO: fix this
+                    while (*env_value != 0)
+                        token_t_append_char(t, *env_value++);
+                }
+                break;
+
+            default:
+                norm = true;
+                break;
+        }
+
+        if (!norm)
+            continue;
+
+        if (!(p_flags & PF_QOUTE) && update_candidates(c, 0, candidates, &total_candidates)) {
             /* as the current char can be an operand, the current token is done and can be finalized */
             if (t->str_len != 0) {
                 token_t_done(t);
@@ -306,8 +358,10 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
             }
             candidate_len = 0;
 
-        } else
+        } else {
             token_t_append_char(t, c);
+        }
+
     }
 
     /*
@@ -315,8 +369,11 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
      * if it has O_NONE type then it has not been already finalized.
      * if skip flag is set then there was no closing qoutation mark, so throw syntax error 
      */
-    if (skip) {
+    if (p_flags & PF_QOUTE) {
         print_syntax_error(buf_start, buffer, "expected \"");
+        return -1;
+    } else if (p_flags & PF_ESCAPE) {
+        print_syntax_error(buf_start, buffer - 1, "dangling escape character");
         return -1;
     }
     if (t->type == O_NONE)

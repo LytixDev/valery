@@ -21,12 +21,24 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include "valery/env.h"
+
 #define DEFAULT_TOKEN_SIZE 128
 #define STARTING_TOKENS 8
 #define TOTAL_OPERANDS 13
 
+#define ASCII_A 0x41
+#define ASCII_Z 0x5a
+#define ASCII_UNDERSCORE 0x5f
+
 
 /* types */
+typedef enum parse_flags {
+    //PF_SKIP     = 1 << 0,
+    PF_QOUTE    = 1 << 1,
+    PF_ESCAPE   = 1 << 2
+} parse_flags;
+
 /* see definition of *operands[] in lexer.c for string representation of the operands */
 typedef enum operands_t {
     O_NONE = -1,  /* special case: string is not an operand */
@@ -134,7 +146,7 @@ void print_syntax_error(const char *buf_start, char *buf_err, char *msg);
 /*
  * splits the input buffer into tokens based using operands in operands_str as delimeters.
  */
-int tokenize(struct tokenized_str_t *ts, char *buffer);
+int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer);
 
 char *trim_edge(char *str, char c);
 

@@ -20,7 +20,7 @@ jobs:
           sudo apt-get install valgrind
 
       - name: Build
-        run: ./build.sh debug
+        run: make debug
 
       - name: Test   
         if: startswith(matrix.os, 'ubuntu-')
@@ -29,4 +29,6 @@ jobs:
           ./test/memory_leak_test.sh
 
       - name: Run
-        run: ./valery --help
+        run: |
+          ./valery --help
+          ./valery -c "ls -la | wc -l"

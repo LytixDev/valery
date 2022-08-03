@@ -366,7 +366,8 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
         case '$':
             while ((c = **buffer) != 0) {
                 /* environment variable keys can only contain numbers, uppercase letters, and underscores */
-                if ((c >= ASCII_A && c <= ASCII_Z) || (c >= ASCII_0 && c <= ASCII_9) || c == ASCII_UNDERSCORE) {
+                if ((c >= ASCII_A && c <= ASCII_Z) || (c >= ASCII_A + 0x20 && c <= ASCII_Z + 0x20) ||
+                    (c >= ASCII_0 && c <= ASCII_9) || c == ASCII_UNDERSCORE) {
                     env_key[pos++] = c;
                     (*buffer)++;
                 } else {

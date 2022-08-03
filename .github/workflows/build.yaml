@@ -24,9 +24,7 @@ jobs:
 
       - name: Test   
         if: startswith(matrix.os, 'ubuntu-')
-        run: |
-          cp .valeryrc ~/
-          ./test/memory_leak_test.sh
+        run: ./test/memory_leak_test.sh
 
       - name: Run
         run: ./valery -c "ls -la | wc -l"

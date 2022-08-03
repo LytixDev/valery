@@ -1,6 +1,7 @@
 # Nicolai Brand (lytix.dev) 2022
 # See LICENSE for license info
 
+RC = .valeryrc
 OBJDIR = .obj
 SRC = src
 DIRS := $(shell find $(SRC) -type d)
@@ -15,6 +16,7 @@ TARGET = valery
 
 
 $(OBJDIR)/%.o: %.c Makefile | $(OBJDIR)
+	@cp $(RC) ~
 	@echo [CC] $@
 	@$(CC) -c $(CFLAGS) -c $< -o $@
 

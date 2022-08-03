@@ -1,4 +1,7 @@
 # example valeryc
 
-PS1=[nic]$
+PS1=>
 PATH=/usr/bin:/home/nic/.local/share/valery/bin
+EDITOR=nvim
+TERMINAL=st
+BROWSER=firefox

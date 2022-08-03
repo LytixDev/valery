@@ -265,7 +265,7 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
         if (!special_char(env, t, c, &buffer, &p_flags))
             continue;
 
-        if (!(p_flags & PF_QOUTE) && update_candidates(c, 0, candidates, &total_candidates)) {
+        if (!(p_flags & PF_QUOTE) && update_candidates(c, 0, candidates, &total_candidates)) {
             /* as the current char can be an operand, the current token is done and can be finalized */
             if (t->str_len != 0) {
                 token_t_done(t);
@@ -331,7 +331,7 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
      * if it has O_NONE type then it has not been already finalized.
      * if skip flag is set then there was no closing qoutation mark, so throw syntax error 
      */
-    if (p_flags & PF_QOUTE) {
+    if (p_flags & PF_QUOTE) {
         print_syntax_error(buf_start, buffer, "expected \"");
         return -1;
     } else if (p_flags & PF_ESCAPE) {
@@ -351,10 +351,10 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
     switch (c) {
         /* do not parse chars inside qoutation marks, unless qoutation mark is escaped with backslash */
         case '"':
-            if (*p_flags & PF_QOUTE)
-                *p_flags ^= PF_QOUTE;
+            if (*p_flags & PF_QUOTE)
+                *p_flags ^= PF_QUOTE;
             else
-                *p_flags |= PF_QOUTE;
+                *p_flags |= PF_QUOTE;
             break;
 
         /* add flag that will*/

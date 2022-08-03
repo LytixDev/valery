@@ -37,7 +37,7 @@
 /* types */
 typedef enum parse_flags {
     //PF_SKIP     = 1 << 0,
-    PF_QOUTE    = 1 << 1,
+    PF_QUOTE    = 1 << 1,
     PF_ESCAPE   = 1 << 2
 } parse_flags;
 

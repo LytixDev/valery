@@ -29,7 +29,7 @@ debug: clean
 debug: $(TARGET)
 
 clean:
-	@rm -rf $(OBJDIR) $(TARGET)
+	@rm -rf $(OBJDIR) $(TARGET) ~/$(RC)
 
 $(OBJDIR):
 	$(foreach dir, $(DIRS), $(shell mkdir -p $(OBJDIR)/$(dir)))

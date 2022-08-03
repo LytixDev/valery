@@ -2,7 +2,9 @@
 Unix like interactive shell. Only for educational purposes and not meant to serve practical use. Everything written by me (Nicolai Brand, https://lytix.dev) and licensed under GPL v3.
 
 ## Installation and set up
-Dependencies: `gcc`
+Dependencies:
+- `gcc compatible c compiler`
+- `make`
 
 ```shell
 $ git clone git@github.com:LytixDev/valery.git
@@ -12,13 +14,8 @@ $ git clone git@github.com:LytixDev/valery.git
 $ cd valery/
 ```
 
-Modify or keep the default `.valeryrc`, and move it to `$HOME`
 ```shell
-$ cp .valeryrc ~/
-```
-
-```shell
-$ ./build.sh
+$ make
 ```
 
 The executable is now made and can be ran by doing

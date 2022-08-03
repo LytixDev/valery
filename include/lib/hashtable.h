@@ -46,14 +46,14 @@ typedef struct ht_item_t {
 
 
 typedef struct ht_t {
-    ht_item_t **items;
+    struct ht_item_t **items;
     // TODO: dynamic size
     //size_t capacity;
 } ht_t;
 
 
 /* functions */
-ht_t *ht_malloc();
+struct ht_t *ht_malloc();
 
 void ht_free(struct ht_t *ht);
 

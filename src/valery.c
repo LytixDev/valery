@@ -83,7 +83,7 @@ int exclusive(char *arg)
     hist = hist_t_malloc(hist_file_path);
 
     ts = tokenized_str_t_malloc();
-    rc = tokenize(ts, arg);
+    rc = tokenize(ts, env, arg);
     if (rc == 0) {
         rc_env = valery_parse_tokens(ts, env, hist);
         //env->exit_code = rc_env;
@@ -142,7 +142,7 @@ int interactive()
             break;
 
         /* loop enters here means ordinary command was typed in */
-        rc = tokenize(ts, input_buffer);
+        rc = tokenize(ts, env, input_buffer);
         if (rc == 0) {
             valery_parse_tokens(ts, env, hist);
             //env->exit_code = rc_env;

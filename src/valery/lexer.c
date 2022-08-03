@@ -24,6 +24,7 @@
 #include <stdbool.h>
 
 #include "valery/lexer.h"
+#include "valery/env.h"
 
 /*
  * enum representation is found in lexer.h.
@@ -133,12 +134,19 @@ void tokenized_str_t_clear(struct tokenized_str_t *ts)
     ts->size = 0;
 }
 
+
 void token_t_append_char(struct token_t *t, char c)
 {
     if (t->str_len >= t->str_capacity)
         token_t_resize(t, t->str_capacity + 32);
 
     t->str[t->str_len++] = c;
+}
+
+void token_t_append_str(struct token_t *t, char *str)
+{
+    while (*str != 0)
+        token_t_append_char(t, *str++);
 }
 
 void token_t_done(struct token_t *t)
@@ -226,7 +234,7 @@ void print_syntax_error(const char *buf_start, char *buf_err, char *msg)
     fprintf(stderr, "^ %s\n", msg);
 }
 
-int tokenize(struct tokenized_str_t *ts, char *buffer)
+int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
 {
     char c;
     /* always points to first address of buffer */
@@ -240,18 +248,24 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
     int total_candidates;
     size_t candidate_len = 0;                  /* keeps track of length of tokens that are possible operands */
     token_t *t = ts->tokens[ts->size]; /* the current token we are modifying */
-    bool skip = false;
+    unsigned int p_flags = 0;
 
     while ((c = *buffer++) != 0) {
         /* reset possible candidates to all be true */
         memset(candidates, true, TOTAL_OPERANDS);
         total_candidates = TOTAL_OPERANDS;
 
-        /* do not parse chars inside qoutation marks, unless qoutation mark is escaped with backslash */
-        if (c == '"')
-            skip = !skip;
+        /* always add escaped character to token, no exception */
+        if (p_flags & PF_ESCAPE) {
+            p_flags ^= PF_ESCAPE;
+            token_t_append_char(t, c);
+            continue;
+        }
 
-        if (!skip && update_candidates(c, 0, candidates, &total_candidates)) {
+        if (!special_char(env, t, c, &buffer, &p_flags))
+            continue;
+
+        if (!(p_flags & PF_QOUTE) && update_candidates(c, 0, candidates, &total_candidates)) {
             /* as the current char can be an operand, the current token is done and can be finalized */
             if (t->str_len != 0) {
                 token_t_done(t);
@@ -306,8 +320,10 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
             }
             candidate_len = 0;
 
-        } else
+        } else {
             token_t_append_char(t, c);
+        }
+
     }
 
     /*
@@ -315,14 +331,61 @@ int tokenize(struct tokenized_str_t *ts, char *buffer)
      * if it has O_NONE type then it has not been already finalized.
      * if skip flag is set then there was no closing qoutation mark, so throw syntax error 
      */
-    if (skip) {
+    if (p_flags & PF_QOUTE) {
         print_syntax_error(buf_start, buffer, "expected \"");
+        return -1;
+    } else if (p_flags & PF_ESCAPE) {
+        print_syntax_error(buf_start, buffer - 1, "dangling escape character");
         return -1;
     }
     if (t->type == O_NONE)
         token_t_done(t);
 
     return 0;
+}
+
+bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, unsigned int *p_flags)
+{
+    char env_key[MAX_ENV_LEN];
+    int pos = 0;
+    switch (c) {
+        /* do not parse chars inside qoutation marks, unless qoutation mark is escaped with backslash */
+        case '"':
+            if (*p_flags & PF_QOUTE)
+                *p_flags ^= PF_QOUTE;
+            else
+                *p_flags |= PF_QOUTE;
+            break;
+
+        /* add flag that will*/
+        case '\\':
+            *p_flags |= PF_ESCAPE;
+            break;
+
+        /* replace with environment variable value */
+        case '$':
+            while ((c = **buffer) != 0) {
+                /* environment variable keys can only contain numbers, uppercase letters, and underscores */
+                if ((c >= ASCII_A && c <= ASCII_Z) || (c >= ASCII_A + 0x20 && c <= ASCII_Z + 0x20) ||
+                    (c >= ASCII_0 && c <= ASCII_9) || c == ASCII_UNDERSCORE) {
+                    env_key[pos++] = c;
+                    (*buffer)++;
+                } else {
+                    break;
+                }
+            }
+            env_key[pos] = 0;
+            char *env_value = env_get(env, env_key);
+
+            if (env_value != NULL)
+                token_t_append_str(t, env_value);
+            break;
+
+        default:
+            return true;
+    }
+
+    return false;
 }
 
 char *trim_edge(char *str, char c)

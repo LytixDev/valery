@@ -69,6 +69,11 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     /* last pointer always NULL */
     full[1 + argc] = NULL;
 
+    #ifdef DEBUG
+    for (int i = 0; i < argc + 1; i++)
+        print_debug("argv['%d'] = '%s'\n", i, full[i]);
+    #endif /* DEBUG */
+
     pid_t new_pid = fork();
     if (new_pid == CHILD_PID) {
         /* dup read end */
@@ -149,22 +154,7 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
     }
 
     free(argv);
-
     return 0;
-    /*
-        if (t->type == O_NONE) {
-            argc = str_to_argv(t->str_start, argv, &argv_cap);
-            rc = valery_eval_token(t->str_start, argv, argc, env, hist);
-
-        } else if (t->type == O_AND) {
-            if (env->exit_code != 0)
-                break;
-
-        } else if (t->type == O_OR) {
-            if (env->exit_code == 0)
-                break;
-        }
-    */
 }
 
 void new_pipe(struct exec_ctx *e_ctx)
@@ -236,17 +226,15 @@ void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_
 
 int str_to_argv(char *str, char **argv, int *argv_cap)
 {
-    int argc = 0;
-    bool skip = false;
-    while (*str != 0) {
-        if (*str == '"')
-            skip = !skip;
+    print_debug("converting '%s' into argv\n", str);
 
-        if (!skip && *str == ' ') {
+    int argc = 0;
+    while (*str != 0) {
+        if (*str == ' ') {
             *str = 0;
-            // TODO: find next non backspace instead of assuming there is always only one backspace
-            // example: '  -la' should be evaluated to 'la' and not ' ' and '-la'
-            argv[argc++] = ++str;
+            /* start next argv on last backspace */
+            while (*(++str) == ' ');
+            argv[argc++] = str;
             if (argc >= *argv_cap) {
                 *argv_cap += 8;
                 argv = (char **) realloc(argv, *argv_cap * sizeof(char *));
@@ -255,11 +243,5 @@ int str_to_argv(char *str, char **argv, int *argv_cap)
             str++;
         }
     }
-
-    for (int i = 0; i < argc; i++) {
-        argv[i] = trim_edge(argv[i], '"');
-    }
-
     return argc;
 }
-

@@ -29,6 +29,4 @@ jobs:
           ./test/memory_leak_test.sh
 
       - name: Run
-        run: |
-          ./valery --help
-          ./valery -c "ls -la | wc -l"
+        run: ./valery -c "ls -la | wc -l"

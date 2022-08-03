@@ -29,6 +29,8 @@
 
 #define ASCII_A 0x41
 #define ASCII_Z 0x5a
+#define ASCII_0 0x30
+#define ASCII_9 0x39
 #define ASCII_UNDERSCORE 0x5f
 
 

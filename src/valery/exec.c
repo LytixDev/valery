@@ -224,20 +224,19 @@ void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_
     }
 }
 
-//TODO: improve this
 int str_to_argv(char *str, char **argv, int *argv_cap)
 {
-    int argc = 0;
-    bool skip = false;
-    while (*str != 0) {
-        if (*str == '"')
-            skip = !skip;
+    #ifdef DEBUG
+    printf("DEBUG: converting '%s' into argv\n", str);
+    #endif /* DEBUG */
 
-        if (!skip && *str == ' ') {
+    int argc = 0;
+    while (*str != 0) {
+        if (*str == ' ') {
             *str = 0;
-            // TODO: find next non backspace instead of assuming there is always only one backspace
-            // example: '  -la' should be evaluated to 'la' and not ' ' and '-la'
-            argv[argc++] = ++str;
+            /* start next argv on last backspace */
+            while (*(++str) == ' ');
+            argv[argc++] = str;
             if (argc >= *argv_cap) {
                 *argv_cap += 8;
                 argv = (char **) realloc(argv, *argv_cap * sizeof(char *));
@@ -246,11 +245,5 @@ int str_to_argv(char *str, char **argv, int *argv_cap)
             str++;
         }
     }
-
-    for (int i = 0; i < argc; i++) {
-        argv[i] = trim_edge(argv[i], '"');
-    }
-
     return argc;
 }
-

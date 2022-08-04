@@ -22,9 +22,10 @@
 
 #include "valery/histfile.h"
 
-#define COMMAND_IN_PATH 0
-#define COMMAND_NOT_FOUND 1
-#define COMMAND_IS_BUILTIN 2
+#define COMMAND_IN_PATH         0
+#define COMMAND_NOT_FOUND       1
+#define COMMAND_IS_BUILTIN      2
+#define COMMAND_IS_PATH         3
 
 #define total_builtin_functions 4
 extern char *builtin_names[total_builtin_functions];

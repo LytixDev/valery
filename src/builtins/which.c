@@ -42,6 +42,17 @@ int which_single(char *program_name, char **paths, int path_count, char **path_r
     DIR *d;
     struct dirent *dir;
     struct stat sb;
+    /* if program_name is already a path, do not add any PATH to it */
+    bool program_is_path = program_name[0] == '/';
+    if (program_is_path) {
+        if (stat(program_name, &sb) == 0 && sb.st_mode & S_IXUSR) {
+            if (path_result == NULL)
+                printf("%s\n", program_name);
+            return COMMAND_IS_PATH;
+        } else {
+            goto not_found;
+        }
+    }
     
     for (int i = 0; i < path_count; i++) {
         char *path = paths[i];
@@ -63,7 +74,7 @@ int which_single(char *program_name, char **paths, int path_count, char **path_r
                      * and should print the found path, but not attempt to 
                      * modify path_result as this is not used in this case */
                     if (path_result == NULL)
-                        printf("%s/%s\n", path, program_name);
+                        printf("%s\n", final);
                     else
                         *path_result = path;
 
@@ -74,6 +85,7 @@ int which_single(char *program_name, char **paths, int path_count, char **path_r
         closedir(d);
     }
 
+not_found:
     if (path_result == NULL)
         fprintf(stderr, "%s: not found\n", program_name);
 
@@ -87,7 +99,7 @@ int which(char **program_names, int program_count, char **paths, int path_count)
 
     for (int i = 0; i < program_count; i++) {
         rc_tmp = which_single(program_names[i], paths, path_count, NULL);
-        if (rc_tmp == 1)
+        if (rc_tmp == COMMAND_NOT_FOUND)
             rc = 1;
     }
     return rc;

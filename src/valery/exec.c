@@ -36,6 +36,8 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     int rc;
     int return_code = 0;
     char *found_path;
+    char *command_with_path;
+    char tmp[1024];
 
     /* create NULL terminated list of environment variables */
     char *environ[env->env_size];
@@ -44,27 +46,31 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     environ[env->env_size] = NULL;
 
     rc = which_single(program_name, env->paths, env->path_size, &found_path);
-    if (rc != COMMAND_IN_PATH) {
+    if (!(rc == COMMAND_IN_PATH || rc == COMMAND_IS_PATH)) {
         fprintf(stderr, "valery: command not found '%s'\n", program_name);
         env->exit_code = 1;
         return 1;
     }
 
-    /* command has been found in path and found_path should poit to the address containg the string */
-    //TODO: there are probably ways to avoid strlen here
-    char command_with_path[strlen(found_path) + strlen(program_name) + 2];
-    snprintf(command_with_path, 1024, "%s/%s", found_path, program_name);
+    if (rc == COMMAND_IS_PATH) {
+        command_with_path = program_name;
+    } else {
+        /* command has been found in path and found_path should poit to the address containg the string */
+        //TODO: make memory save
+        snprintf(tmp, 1024, "%s/%s", found_path, program_name);
+        command_with_path = tmp;
+    }
 
     /*
      * full must contain program name and an argument.
      * last argument must be NULL to signify end of pointer arr.
-     * ex: full = { "/bin/ls", "-la", "/", NULL }
+     * ex: full = { "/bin/ls", "-la", NULL }
      */
     char *full[2 + argc];
     full[0] = command_with_path;
 
-    for (int i = 1; i < argc + 1; i++)
-        full[i] = argv[i - 1];
+    for (int i = 0; i < argc; i++)
+        full[i + 1] = argv[i];
 
     /* last pointer always NULL */
     full[1 + argc] = NULL;

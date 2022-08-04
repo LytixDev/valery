@@ -82,8 +82,8 @@ int valery(char *arg)
     ts = tokenized_str_t_malloc();
 
     if (INTERACTIVE) {
-        char input_buffer[COMMAND_LEN];
-        char hist_file_path[MAX_ENV_LEN];
+        char input_buffer[COMMAND_LEN] = {0};
+        char hist_file_path[MAX_ENV_LEN] = {0};
 
         snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env_get(env, "HOME"), HISTFILE_NAME);
         /* establish a connection to the hist file */

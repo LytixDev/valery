@@ -112,10 +112,11 @@ int valery(char *arg)
 
             /* loop enters here means ordinary command was typed in */
             rc = tokenize(ts, env, input_buffer);
-            if (rc == 0) {
+#ifdef DEBUG
+        tokenized_str_t_print(ts);
+#endif /* DEBUG */
+            if (rc == 0)
                 valery_parse_tokens(ts, env, hist);
-                //env->exit_code = rc_env;
-            }
 
         /* clears all buffers */
         end_loop:

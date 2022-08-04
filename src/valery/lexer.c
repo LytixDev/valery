@@ -25,6 +25,7 @@
 
 #include "valery/lexer.h"
 #include "valery/env.h"
+#include "valery.h"
 
 /*
  * enum representation is found in lexer.h.
@@ -184,14 +185,14 @@ void token_t_print(struct token_t *t)
     else
         strcpy(type, operands_str[t->type]);
 
-    printf("TOKEN_T: str: '%s', type: '%s', str_len: '%ld', str_capacity: '%ld'",\
+    print_debug("TOKEN_T: str: '%s', type: '%s', str_len: '%ld', str_capacity: '%ld'",\
            t->str, type, t->str_len, t->str_capacity);
 }
 
 /* just for debugging */
 void tokenized_str_t_print(struct tokenized_str_t *ts)
 {
-    printf("metadata: total tokens: %ld, total tokens allocated: %ld\n\n", ts->size + 1, ts->capacity);
+    print_debug("metadata: total tokens: %ld, total tokens allocated: %ld\n\n", ts->size + 1, ts->capacity);
 
     for (size_t i = 0; i < ts->size + 1; i++) {
         printf("num: '%ld', ", i);
@@ -273,9 +274,7 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
                 t = tokenized_str_t_next(ts);
             }
 
-            token_t_append_char(t, c);
-
-            while ((c = *buffer++) != 0) {
+            do {
                 token_t_append_char(t, c);
                 update_candidates(c, candidate_len++, candidates, &total_candidates);
 
@@ -310,7 +309,7 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
                     print_syntax_error(buf_start, buffer, "unexpected token");
                     return -1;
                 }
-            }
+            } while ((c = *buffer++) != 0);
 
         finished_op:
             /* only finalize token if we broke out of the loop (i.e operand was found and buffer not ended) */
@@ -337,9 +336,12 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
     } else if (p_flags & PF_ESCAPE) {
         print_syntax_error(buf_start, buffer - 1, "dangling escape character");
         return -1;
-    }
-    if (t->type == O_NONE)
+    } else if (which_operand(candidates) != O_NONE) {
+        print_syntax_error(buf_start, buffer - 2, "excpected another token after this operand");
+        return -1;
+    } else {
         token_t_done(t);
+    }
 
     return 0;
 }
@@ -353,6 +355,7 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
         case '"':
             if (*p_flags & PF_QUOTE)
                 *p_flags ^= PF_QUOTE;
+
             else
                 *p_flags |= PF_QUOTE;
             break;

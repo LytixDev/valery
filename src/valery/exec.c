@@ -229,6 +229,7 @@ int str_to_argv(char *str, char **argv, int *argv_cap)
     print_debug("converting '%s' into argv\n", str);
 
     int argc = 0;
+
     while (*str != 0) {
         if (*str == ' ') {
             *str = 0;

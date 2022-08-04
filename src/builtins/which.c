@@ -27,7 +27,7 @@
 #include "builtins/builtins.h"
 
 
-int which(char *program_name, char **paths, int path_capacity, char **path_result)
+int which_single(char *program_name, char **paths, int path_count, char **path_result)
 {
     /* check if program name is shell builtin */
     for (int i = 0; i < total_builtin_functions; i++) {
@@ -43,7 +43,7 @@ int which(char *program_name, char **paths, int path_capacity, char **path_resul
     struct dirent *dir;
     struct stat sb;
     
-    for (int i = 0; i < path_capacity; i++) {
+    for (int i = 0; i < path_count; i++) {
         char *path = paths[i];
         d = opendir(path);
         if (d == NULL)
@@ -79,14 +79,16 @@ int which(char *program_name, char **paths, int path_capacity, char **path_resul
 
     return COMMAND_NOT_FOUND;
 }
-/*
-int main(int argc, char *argv[])
-{
-    if (argc == 3) {
-        int rc = which(argv[1], argv[2]);
-        return rc;
-    }
 
-    return 1;
+int which(char **program_names, int program_count, char **paths, int path_count)
+{
+    int rc = 0;
+    int rc_tmp;
+
+    for (int i = 0; i < program_count; i++) {
+        rc_tmp = which_single(program_names[i], paths, path_count, NULL);
+        if (rc_tmp == 1)
+            rc = 1;
+    }
+    return rc;
 }
-*/

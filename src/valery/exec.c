@@ -36,8 +36,6 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     int rc;
     int return_code = 0;
     char *found_path;
-    // TODO: make memory robust
-    char command_with_path[1024];
 
     /* create NULL terminated list of environment variables */
     char *environ[env->env_size];
@@ -45,7 +43,7 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
         environ[i] = env->environ[i];
     environ[env->env_size] = NULL;
 
-    rc = which(program_name, env->paths, env->path_size, &found_path);
+    rc = which_single(program_name, env->paths, env->path_size, &found_path);
     if (rc != COMMAND_IN_PATH) {
         fprintf(stderr, "valery: command not found '%s'\n", program_name);
         env->exit_code = 1;
@@ -53,6 +51,8 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     }
 
     /* command has been found in path and found_path should poit to the address containg the string */
+    //TODO: there are probably ways to avoid strlen here
+    char command_with_path[strlen(found_path) + strlen(program_name) + 2];
     snprintf(command_with_path, 1024, "%s/%s", found_path, program_name);
 
     /*
@@ -110,12 +110,11 @@ bool valery_eval_token(char *program_name, char *argv[], int argc, struct env_t 
     int rc;
     /* check if program is shell builtin */
     if (strcmp(program_name, "which") == 0)
-        //TODO: make which take in all argv
-        rc = which(argv[0], env->paths, env->path_size, NULL);
+        rc = which(argv, argc, env->paths, env->path_size);
     else if (strcmp(program_name, "cd") == 0)
         rc = cd(argv[0]);
     else if (strcmp(program_name, "history") == 0)
-        rc = history(hist);
+        rc = history(hist, argc > 0);
     else if (strcmp(program_name, "help") == 0)
         rc = help();
     else
@@ -195,7 +194,6 @@ void terminate_pipe(struct exec_ctx *e_ctx)
         st = ST_SETH;
     }
 
-    //TODO: can call to close() fail?
     if (st != ST_NONE) {
         close(e_ctx->streams[st][READ_END]);
         close(e_ctx->streams[st][WRITE_END]);
@@ -205,7 +203,6 @@ void terminate_pipe(struct exec_ctx *e_ctx)
 
 void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_type)
 {
-    // TODO: currently assumes inputted tokens are valid.
     if (type == O_PIPE) {
         /* write stream was set in previous call */
         e_ctx->read_stream = e_ctx->write_stream;

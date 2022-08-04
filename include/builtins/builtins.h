@@ -18,6 +18,8 @@
 #ifndef BUILTINS
 #define BUILTINS
 
+#include <stdbool.h>
+
 #include "valery/histfile.h"
 
 #define COMMAND_IN_PATH 0
@@ -31,17 +33,30 @@ extern char *builtin_names[total_builtin_functions];
 /* functions */
 
 /*
+ * which builtin that is meant to be used interactively.
+ * calls which_single() on all program_names and prints where program executable
+ * is located, what type of program it is, or could not find.
+ * returns 0 if all program were found, else 1.
+ */
+int which(char **program_names, int program_count, char **paths, int path_count);
+
+/*
  * if which is used interactively, pass NULL as the path_result parameter.
  * if path_result is not NULL, assumes the function is not used interactively.
  * in this case, the program does not print the result, but instead puts the 
  * address of the path from paths into path_result if it is found.
  * returns COMMAND_IN_PATH, COMMAND_IS_BUILTIN and COMMAND_NOT_FOUND accordingly.
  */
-int which(char *program_name, char **paths, int path_capacity, char **path_result);
+int which_single(char *program_name, char **paths, int path_count, char **path_result);
 
+/*
+ * its cd
+ */
 int cd(char *directory);
 
-int history(struct hist_t *hist);
+/*
+ */
+int history(struct hist_t *hist, bool print_all);
 
 int help();
 

@@ -174,8 +174,7 @@ void new_pipe(struct exec_ctx *e_ctx)
 
     rc = pipe(e_ctx->streams[st]);
     if (rc == -1) {
-        // TODO: better error handling
-        fprintf(stderr, "valery error: could not create pipe\n");
+        fprintf(stderr, "valery internal error: call to POSIX C library function pipe() failed\n");
         exit(EXIT_FAILURE);
     }
 

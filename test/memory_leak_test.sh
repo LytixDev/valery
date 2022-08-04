@@ -5,7 +5,8 @@ f="/tmp/valery_test_data"
 heap="in use at exit: 0 bytes in 0 blocks"
 failed=0
 
-for test_vector in "ls -la" "echo a && echo b && echo c && echo d && echo e" "ls | wc -l" "ls -la | grep . | grep . | wc -l"
+for test_vector in "ls -la" "echo a && echo b && echo c && echo d && echo e" "ls | wc -l" \
+    "ls -la | grep . | grep . | wc -l" "echo \$PS1"
 do
     echo "VALERY TEST: '$test_vector' started."
     if ./valery -c "$test_vector" >/dev/null

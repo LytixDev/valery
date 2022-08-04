@@ -330,6 +330,8 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
      * if it has O_NONE type then it has not been already finalized.
      * if skip flag is set then there was no closing qoutation mark, so throw syntax error 
      */
+    token_t_done(t);
+
     if (p_flags & PF_QUOTE) {
         print_syntax_error(buf_start, buffer, "expected \"");
         return -1;
@@ -337,10 +339,9 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
         print_syntax_error(buf_start, buffer - 1, "dangling escape character");
         return -1;
     } else if (which_operand(candidates) != O_NONE) {
-        print_syntax_error(buf_start, buffer - 2, "excpected another token after this operand");
-        return -1;
-    } else {
-        token_t_done(t);
+        //TODO: does not work properly
+        //print_syntax_error(buf_start, buffer - 2, "excpected another token after this operand");
+        //return -1;
     }
 
     return 0;

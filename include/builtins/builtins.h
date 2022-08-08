@@ -18,17 +18,28 @@
 #ifndef BUILTINS
 #define BUILTINS
 
+#include <stdbool.h>
+
 #include "valery/histfile.h"
 
-#define COMMAND_IN_PATH 0
-#define COMMAND_NOT_FOUND 1
-#define COMMAND_IS_BUILTIN 2
+#define COMMAND_IN_PATH         0
+#define COMMAND_NOT_FOUND       1
+#define COMMAND_IS_BUILTIN      2
+#define COMMAND_IS_PATH         3
 
-#define total_builtin_functions 4
+#define total_builtin_functions 5
 extern char *builtin_names[total_builtin_functions];
 
 
 /* functions */
+
+/*
+ * which builtin that is meant to be used interactively.
+ * calls which_single() on all program_names and prints where program executable
+ * is located, what type of program it is, or could not find.
+ * returns 0 if all program were found, else 1.
+ */
+int which(char **program_names, int program_count, char **paths, int path_count);
 
 /*
  * if which is used interactively, pass NULL as the path_result parameter.
@@ -37,12 +48,26 @@ extern char *builtin_names[total_builtin_functions];
  * address of the path from paths into path_result if it is found.
  * returns COMMAND_IN_PATH, COMMAND_IS_BUILTIN and COMMAND_NOT_FOUND accordingly.
  */
-int which(char *program_name, char **paths, int path_capacity, char **path_result);
+int which_single(char *program_name, char **paths, int path_count, char **path_result);
 
+/*
+ * its cd
+ */
 int cd(char *directory);
 
-int history(struct hist_t *hist);
+/*
+ * if print_all is true, program prints entire hist file.
+ * if not, program prints the 15 most recent hist lines.
+ */
+int history(struct hist_t *hist, bool print_all);
+
+/*
+ * if result is NULL, program prints the current working directory.
+ * if not, program copies the current working directory into result param.
+ */
+int pwd(char result[4096]);
 
 int help();
+
 
 #endif

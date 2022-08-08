@@ -37,8 +37,9 @@
 /* types */
 typedef enum parse_flags {
     //PF_SKIP     = 1 << 0,
-    PF_QOUTE    = 1 << 1,
-    PF_ESCAPE   = 1 << 2
+    PF_QUOTE    = 1 << 1,
+    PF_ESCAPE   = 1 << 2,
+    PF_DOTDOT   = 1 << 3
 } parse_flags;
 
 /* see definition of *operands[] in lexer.c for string representation of the operands */
@@ -160,6 +161,8 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer);
 bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, unsigned int *p_flags);
 
 char *trim_edge(char *str, char c);
+
+char peek(char *buffer);
 
 
 #endif

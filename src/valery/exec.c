@@ -36,35 +36,41 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     int rc;
     int return_code = 0;
     char *found_path;
-    // TODO: make memory robust
-    char command_with_path[1024];
+    char *command_with_path;
+    char tmp[1024];
 
-    /* create NULL terminated list of environment variables */
-    char *environ[env->env_size];
-    for (int i = 0; i < env->env_size; i++)
-        environ[i] = env->environ[i];
-    environ[env->env_size] = NULL;
+    /* update list of environment variables if necessary */
+    if (env->env_update)
+        env_gen(env);
 
-    rc = which(program_name, env->paths, env->path_size, &found_path);
-    if (rc != COMMAND_IN_PATH) {
+    char **environ = env->environ;
+
+    rc = which_single(program_name, env->paths, env->path_size, &found_path);
+    if (!(rc == COMMAND_IN_PATH || rc == COMMAND_IS_PATH)) {
         fprintf(stderr, "valery: command not found '%s'\n", program_name);
         env->exit_code = 1;
         return 1;
     }
 
-    /* command has been found in path and found_path should poit to the address containg the string */
-    snprintf(command_with_path, 1024, "%s/%s", found_path, program_name);
+    if (rc == COMMAND_IS_PATH) {
+        command_with_path = program_name;
+    } else {
+        /* command has been found in path and found_path should poit to the address containg the string */
+        //TODO: make memory save
+        snprintf(tmp, 1024, "%s/%s", found_path, program_name);
+        command_with_path = tmp;
+    }
 
     /*
      * full must contain program name and an argument.
      * last argument must be NULL to signify end of pointer arr.
-     * ex: full = { "/bin/ls", "-la", "/", NULL }
+     * ex: full = { "/bin/ls", "-la", NULL }
      */
     char *full[2 + argc];
     full[0] = command_with_path;
 
-    for (int i = 1; i < argc + 1; i++)
-        full[i] = argv[i - 1];
+    for (int i = 0; i < argc; i++)
+        full[i + 1] = argv[i];
 
     /* last pointer always NULL */
     full[1 + argc] = NULL;
@@ -110,12 +116,13 @@ bool valery_eval_token(char *program_name, char *argv[], int argc, struct env_t 
     int rc;
     /* check if program is shell builtin */
     if (strcmp(program_name, "which") == 0)
-        //TODO: make which take in all argv
-        rc = which(argv[0], env->paths, env->path_size, NULL);
+        rc = which(argv, argc, env->paths, env->path_size);
     else if (strcmp(program_name, "cd") == 0)
         rc = cd(argv[0]);
     else if (strcmp(program_name, "history") == 0)
-        rc = history(hist);
+        rc = history(hist, argc > 0);
+    else if (strcmp(program_name, "pwd") == 0)
+        rc = pwd(NULL);
     else if (strcmp(program_name, "help") == 0)
         rc = help();
     else
@@ -175,8 +182,7 @@ void new_pipe(struct exec_ctx *e_ctx)
 
     rc = pipe(e_ctx->streams[st]);
     if (rc == -1) {
-        // TODO: better error handling
-        fprintf(stderr, "valery error: could not create pipe\n");
+        fprintf(stderr, "valery internal error: call to POSIX C library function pipe() failed\n");
         exit(EXIT_FAILURE);
     }
 
@@ -195,7 +201,6 @@ void terminate_pipe(struct exec_ctx *e_ctx)
         st = ST_SETH;
     }
 
-    //TODO: can call to close() fail?
     if (st != ST_NONE) {
         close(e_ctx->streams[st][READ_END]);
         close(e_ctx->streams[st][WRITE_END]);
@@ -205,7 +210,6 @@ void terminate_pipe(struct exec_ctx *e_ctx)
 
 void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_type)
 {
-    // TODO: currently assumes inputted tokens are valid.
     if (type == O_PIPE) {
         /* write stream was set in previous call */
         e_ctx->read_stream = e_ctx->write_stream;
@@ -229,6 +233,7 @@ int str_to_argv(char *str, char **argv, int *argv_cap)
     print_debug("converting '%s' into argv\n", str);
 
     int argc = 0;
+
     while (*str != 0) {
         if (*str == ' ') {
             *str = 0;

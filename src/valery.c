@@ -38,6 +38,7 @@
 
 static volatile int received_sigint = 0;
 static struct termios originalt, newt;
+static bool INTERACTIVE;
 
 
 void disable_term_flags()
@@ -63,14 +64,12 @@ static void catch_exit_signal()
     received_sigint = 1;
 }
 
-int exclusive(char *arg)
+int valery(char *arg)
 {
-    struct env_t *env = env_t_malloc();
-    struct hist_t *hist;
     struct tokenized_str_t *ts;
-    char hist_file_path[MAX_ENV_LEN];
+    struct hist_t *hist = NULL;
+    struct env_t *env = env_t_malloc();
     int rc;
-    int rc_env;
 
     rc = parse_config(env);
     if (rc == 1) {
@@ -78,90 +77,66 @@ int exclusive(char *arg)
         env_t_free(env);
         return 1;
     }
-
-    snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env_get(env, "HOME"), HISTFILE_NAME);
-    hist = hist_t_malloc(hist_file_path);
-
-    ts = tokenized_str_t_malloc();
-    rc = tokenize(ts, env, arg);
-    if (rc == 0) {
-        rc_env = valery_parse_tokens(ts, env, hist);
-        //env->exit_code = rc_env;
-    }
-
-    env_t_free(env);
-    hist_t_free(hist);
-    tokenized_str_t_free(ts);
-
-    return rc_env;
-}
-
-int interactive()
-{
-    struct env_t *env = env_t_malloc();
-    struct hist_t *hist;
-    struct tokenized_str_t *ts;
-    char hist_file_path[MAX_ENV_LEN];
-    char input_buffer[COMMAND_LEN];
-    int rc;
-
-    signal(SIGINT, catch_exit_signal);
-    disable_term_flags();
-
-    rc = parse_config(env);
-    if (rc == 1) {
-        fprintf(stderr, "error parsing .valeryrc");
-        env_t_free(env);
-        enable_term_flags();
-        return 1;
-    }
-
-    /* establish a connection to the hist file */
-    snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env_get(env, "HOME"), HISTFILE_NAME);
-    hist = hist_t_malloc(hist_file_path);
 
     /* create tokenized_str_t object. Will reused same object every loop. */
     ts = tokenized_str_t_malloc();
 
-    /* main loop */
-    while (1) {
-        prompt(hist, env_get(env, "PS1"), input_buffer);
+    if (INTERACTIVE) {
+        char input_buffer[COMMAND_LEN] = {0};
+        char hist_file_path[MAX_ENV_LEN] = {0};
 
-        /* skip exec if ctrl+c is caught */
-        if (received_sigint) {
-            received_sigint = 0;
-            signal(SIGINT, catch_exit_signal);
-            goto end_loop;
+        snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env_get(env, "HOME"), HISTFILE_NAME);
+        /* establish a connection to the hist file */
+        hist = hist_t_malloc(hist_file_path);
+
+        signal(SIGINT, catch_exit_signal);
+        disable_term_flags();
+
+        /* main loop */
+        while (1) {
+            env_update_pwd(env);
+            prompt(hist, env_get(env, "PS1"), input_buffer);
+
+            /* skip exec if ctrl+c is caught */
+            if (received_sigint) {
+                received_sigint = 0;
+                signal(SIGINT, catch_exit_signal);
+                goto end_loop;
+            }
+
+            hist_t_save(hist, input_buffer);
+
+            if (strcmp(input_buffer, "") == 0)
+                goto end_loop;
+            else if (strcmp(input_buffer, "exit") == 0)
+                break;
+
+            /* loop enters here means ordinary command was typed in */
+            rc = tokenize(ts, env, input_buffer);
+#ifdef DEBUG
+        tokenized_str_t_print(ts);
+#endif /* DEBUG */
+            if (rc == 0)
+                valery_parse_tokens(ts, env, hist);
+
+        /* clears all buffers */
+        end_loop:
+            tokenized_str_t_clear(ts);
+            memset(input_buffer, 0, COMMAND_LEN);
         }
 
-        hist_t_save(hist, input_buffer);
-
-        if (strcmp(input_buffer, "") == 0)
-            goto end_loop;
-        else if (strcmp(input_buffer, "exit") == 0)
-            break;
-
-        /* loop enters here means ordinary command was typed in */
-        rc = tokenize(ts, env, input_buffer);
-        if (rc == 0) {
+        /* free and write to file before exiting */
+        hist_t_write(hist);
+        hist_t_free(hist);
+        enable_term_flags();
+    } else {
+        rc = tokenize(ts, env, arg);
+        if (rc == 0)
             valery_parse_tokens(ts, env, hist);
-            //env->exit_code = rc_env;
-        }
-
-    /* clears all buffers */
-    end_loop:
-        tokenized_str_t_clear(ts);
-        memset(input_buffer, 0, COMMAND_LEN);
     }
 
-    /* free and write to file before exiting */
-    hist_t_write(hist);
     env_t_free(env);
-    hist_t_free(hist);
     tokenized_str_t_free(ts);
-
-    printf("Exiting ...\n");
-    enable_term_flags();
     return rc;
 }
 
@@ -178,10 +153,11 @@ int main(int argc, char *argv[])
                 printf("valery: '-c' option requires an argument\n");
                 return 1;
             }
-            return exclusive(argv[2]);
+            INTERACTIVE = false;
+            return valery(argv[2]);
         }
-
     }
 
-    return interactive();
+    INTERACTIVE = true;
+    return valery(NULL);
 }

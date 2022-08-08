@@ -19,13 +19,14 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "valery/histfile.h"
 
 #define LINES 15
 
 
-int history(struct hist_t *hist)
+int history(struct hist_t *hist, bool print_all)
 {
     if (hist->fp == NULL)
         return 1;
@@ -33,14 +34,19 @@ int history(struct hist_t *hist)
     char buf[COMMAND_LEN];
     long rc;
     int i;
-    int len;
+    size_t len;
     size_t histlines = hist->s_len + hist->f_len;
     if (histlines == 0)
         return 1;
 
     hist_t_reset_pos(hist);
-    /* only read valid amount of histlines */
-    len = histlines >= LINES ? LINES : histlines;
+
+    if (print_all)
+        len = histlines;
+    else
+        /* only read valid amount of histlines */
+        len = histlines >= LINES ? LINES : histlines;
+
     for (i = len; i > 0; i--)
         hist_t_traverse(hist, HIST_UP); 
 

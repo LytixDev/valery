@@ -11,7 +11,7 @@ OBJS := $(SRCS:%.c=$(OBJDIR)/%.o)
 CC = gcc
 CFLAGS = -I include -Wall -Wpedantic -Wextra -Wshadow -std=c99
 
-.PHONY: clean $(OBJDIR)
+.PHONY: clean tags bear $(OBJDIR)
 TARGET = valery
 
 
@@ -25,11 +25,16 @@ $(TARGET): $(OBJS)
 	@$(CC) -o $@ $^
 
 debug: CFLAGS += -g -DDEBUG
-debug: clean
 debug: $(TARGET)
 
 clean:
 	@rm -rf $(OBJDIR) $(TARGET) ~/$(RC)
+
+tags:
+	@ctags -R
+
+bear:
+	bear -- make
 
 $(OBJDIR):
 	$(foreach dir, $(DIRS), $(shell mkdir -p $(OBJDIR)/$(dir)))

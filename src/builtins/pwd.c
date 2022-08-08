@@ -1,4 +1,6 @@
 /*
+ *  Prints the current working directory.
+ *
  *  Copyright (C) 2022 Nicolai Brand 
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -15,4 +17,29 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-char *builtin_names[] = {"cd", "which", "history", "help", "pwd"};
+#include <string.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <limits.h>
+#include <stdbool.h>
+
+#include "builtins/builtins.h"
+
+
+int pwd(char result[4096])
+{
+    bool interactive = result == NULL ? true : false;
+    char cwd[4096];
+
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        if (interactive)
+            printf("%s\n", cwd);
+        else
+            strncpy(result, cwd, 4096);
+    } else {
+        fprintf(stderr, "valery internal error: call to getcwd() failed\n");
+        return 1;
+    }
+
+    return 0;
+}

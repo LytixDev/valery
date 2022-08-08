@@ -25,6 +25,7 @@
 
 #include "valery/lexer.h"
 #include "valery/env.h"
+#include "valery.h"
 
 /*
  * enum representation is found in lexer.h.
@@ -184,14 +185,14 @@ void token_t_print(struct token_t *t)
     else
         strcpy(type, operands_str[t->type]);
 
-    printf("TOKEN_T: str: '%s', type: '%s', str_len: '%ld', str_capacity: '%ld'",\
+    print_debug("TOKEN_T: str: '%s', type: '%s', str_len: '%ld', str_capacity: '%ld'",\
            t->str, type, t->str_len, t->str_capacity);
 }
 
 /* just for debugging */
 void tokenized_str_t_print(struct tokenized_str_t *ts)
 {
-    printf("metadata: total tokens: %ld, total tokens allocated: %ld\n\n", ts->size + 1, ts->capacity);
+    print_debug("metadata: total tokens: %ld, total tokens allocated: %ld\n\n", ts->size + 1, ts->capacity);
 
     for (size_t i = 0; i < ts->size + 1; i++) {
         printf("num: '%ld', ", i);
@@ -265,7 +266,7 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
         if (!special_char(env, t, c, &buffer, &p_flags))
             continue;
 
-        if (!(p_flags & PF_QOUTE) && update_candidates(c, 0, candidates, &total_candidates)) {
+        if (!(p_flags & PF_QUOTE) && update_candidates(c, 0, candidates, &total_candidates)) {
             /* as the current char can be an operand, the current token is done and can be finalized */
             if (t->str_len != 0) {
                 token_t_done(t);
@@ -273,9 +274,7 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
                 t = tokenized_str_t_next(ts);
             }
 
-            token_t_append_char(t, c);
-
-            while ((c = *buffer++) != 0) {
+            do {
                 token_t_append_char(t, c);
                 update_candidates(c, candidate_len++, candidates, &total_candidates);
 
@@ -310,7 +309,7 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
                     print_syntax_error(buf_start, buffer, "unexpected token");
                     return -1;
                 }
-            }
+            } while ((c = *buffer++) != 0);
 
         finished_op:
             /* only finalize token if we broke out of the loop (i.e operand was found and buffer not ended) */
@@ -331,15 +330,19 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
      * if it has O_NONE type then it has not been already finalized.
      * if skip flag is set then there was no closing qoutation mark, so throw syntax error 
      */
-    if (p_flags & PF_QOUTE) {
+    token_t_done(t);
+
+    if (p_flags & PF_QUOTE) {
         print_syntax_error(buf_start, buffer, "expected \"");
         return -1;
     } else if (p_flags & PF_ESCAPE) {
         print_syntax_error(buf_start, buffer - 1, "dangling escape character");
         return -1;
+    } else if (which_operand(candidates) != O_NONE) {
+        //TODO: does not work properly
+        //print_syntax_error(buf_start, buffer - 2, "excpected another token after this operand");
+        //return -1;
     }
-    if (t->type == O_NONE)
-        token_t_done(t);
 
     return 0;
 }
@@ -351,10 +354,11 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
     switch (c) {
         /* do not parse chars inside qoutation marks, unless qoutation mark is escaped with backslash */
         case '"':
-            if (*p_flags & PF_QOUTE)
-                *p_flags ^= PF_QOUTE;
+            if (*p_flags & PF_QUOTE)
+                *p_flags ^= PF_QUOTE;
+
             else
-                *p_flags |= PF_QOUTE;
+                *p_flags |= PF_QUOTE;
             break;
 
         /* add flag that will*/
@@ -379,6 +383,29 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
 
             if (env_value != NULL)
                 token_t_append_str(t, env_value);
+            break;
+
+        /* expand "." into current working directory */
+        case '.':
+            if (*p_flags & PF_QUOTE || *p_flags & PF_ESCAPE)
+                return true;
+
+            if (*p_flags & PF_DOTDOT) {
+                *p_flags ^= PF_DOTDOT;
+                return true;
+            }
+
+            /* if next char is also '.', ignore */
+            if (**buffer == '.') {
+                *p_flags |= PF_DOTDOT;
+                return true;
+            }
+
+            char *PWD = env_get(env, "PWD");
+            /* copy pwd into token */
+            if (PWD != NULL)
+                token_t_append_str(t, PWD);
+
             break;
 
         default:
@@ -406,4 +433,13 @@ char *trim_edge(char *str, char c)
     *(++str_cpy) = 0;
 
     return str_start;
+}
+
+char peek(char *buffer)
+{
+    if (++(*buffer) == 0) {
+        buffer--;
+        return -1;
+    } else
+        return *buffer--;
 }

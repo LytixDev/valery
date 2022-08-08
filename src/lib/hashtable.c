@@ -73,7 +73,7 @@ static struct ht_item_t *ht_item_malloc(char *key, void *value)
     strcpy(ht_item->key, key);
 #ifdef HT_VALUE_IS_STR
     ht_item->value = malloc(strlen(value) + 1);
-    strcpy(ht_item->value, value);
+    strcpy(ht_item->value, (char *) value);
 #else
     ht_item->value = malloc(HT_VALUE_SIZE);
     memcpy(item->value, value, HT_VALUE_SIZE);
@@ -107,7 +107,7 @@ void ht_set(struct ht_t *ht, char *key, void *value)
             free(item->value);
 #ifdef HT_VALUE_IS_STR
             item->value = malloc(strlen(value) + 1);
-            strcpy(item->value, value);
+            strcpy(item->value, (char *) value);
 #else
             item->value = malloc(HT_VALUE_SIZE);
             memcpy(item->value, value, HT_VALUE_SIZE);

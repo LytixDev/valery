@@ -40,6 +40,7 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     char tmp[1024];
 
     /* update list of environment variables if necessary */
+    //TODO: null terminate
     if (env->env_update)
         env_gen(env);
 

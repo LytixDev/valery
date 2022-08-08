@@ -63,4 +63,6 @@ char *env_get(struct env_t *env, char *key);
 
 void env_set(struct env_t *env, char *key, char *value);
 
+void env_update_pwd(struct env_t *env);
+
 #endif

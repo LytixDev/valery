@@ -20,6 +20,7 @@
 
 #include "valery/env.h"
 #include "lib/hashtable.h"
+#include "builtins/builtins.h"
 
 
 struct env_t *env_t_malloc()
@@ -84,4 +85,19 @@ void env_t_path_increase(struct env_t *env, int new_len) {
 
     env->path_capacity = new_len;
     return;
+}
+
+void env_update_pwd(struct env_t *env)
+{
+    char *old = env_get(env, "PWD");
+    char result[4096];
+    if (pwd(result) == 1)
+        return;
+
+    env_set(env, "PWD", result);
+
+    if (old != NULL)
+        env_set(env, "OLDPWD", old);
+    else
+        env_set(env, "OLDPWD", result);
 }

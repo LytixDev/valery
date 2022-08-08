@@ -121,6 +121,8 @@ bool valery_eval_token(char *program_name, char *argv[], int argc, struct env_t 
         rc = cd(argv[0]);
     else if (strcmp(program_name, "history") == 0)
         rc = history(hist, argc > 0);
+    else if (strcmp(program_name, "pwd") == 0)
+        rc = pwd(NULL);
     else if (strcmp(program_name, "help") == 0)
         rc = help();
     else

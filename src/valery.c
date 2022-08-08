@@ -94,6 +94,7 @@ int valery(char *arg)
 
         /* main loop */
         while (1) {
+            env_update_pwd(env);
             prompt(hist, env_get(env, "PS1"), input_buffer);
 
             /* skip exec if ctrl+c is caught */

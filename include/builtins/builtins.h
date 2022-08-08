@@ -27,7 +27,7 @@
 #define COMMAND_IS_BUILTIN      2
 #define COMMAND_IS_PATH         3
 
-#define total_builtin_functions 4
+#define total_builtin_functions 5
 extern char *builtin_names[total_builtin_functions];
 
 
@@ -56,9 +56,18 @@ int which_single(char *program_name, char **paths, int path_count, char **path_r
 int cd(char *directory);
 
 /*
+ * if print_all is true, program prints entire hist file.
+ * if not, program prints the 15 most recent hist lines.
  */
 int history(struct hist_t *hist, bool print_all);
 
+/*
+ * if result is NULL, program prints the current working directory.
+ * if not, program copies the current working directory into result param.
+ */
+int pwd(char result[4096]);
+
 int help();
+
 
 #endif

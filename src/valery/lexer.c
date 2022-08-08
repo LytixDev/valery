@@ -411,3 +411,10 @@ char *trim_edge(char *str, char c)
 
     return str_start;
 }
+
+char peek(char *buffer)
+{
+    char res = ++(*buffer);
+    buffer--;
+    return res;
+}

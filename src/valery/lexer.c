@@ -385,6 +385,24 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
                 token_t_append_str(t, env_value);
             break;
 
+        /* expand "." into current working directory */
+        case '.':
+            /* ignore */
+            if (*p_flags & PF_QUOTE || *p_flags & PF_ESCAPE)
+                return true;
+
+            //if (peek(*buffer) == '.') {
+            //}
+            //break;
+            printf("");
+
+            char *PWD = env_get(env, "PWD");
+            /* copy pwd into token */
+            if (PWD != NULL)
+                token_t_append_str(t, PWD);
+
+            break;
+
         default:
             return true;
     }
@@ -414,7 +432,9 @@ char *trim_edge(char *str, char c)
 
 char peek(char *buffer)
 {
-    char res = ++(*buffer);
-    buffer--;
-    return res;
+    if (++(*buffer) == 0) {
+        buffer--;
+        return -1;
+    } else
+        return *buffer--;
 }

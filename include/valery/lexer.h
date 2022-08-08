@@ -161,5 +161,7 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
 
 char *trim_edge(char *str, char c);
 
+char peek(char *buffer);
+
 
 #endif

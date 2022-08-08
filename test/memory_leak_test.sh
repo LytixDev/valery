@@ -11,12 +11,12 @@ do
     echo "VALERY TEST: '$test_vector' started."
     if ./valery -c "$test_vector" >/dev/null
     then
-        echo "VALERY TEST: '$test_vector' SUCCESSFULLY RAN."
+        echo "VALERY TEST: '$test_vector' COMPLETED."
     else
         echo "VALERY TEST: '$test_vector' FAILED." && failed=1
     fi
 
-    valgrind ./valery -c "$test_vector" 2> "$f" >/dev/null
+    valgrind --leak-check=full ./valery -c "$test_vector" 2> "$f" >/dev/null
     grep -q "$heap" "$f"
 
     [ $? -eq 1 ] && echo "VALERY TEST: '$test_vector' MEMORY LEAK DETECTED." && failed=1 && cat "$f"

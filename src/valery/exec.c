@@ -39,11 +39,11 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     char *command_with_path;
     char tmp[1024];
 
-    /* create NULL terminated list of environment variables */
-    char *environ[env->env_size];
-    for (int i = 0; i < env->env_size; i++)
-        environ[i] = env->environ[i];
-    environ[env->env_size] = NULL;
+    /* update list of environment variables if necessary */
+    if (env->env_update)
+        env_gen(env);
+
+    char **environ = env->environ;
 
     rc = which_single(program_name, env->paths, env->path_size, &found_path);
     if (!(rc == COMMAND_IN_PATH || rc == COMMAND_IS_PATH)) {

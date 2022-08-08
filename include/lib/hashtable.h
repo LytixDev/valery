@@ -30,6 +30,7 @@
 #define LIB_HASHTABLE
 
 #include <stdlib.h>
+#include <stdint.h>
 
 /* variables */
 #define TABLE_SIZE 100
@@ -47,6 +48,7 @@ typedef struct ht_item_t {
 
 typedef struct ht_t {
     struct ht_item_t **items;
+    uint8_t keys[TABLE_SIZE];
     // TODO: dynamic size
     //size_t capacity;
 } ht_t;
@@ -60,6 +62,8 @@ void ht_free(struct ht_t *ht);
 void ht_set(struct ht_t *ht, char *key, char *value);
 
 char *ht_get(struct ht_t *ht, char *key);
+
+struct ht_item_t *ht_geth(struct ht_t *ht, unsigned int hash);
 
 void ht_rm(struct ht_t *ht, char *key);
 

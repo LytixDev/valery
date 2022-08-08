@@ -80,9 +80,11 @@ static struct ht_item_t *ht_item_malloc(char *key, void *value)
 void ht_set(struct ht_t *ht, char *key, char *value)
 {
     unsigned int hash = hasher(key);
+    /* add hash to list of keys */
+    ht->keys[hash] += 1;
     struct ht_item_t *item = ht->items[hash];
 
-    // no ht_item means hash empty, insert immediately
+    /* no ht_item means hash empty, insert immediately */
     if (item == NULL) {
         ht->items[hash] = ht_item_malloc(key, value);
         return;
@@ -90,12 +92,13 @@ void ht_set(struct ht_t *ht, char *key, char *value)
 
     struct ht_item_t *prev;
 
-    // walk through each ht_item until either the end is
-    // reached or a matching key is found
+    /*
+     * walk through each ht_item until either the end is
+     * reached or a matching key is found
+     */
     while (item != NULL) {
-        // check key
         if (strcmp(item->key, key) == 0) {
-            // match found, replace value
+            /* match found, replace value */
             free(item->value);
             item->value = malloc(strlen(value) + 1);
             strcpy(item->value, value);
@@ -106,7 +109,7 @@ void ht_set(struct ht_t *ht, char *key, char *value)
         item = prev->next;
     }
 
-    // end of chain reached without a match, add new
+    /* end of chain reached without a match, add new */
     prev->next = ht_item_malloc(key, value);
 }
 
@@ -125,7 +128,24 @@ char *ht_get(struct ht_t *ht, char *key)
         item = item->next;
     }
 
-    // reaching here means there were >= 1 items but no key match
+    /* reaching here means there were >= 1 items but no key match */
+    return NULL;
+}
+
+struct ht_item_t *ht_geth(struct ht_t *ht, unsigned int hash)
+{
+    struct ht_item_t *item = ht->items[hash];
+
+    if (item == NULL)
+        return NULL;
+
+    while (item != NULL) {
+        //TODO: what if collision?
+        return item;
+
+        //item = item->next;
+    }
+
     return NULL;
 }
 
@@ -142,31 +162,32 @@ void ht_rm(struct ht_t *ht, char *key)
 
     while (item != NULL) {
         if (strcmp(item->key, key) == 0) {
-            // first ht_item and no next ht_item
+            /* first ht_item and no next ht_item */
             if (item->next == NULL && i == 0)
                 ht->items[hash] = NULL;
 
-            // first ht_item with a next ht_item
+            /* first ht_item with a next ht_item */
             if (item->next != NULL && i == 0)
                 ht->items[hash] = item->next;
 
-            // last ht_item
+            /* last ht_item */
             if (item->next == NULL && i != 0)
                 prev->next = NULL;
 
-            // middle ht_item
+            /* middle ht_item */
             if (item->next != NULL && i != 0)
                 prev->next = item->next;
 
-            // free the deleted ht_item
+            /* free the deleted ht_item */
             free(item->key);
             free(item->value);
             free(item);
+            ht->keys[hash] -= 1;
 
             return;
         }
 
-        // walk to next
+        /* walk to next */
         prev = item;
         item = prev->next;
         i++;

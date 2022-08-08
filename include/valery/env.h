@@ -61,6 +61,10 @@ void env_t_path_increase(struct env_t *env, int new_len);
 
 char *env_get(struct env_t *env, char *key);
 
+struct ht_item_t *env_geth(struct env_t *env, unsigned int hash);
+
+void env_gen(struct env_t *env);
+
 void env_set(struct env_t *env, char *key, char *value);
 
 void env_update_pwd(struct env_t *env);

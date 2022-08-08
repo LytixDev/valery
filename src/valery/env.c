@@ -37,7 +37,7 @@ struct env_t *env_t_malloc()
     env->env_vars = ht_malloc();
     env->env_update = false;
 
-    env->env_capacity = TABLE_SIZE;
+    env->env_capacity = HT_TABLE_SIZE;
     env->env_size = 0;
     env->environ = (char **) malloc(env->env_capacity * sizeof(char *));
     for (int i = 0; i < env->env_capacity; i++)
@@ -101,7 +101,7 @@ void env_gen(struct env_t *env, char *env_str[env->env_capacity])
                 item = env_geth(env, hash);
                 /* hash table may have collisions */
                 while (item != NULL) {
-                    snprintf(env->environ[i], MAX_ENV_LEN, "%s=%s", item->key, item->value);
+                    snprintf(env->environ[i], MAX_ENV_LEN, "%s=%s", item->key, (char *) item->value);
                     env_str[i] = env->environ[i];
                     i++;
                     item = item->next;

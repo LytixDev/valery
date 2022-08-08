@@ -82,19 +82,42 @@ void env_set(struct env_t *env, char *key, char *value)
     env->env_update = true;
 }
 
-void env_gen(struct env_t *env)
+void env_rm(struct env_t *env, char *key)
 {
-    int i = 0;
-    struct ht_item_t *item;
-    for (int hash = 0; hash < env->env_capacity; hash++) {
-        //TODO what if collition?
-        if (env->env_vars->keys[hash] > 0) {
-            item = env_geth(env, hash);
-            snprintf(env->environ[i++], MAX_ENV_LEN, "%s=%s", item->key, item->value);
+    ht_rm(env->env_vars, key);
+    env->env_update = true;
+}
+
+void env_gen(struct env_t *env, char *env_str[env->env_capacity])
+{
+    int i;
+
+    if (env->env_update) {
+        struct ht_item_t *item;
+        i = 0;
+
+        for (int hash = 0; hash < env->env_capacity; hash++) {
+            if (env->env_vars->keys[hash] != 0) {
+                item = env_geth(env, hash);
+                /* hash table may have collisions */
+                while (item != NULL) {
+                    snprintf(env->environ[i], MAX_ENV_LEN, "%s=%s", item->key, item->value);
+                    env_str[i] = env->environ[i];
+                    i++;
+                    item = item->next;
+                }
+            }
         }
+
+        env_str[i] = NULL;
+        env->env_size = --i;
+        env->env_update = false;
+    } else {
+        for (i = 0; i < env->env_size; i++) {
+            env_str[i] = env->environ[i];
+        }
+        env_str[i] = NULL;
     }
-    env->env_size = --i;
-    env->env_update = false;
 }
 
 void env_t_path_increase(struct env_t *env, int new_len) {

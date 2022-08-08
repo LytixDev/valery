@@ -63,7 +63,9 @@ char *env_get(struct env_t *env, char *key);
 
 struct ht_item_t *env_geth(struct env_t *env, unsigned int hash);
 
-void env_gen(struct env_t *env);
+void env_gen(struct env_t *env, char *env_str[env->env_capacity]);
+
+void env_rm(struct env_t *env, char *key);
 
 void env_set(struct env_t *env, char *key, char *value);
 

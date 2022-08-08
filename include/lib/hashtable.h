@@ -24,33 +24,32 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// TODO/NOTE: still in experimental phase
-
 #ifndef LIB_HASHTABLE
 #define LIB_HASHTABLE
 
 #include <stdlib.h>
-#include <stdint.h>
 
 /* variables */
-#define TABLE_SIZE 100
+#define HT_TABLE_SIZE 100
 
+/*
+ * if HT_VALUE_IS_STR is defined, ht_item_malloc will call strlen to allocate the space
+ * necessary, instead of using the default_value_size.
+ */
+#define HT_VALUE_IS_STR
+#define HT_VALUE_SIZE 1024      /* unused in this case */
 
 /* types */
 typedef struct ht_item_t {
     char *key;
-    //TODO: use void pointer ?
-    char *value;
-    //void (*free_func)(void *);
+    void *value;
     struct ht_item_t *next;
 } ht_item_t;
 
 
 typedef struct ht_t {
     struct ht_item_t **items;
-    uint8_t keys[TABLE_SIZE];
-    // TODO: dynamic size
-    //size_t capacity;
+    unsigned int keys[HT_TABLE_SIZE];
 } ht_t;
 
 
@@ -59,18 +58,12 @@ struct ht_t *ht_malloc();
 
 void ht_free(struct ht_t *ht);
 
-void ht_set(struct ht_t *ht, char *key, char *value);
+void ht_set(struct ht_t *ht, char *key, void *value);
 
 char *ht_get(struct ht_t *ht, char *key);
 
 struct ht_item_t *ht_geth(struct ht_t *ht, unsigned int hash);
 
 void ht_rm(struct ht_t *ht, char *key);
-
-/*
- * static functions:
- * hasher()
- * ht_item_malloc()
- */
 
 #endif /* LIB_HASHTABLE */

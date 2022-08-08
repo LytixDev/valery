@@ -38,7 +38,7 @@ struct env_t *env_t_malloc()
     env->env_update = false;
 
     env->env_capacity = TABLE_SIZE;
-    //env->env_size = 0;
+    env->env_size = 0;
     env->environ = (char **) malloc(env->env_capacity * sizeof(char *));
     for (int i = 0; i < env->env_capacity; i++)
         env->environ[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
@@ -93,7 +93,7 @@ void env_gen(struct env_t *env)
             snprintf(env->environ[i++], MAX_ENV_LEN, "%s=%s", item->key, item->value);
         }
     }
-    env->environ[i] = NULL;
+    env->env_size = --i;
     env->env_update = false;
 }
 
@@ -119,4 +119,7 @@ void env_update_pwd(struct env_t *env)
         env_set(env, "OLDPWD", old);
     else
         env_set(env, "OLDPWD", result);
+
+    //TODO: check if actually need to update
+    env->env_update = true;
 }

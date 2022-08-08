@@ -387,14 +387,19 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
 
         /* expand "." into current working directory */
         case '.':
-            /* ignore */
             if (*p_flags & PF_QUOTE || *p_flags & PF_ESCAPE)
                 return true;
 
-            //if (peek(*buffer) == '.') {
-            //}
-            //break;
-            printf("");
+            if (*p_flags & PF_DOTDOT) {
+                *p_flags ^= PF_DOTDOT;
+                return true;
+            }
+
+            /* if next char is also '.', ignore */
+            if (**buffer == '.') {
+                *p_flags |= PF_DOTDOT;
+                return true;
+            }
 
             char *PWD = env_get(env, "PWD");
             /* copy pwd into token */

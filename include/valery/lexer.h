@@ -38,7 +38,8 @@
 typedef enum parse_flags {
     //PF_SKIP     = 1 << 0,
     PF_QUOTE    = 1 << 1,
-    PF_ESCAPE   = 1 << 2
+    PF_ESCAPE   = 1 << 2,
+    PF_DOTDOT   = 1 << 3
 } parse_flags;
 
 /* see definition of *operands[] in lexer.c for string representation of the operands */

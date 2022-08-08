@@ -123,7 +123,7 @@ void ht_set(struct ht_t *ht, char *key, void *value)
     prev->next = ht_item_malloc(key, value);
 }
 
-char *ht_get(struct ht_t *ht, char *key)
+void *ht_get(struct ht_t *ht, char *key)
 {
     unsigned int hash = hasher(key);
     struct ht_item_t *item = ht->items[hash];

@@ -30,7 +30,7 @@
 #include <stdlib.h>
 
 /* variables */
-#define HT_TABLE_SIZE 100
+#define HT_TABLE_SIZE 64
 
 /*
  * if HT_VALUE_IS_STR is defined, ht_item_malloc will call strlen to allocate the space
@@ -49,21 +49,30 @@ typedef struct ht_item_t {
 
 typedef struct ht_t {
     struct ht_item_t **items;
-    unsigned int keys[HT_TABLE_SIZE];
+    unsigned int keys[HT_TABLE_SIZE];   /* how many items that are stored per hash */
 } ht_t;
 
 
 /* functions */
 struct ht_t *ht_malloc();
 
+/* frees the entire ht and all items associated with it */
 void ht_free(struct ht_t *ht);
 
+/*
+ * allocates space a new ht_item_t, computes the hash, and slots the 
+ * item into the given 'ht_t *ht' hashtable. Frees and overrides previous
+ * item with if there is an item with the exact same key.
+ */
 void ht_set(struct ht_t *ht, char *key, void *value);
 
-char *ht_get(struct ht_t *ht, char *key);
+/* returns the value corresponding to the given key */
+void *ht_get(struct ht_t *ht, char *key);
 
+/* returns the first item stored with the given hash parameter */
 struct ht_item_t *ht_geth(struct ht_t *ht, unsigned int hash);
 
+/* removes and frees the item the hashtable */
 void ht_rm(struct ht_t *ht, char *key);
 
 #endif /* LIB_HASHTABLE */

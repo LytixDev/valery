@@ -26,6 +26,8 @@
 struct env_t *env_t_malloc()
 {
     struct env_t *env = (env_t *) malloc(sizeof(env_t));
+    env->exit_code = 0;
+
     env->paths = (char **) malloc(STARTING_PATHS * sizeof(char *));
     for (int i = 0; i < STARTING_PATHS; i++)
         env->paths[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
@@ -33,16 +35,14 @@ struct env_t *env_t_malloc()
     env->path_capacity = STARTING_PATHS;
     env->path_size = 0;
     env->PATH = (char *) malloc(MAX_ENV_LEN * sizeof(char));
-    env->exit_code = 0;
+
     env->env_vars = ht_malloc();
     env->env_update = false;
-
     env->env_capacity = HT_TABLE_SIZE;
     env->env_size = 0;
     env->environ = (char **) malloc(env->env_capacity * sizeof(char *));
     for (int i = 0; i < env->env_capacity; i++)
         env->environ[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
-
 
     return env;
 }
@@ -68,7 +68,7 @@ void env_t_free(struct env_t *env)
 
 char *env_get(struct env_t *env, char *key)
 {
-    return ht_get(env->env_vars, key);
+    return (char *) ht_get(env->env_vars, key);
 }
 
 struct ht_item_t *env_geth(struct env_t *env, unsigned int hash)
@@ -136,12 +136,13 @@ void env_update_pwd(struct env_t *env)
     if (pwd(result) == 1)
         return;
 
-    env_set(env, "PWD", result);
-
+    /* update OLDPWD first, because pointer to old will be changed */
     if (old != NULL)
         env_set(env, "OLDPWD", old);
     else
         env_set(env, "OLDPWD", result);
+
+    env_set(env, "PWD", result);
 
     //TODO: check if actually need to update
     env->env_update = true;

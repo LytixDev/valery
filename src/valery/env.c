@@ -48,6 +48,7 @@ struct env_t *env_t_malloc()
     for (int i = 0; i < env->env_capacity; i++)
         env->environ[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
 
+
     set_home_dir(env);
 
     return env;

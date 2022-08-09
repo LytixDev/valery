@@ -24,7 +24,7 @@
 
 
 /* variables */
-#define MAX_ENV_LEN 1024
+#define MAX_ENV_LEN 4096
 #define CONFIG_NAME ".valeryrc"
 #define HISTFILE_NAME ".valery_hist"
 #define STARTING_PATHS 5
@@ -88,5 +88,7 @@ void env_set(struct env_t *env, char *key, char *value);
  * OLDPWD is set to the current working directory if PWD was NULL.
  */
 void env_update_pwd(struct env_t *env);
+
+int set_home_dir(struct env_t *env);
 
 #endif

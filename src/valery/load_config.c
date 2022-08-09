@@ -17,41 +17,13 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
 #include <stdio.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <pwd.h>
 #include <string.h>
 #include <stdlib.h>
 
 #include "valery/load_config.h"
 #include "valery/env.h"
 
-
-int set_home_dir(struct env_t *env)
-{
-    struct passwd *pw = getpwuid(getuid());
-    char *homedir = pw->pw_dir;
-    
-    if (homedir == NULL)
-        return 1;
-    
-    env_set(env, "HOME", homedir);
-    return 0;
-}
-
-int get_config_path(struct env_t *env, char config_path[MAX_ENV_LEN])
-{
-    char *HOME = env_get(env, "HOME");
-    if (HOME != NULL) {
-        snprintf(config_path, MAX_ENV_LEN, "%s/%s", HOME, CONFIG_NAME);
-        return 0;
-    } else {
-        fprintf(stderr, "VALERY ERROR: could not find HOME environment variable\n");
-        return 1;
-    }
-}
 
 static int find_pos(char look_for, char *str)
 {
@@ -66,25 +38,13 @@ static int find_pos(char look_for, char *str)
     return -1;
 }
 
-void unwrap_paths(struct env_t *env)
-{
-    const char delim[] = ":";
-    char *path = strtok(env->PATH, delim);
-    
-    while (path != NULL) {
-        if (env->path_size == env->path_capacity - 1)
-            env_t_path_increase(env, env->path_capacity + 5);
-       
-        strcpy(env->paths[env->path_size++], path);
-        path = strtok(NULL, delim);
-    }
-}
-
 int parse_config(struct env_t *env)
 {
     /*
      * TODO: look for config in various places, f.ex: ~/.config/ 
-     * get home dir in a more robust fashion
+     * NOTE: parsing the config should idelly be done identically to how
+     * input buffers given from te prompt are parsed, but at this point,
+     * that whole event loop is not robust enough to handle that.
      */
 
     FILE *fp;
@@ -94,10 +54,6 @@ int parse_config(struct env_t *env)
     char val[MAX_ENV_LEN];
     int found_pos;
     int rc;
-
-    rc = set_home_dir(env);
-    if (rc == 1)
-        return 1;
 
     rc = get_config_path(env, config_path);
     if (rc == 1)
@@ -131,4 +87,30 @@ int parse_config(struct env_t *env)
     fclose(fp);
     unwrap_paths(env);
     return 0;
+}
+
+int get_config_path(struct env_t *env, char config_path[MAX_ENV_LEN])
+{
+    char *HOME = env_get(env, "HOME");
+    if (HOME != NULL) {
+        snprintf(config_path, MAX_ENV_LEN, "%s/%s", HOME, CONFIG_NAME);
+        return 0;
+    } else {
+        fprintf(stderr, "VALERY ERROR: could not find HOME environment variable\n");
+        return 1;
+    }
+}
+
+void unwrap_paths(struct env_t *env)
+{
+    const char delim[] = ":";
+    char *path = strtok(env->PATH, delim);
+    
+    while (path != NULL) {
+        if (env->path_size == env->path_capacity - 1)
+            env_t_path_increase(env, env->path_capacity + 5);
+       
+        strcpy(env->paths[env->path_size++], path);
+        path = strtok(NULL, delim);
+    }
 }

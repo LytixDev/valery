@@ -24,8 +24,6 @@
 
 /* functions */
 
-int set_home_dir(struct env_t *env);
-
 int get_config_path(struct env_t *env, char config_path[MAX_ENV_LEN]);
 
 void unwrap_paths(struct env_t *env);

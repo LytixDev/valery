@@ -164,11 +164,6 @@ void token_t_pop_char(struct token_t *t)
         t->str[--(t->str_len)] = 0;
 }
 
-void tokenized_str_t_append_char(struct tokenized_str_t *ts, char c)
-{
-    token_t_append_char(ts->tokens[ts->size], c);
-}
-
 struct token_t *tokenized_str_t_next(struct tokenized_str_t *ts)
 {
     if (++(ts->size) >= ts->capacity)
@@ -201,7 +196,7 @@ void tokenized_str_t_print(struct tokenized_str_t *ts)
     }
 }
 
-operands_t which_operand(bool candidates[TOTAL_OPERANDS])
+operands_t which_operand(const bool candidates[TOTAL_OPERANDS])
 {
     for (int i = 0; i < TOTAL_OPERANDS; i++) {
         if (candidates[i] == true)
@@ -224,13 +219,13 @@ int update_candidates(char c, size_t pos, bool candidates[TOTAL_OPERANDS], int *
     return *total_candidates;
 }
 
-void print_syntax_error(const char *buf_start, char *buf_err, char *msg)
+void print_syntax_error(const char *buf_start, const char *buf_err, char *msg)
 {
     fprintf(stderr, "valery: syntax error near: '%c'\n", *buf_err);
     fprintf(stderr, "%s\n", buf_start);
 
-    int offset = buf_err - buf_start - 1 > 0 ? buf_err - buf_start - 1: 0;
-    for (int i = 0; i < offset; i++)
+    long offset = buf_err - buf_start - 1 > 0 ? buf_err - buf_start - 1: 0;
+    for (long i = 0; i < offset; i++)
         fprintf(stderr, " ");
     fprintf(stderr, "^ %s\n", msg);
 }
@@ -305,14 +300,14 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
                         }
                     }
 
-                    /* execution enters here means operand was expected, but not found, i.e syntax error */
+                    /* execution enters here means operand was expected, but not found, i.e. syntax error */
                     print_syntax_error(buf_start, buffer, "unexpected token");
                     return -1;
                 }
             } while ((c = *buffer++) != 0);
 
         finished_op:
-            /* only finalize token if we broke out of the loop (i.e operand was found and buffer not ended) */
+            /* only finalize token if we broke out of the loop (i.e. operand was found and buffer not ended) */
             if (*buffer != 0) {
                 token_t_done(t);
                 t = tokenized_str_t_next(ts);
@@ -442,13 +437,4 @@ char *trim_edge(char *str, char c)
     *(++str_cpy) = 0;
 
     return str_start;
-}
-
-char peek(char *buffer)
-{
-    if (++(*buffer) == 0) {
-        buffer--;
-        return -1;
-    } else
-        return *buffer--;
 }

@@ -99,7 +99,7 @@ void hist_t_write(struct hist_t *hist)
 void hist_t_count(struct hist_t *hist)
 {
     size_t len = 0;
-    size_t chars = 0;
+    long chars = 0;
 
     while (!feof(hist->fp)) {
         chars++;
@@ -182,7 +182,7 @@ readfrom_t hist_t_get_line(struct hist_t *hist, char buf[COMMAND_LEN], histactio
 
     long rc = hist_t_traverse(hist, action);
     if (rc == READ_FROM_MEMORY) {
-        int index = hist->pos - hist->f_len;
+        size_t index = hist->pos - hist->f_len;
         strncpy(buf, hist->stored_commands[index], COMMAND_LEN);
         return READ_FROM_MEMORY;
     }

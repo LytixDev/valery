@@ -131,7 +131,7 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
     token_t *t;
     operands_t next_type;
     int argv_cap = 8;
-    int argc = 0;
+    int argc;
     char **argv = (char **) malloc(8 * sizeof(char *));
     /* initialize exec_ctx to have vacant streams */
     exec_ctx e_ctx = { .flags = SF_ADAM_VACANT | SF_SETH_VACANT, .read_stream = ST_NONE, .write_stream = ST_NONE };

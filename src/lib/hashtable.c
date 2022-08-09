@@ -1,5 +1,5 @@
 /*
- *  Hashtable implementantion in C.
+ *  Hashtable implementation in C.
  *  Copyright (C) 2022 Nicolai Brand 
  *
  *  This program is free software: you can redistribute it and/or modify

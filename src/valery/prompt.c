@@ -1,6 +1,6 @@
 /*
  *  Displays a prompt for the user to type in commands. Operates on the
- *  buffer inputet by the user.
+ *  buffer inputted by the user.
  * 
  *  Copyright (C) 2022 Nicolai Brand 
  *

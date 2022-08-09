@@ -54,7 +54,7 @@ typedef struct ht_t {
 
 
 /* functions */
-struct ht_t *ht_malloc();
+struct ht_t *ht_malloc(void);
 
 /* frees the entire ht and all items associated with it */
 void ht_free(struct ht_t *ht);

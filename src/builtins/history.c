@@ -33,7 +33,7 @@ int history(struct hist_t *hist, bool print_all)
 
     char buf[COMMAND_LEN];
     long rc;
-    int i;
+    size_t i;
     size_t len;
     size_t histlines = hist->s_len + hist->f_len;
     if (histlines == 0)

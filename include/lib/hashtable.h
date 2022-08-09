@@ -24,53 +24,55 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// TODO/NOTE: still in experimental phase
-
 #ifndef LIB_HASHTABLE
 #define LIB_HASHTABLE
 
 #include <stdlib.h>
-#include <stdint.h>
 
 /* variables */
-#define TABLE_SIZE 100
+#define HT_TABLE_SIZE 64
 
+/*
+ * if HT_VALUE_IS_STR is defined, ht_item_malloc will call strlen to allocate the space
+ * necessary, instead of using the default_value_size.
+ */
+#define HT_VALUE_IS_STR
+#define HT_VALUE_SIZE 1024      /* unused in this case */
 
 /* types */
 typedef struct ht_item_t {
     char *key;
-    //TODO: use void pointer ?
-    char *value;
-    //void (*free_func)(void *);
+    void *value;
     struct ht_item_t *next;
 } ht_item_t;
 
 
 typedef struct ht_t {
     struct ht_item_t **items;
-    uint8_t keys[TABLE_SIZE];
-    // TODO: dynamic size
-    //size_t capacity;
+    unsigned int keys[HT_TABLE_SIZE];   /* how many items that are stored per hash */
 } ht_t;
 
 
 /* functions */
 struct ht_t *ht_malloc();
 
+/* frees the entire ht and all items associated with it */
 void ht_free(struct ht_t *ht);
 
-void ht_set(struct ht_t *ht, char *key, char *value);
+/*
+ * allocates space a new ht_item_t, computes the hash, and slots the 
+ * item into the given 'ht_t *ht' hashtable. Frees and overrides previous
+ * item with if there is an item with the exact same key.
+ */
+void ht_set(struct ht_t *ht, char *key, void *value);
 
-char *ht_get(struct ht_t *ht, char *key);
+/* returns the value corresponding to the given key */
+void *ht_get(struct ht_t *ht, char *key);
 
+/* returns the first item stored with the given hash parameter */
 struct ht_item_t *ht_geth(struct ht_t *ht, unsigned int hash);
 
+/* removes and frees the item the hashtable */
 void ht_rm(struct ht_t *ht, char *key);
-
-/*
- * static functions:
- * hasher()
- * ht_item_malloc()
- */
 
 #endif /* LIB_HASHTABLE */

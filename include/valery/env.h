@@ -59,14 +59,34 @@ void env_t_free(struct env_t *env);
 
 void env_t_path_increase(struct env_t *env, int new_len);
 
+/* returns a pointer to allocated memory for the corresponding value to the given key */
 char *env_get(struct env_t *env, char *key);
 
+/*
+ * returns a pointer to the first allocated ht_item_t corresponding to the given key.
+ * note: there may be multiple items allocated under the same hash.
+ */
 struct ht_item_t *env_geth(struct env_t *env, unsigned int hash);
 
-void env_gen(struct env_t *env);
+/*
+ * generates the environment variables needed when executing a program on the form:
+ * "KEY=VALUE". This is stored in env->environ. 
+ * The given env_str parameter is populated with pointers to the all entries of 
+ * env->environ. Last entry in env_str is set to NULL.
+ */
+void env_gen(struct env_t *env, char *env_str[env->env_capacity]);
 
+/* calls ht_rm() */
+void env_rm(struct env_t *env, char *key);
+
+/* calls ht_set() */
 void env_set(struct env_t *env, char *key, char *value);
 
+/*
+ * updates environment variables PWD and OLDPWD.
+ * sets OLDPWD to PWD, and then updates PWD to the current working directory.
+ * OLDPWD is set to the current working directory if PWD was NULL.
+ */
 void env_update_pwd(struct env_t *env);
 
 #endif

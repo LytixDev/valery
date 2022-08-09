@@ -21,6 +21,7 @@
 #include <stdbool.h>
 
 #include "lib/hashtable.h"
+#include "valery/env.h"
 
 
 static unsigned int hasher(char *str)
@@ -31,16 +32,16 @@ static unsigned int hasher(char *str)
     while ((c = *((char *) str++)))
 	hash += (hash << 5) + c;
 
-    return hash % TABLE_SIZE;
+    return hash % HT_TABLE_SIZE;
 }
 
 struct ht_t *ht_malloc()
 {
     struct ht_t *ht = malloc(sizeof(struct ht_t));
-    ht->items = malloc(sizeof(ht_item_t*) * TABLE_SIZE);
-    memset(ht->keys, 0, TABLE_SIZE);
+    ht->items = malloc(sizeof(ht_item_t*) * HT_TABLE_SIZE);
+    memset(ht->keys, 0, HT_TABLE_SIZE);
 
-    for (int i = 0; i < TABLE_SIZE; i++)
+    for (int i = 0; i < HT_TABLE_SIZE; i++)
         ht->items[i] = NULL;
 
     return ht;
@@ -51,7 +52,7 @@ void ht_free(struct ht_t *ht)
     struct ht_item_t *item;
     struct ht_item_t *prev;
 
-    for (int i = 0; i < TABLE_SIZE; i++) {
+    for (int i = 0; i < HT_TABLE_SIZE; i++) {
         item = ht->items[i];
         while (item != NULL) {
             free(item->key);
@@ -69,16 +70,19 @@ static struct ht_item_t *ht_item_malloc(char *key, void *value)
 {
     struct ht_item_t *ht_item = malloc(sizeof(struct ht_item_t));
     ht_item->key = malloc(strlen(key) + 1);
-    ht_item->value = malloc(strlen(value) + 1);
-
     strcpy(ht_item->key, key);
-    strcpy(ht_item->value, value);
-
+#ifdef HT_VALUE_IS_STR
+    ht_item->value = malloc(strlen(value) + 1);
+    strcpy(ht_item->value, (char *) value);
+#else
+    ht_item->value = malloc(HT_VALUE_SIZE);
+    memcpy(item->value, value, HT_VALUE_SIZE);
+#endif
     ht_item->next = NULL;
     return ht_item;
 }
 
-void ht_set(struct ht_t *ht, char *key, char *value)
+void ht_set(struct ht_t *ht, char *key, void *value)
 {
     unsigned int hash = hasher(key);
     /* add hash to list of keys */
@@ -101,8 +105,13 @@ void ht_set(struct ht_t *ht, char *key, char *value)
         if (strcmp(item->key, key) == 0) {
             /* match found, replace value */
             free(item->value);
+#ifdef HT_VALUE_IS_STR
             item->value = malloc(strlen(value) + 1);
-            strcpy(item->value, value);
+            strcpy(item->value, (char *) value);
+#else
+            item->value = malloc(HT_VALUE_SIZE);
+            memcpy(item->value, value, HT_VALUE_SIZE);
+#endif
             return;
         }
 
@@ -114,7 +123,7 @@ void ht_set(struct ht_t *ht, char *key, char *value)
     prev->next = ht_item_malloc(key, value);
 }
 
-char *ht_get(struct ht_t *ht, char *key)
+void *ht_get(struct ht_t *ht, char *key)
 {
     unsigned int hash = hasher(key);
     struct ht_item_t *item = ht->items[hash];
@@ -135,19 +144,7 @@ char *ht_get(struct ht_t *ht, char *key)
 
 struct ht_item_t *ht_geth(struct ht_t *ht, unsigned int hash)
 {
-    struct ht_item_t *item = ht->items[hash];
-
-    if (item == NULL)
-        return NULL;
-
-    while (item != NULL) {
-        //TODO: what if collision?
-        return item;
-
-        //item = item->next;
-    }
-
-    return NULL;
+    return ht->items[hash];
 }
 
 void ht_rm(struct ht_t *ht, char *key)

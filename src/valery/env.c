@@ -26,6 +26,8 @@
 struct env_t *env_t_malloc()
 {
     struct env_t *env = (env_t *) malloc(sizeof(env_t));
+    env->exit_code = 0;
+
     env->paths = (char **) malloc(STARTING_PATHS * sizeof(char *));
     for (int i = 0; i < STARTING_PATHS; i++)
         env->paths[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
@@ -33,16 +35,14 @@ struct env_t *env_t_malloc()
     env->path_capacity = STARTING_PATHS;
     env->path_size = 0;
     env->PATH = (char *) malloc(MAX_ENV_LEN * sizeof(char));
-    env->exit_code = 0;
+
     env->env_vars = ht_malloc();
     env->env_update = false;
-
-    env->env_capacity = TABLE_SIZE;
+    env->env_capacity = HT_TABLE_SIZE;
     env->env_size = 0;
     env->environ = (char **) malloc(env->env_capacity * sizeof(char *));
     for (int i = 0; i < env->env_capacity; i++)
         env->environ[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
-
 
     return env;
 }
@@ -68,7 +68,7 @@ void env_t_free(struct env_t *env)
 
 char *env_get(struct env_t *env, char *key)
 {
-    return ht_get(env->env_vars, key);
+    return (char *) ht_get(env->env_vars, key);
 }
 
 struct ht_item_t *env_geth(struct env_t *env, unsigned int hash)
@@ -82,19 +82,42 @@ void env_set(struct env_t *env, char *key, char *value)
     env->env_update = true;
 }
 
-void env_gen(struct env_t *env)
+void env_rm(struct env_t *env, char *key)
 {
-    int i = 0;
-    struct ht_item_t *item;
-    for (int hash = 0; hash < env->env_capacity; hash++) {
-        //TODO what if collition?
-        if (env->env_vars->keys[hash] > 0) {
-            item = env_geth(env, hash);
-            snprintf(env->environ[i++], MAX_ENV_LEN, "%s=%s", item->key, item->value);
+    ht_rm(env->env_vars, key);
+    env->env_update = true;
+}
+
+void env_gen(struct env_t *env, char *env_str[env->env_capacity])
+{
+    int i;
+
+    if (env->env_update) {
+        struct ht_item_t *item;
+        i = 0;
+
+        for (int hash = 0; hash < env->env_capacity; hash++) {
+            if (env->env_vars->keys[hash] != 0) {
+                item = env_geth(env, hash);
+                /* hash table may have collisions */
+                while (item != NULL) {
+                    snprintf(env->environ[i], MAX_ENV_LEN, "%s=%s", item->key, (char *) item->value);
+                    env_str[i] = env->environ[i];
+                    i++;
+                    item = item->next;
+                }
+            }
         }
+
+        env_str[i] = NULL;
+        env->env_size = --i;
+        env->env_update = false;
+    } else {
+        for (i = 0; i < env->env_size; i++) {
+            env_str[i] = env->environ[i];
+        }
+        env_str[i] = NULL;
     }
-    env->env_size = --i;
-    env->env_update = false;
 }
 
 void env_t_path_increase(struct env_t *env, int new_len) {
@@ -113,12 +136,13 @@ void env_update_pwd(struct env_t *env)
     if (pwd(result) == 1)
         return;
 
-    env_set(env, "PWD", result);
-
+    /* update OLDPWD first, because pointer to old will be changed */
     if (old != NULL)
         env_set(env, "OLDPWD", old);
     else
         env_set(env, "OLDPWD", result);
+
+    env_set(env, "PWD", result);
 
     //TODO: check if actually need to update
     env->env_update = true;

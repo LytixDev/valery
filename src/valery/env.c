@@ -17,10 +17,14 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <pwd.h>
+#include <sys/types.h>
 
 #include "valery/env.h"
 #include "lib/hashtable.h"
 #include "builtins/builtins.h"
+#include "valery/load_config.h"
 
 
 struct env_t *env_t_malloc()
@@ -43,6 +47,9 @@ struct env_t *env_t_malloc()
     env->environ = (char **) malloc(env->env_capacity * sizeof(char *));
     for (int i = 0; i < env->env_capacity; i++)
         env->environ[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
+
+
+    set_home_dir(env);
 
     return env;
 }
@@ -146,4 +153,17 @@ void env_update_pwd(struct env_t *env)
 
     //TODO: check if actually need to update
     env->env_update = true;
+}
+
+
+int set_home_dir(struct env_t *env)
+{
+    struct passwd *pw = getpwuid(getuid());
+    char *homedir = pw->pw_dir;
+    
+    if (homedir == NULL)
+        return 1;
+    
+    env_set(env, "HOME", homedir);
+    return 0;
 }

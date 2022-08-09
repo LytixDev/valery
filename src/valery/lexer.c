@@ -350,7 +350,9 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
 bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, unsigned int *p_flags)
 {
     char env_key[MAX_ENV_LEN];
+    char *home_dir;
     int pos = 0;
+
     switch (c) {
         /* do not parse chars inside qoutation marks, unless qoutation mark is escaped with backslash */
         case '"':
@@ -406,6 +408,13 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
             if (PWD != NULL)
                 token_t_append_str(t, PWD);
 
+            break;
+
+        /* expand ̃'~' into $HOME */
+        case '~':
+            home_dir = env_get(env, "HOME");
+            if (home_dir != NULL)
+                token_t_append_str(t, home_dir);
             break;
 
         default:

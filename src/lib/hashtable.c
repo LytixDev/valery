@@ -29,7 +29,7 @@ static unsigned int hasher(char *str)
     unsigned char c;
     unsigned int hash = 0;
 
-    while ((c = *((char *) str++)))
+    while ((c = *str++) != 0)
 	hash += (hash << 5) + c;
 
     return hash % HT_TABLE_SIZE;

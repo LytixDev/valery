@@ -45,7 +45,7 @@ int which_single(char *program_name, char **paths, int path_count, char **path_r
     /* if program_name is already a path, do not add any PATH to it */
     bool program_is_path = program_name[0] == '/';
     if (program_is_path) {
-        if (stat(program_name, &sb) == 0 && sb.st_mode & S_IXUSR) {
+        if (stat(program_name, &sb) == 0 && sb.st_mode & S_IXUSR && !S_ISDIR(sb.st_mode)) {
             if (path_result == NULL)
                 printf("%s\n", program_name);
             return COMMAND_IS_PATH;
@@ -67,7 +67,7 @@ int which_single(char *program_name, char **paths, int path_count, char **path_r
                 snprintf(final, 1024, "%s/%s", path, program_name);
 
                 /* check if executable bit is on */
-                if (stat(final, &sb) == 0 && sb.st_mode & S_IXUSR) {
+                if (stat(final, &sb) == 0 && sb.st_mode & S_IXUSR && !S_ISDIR(sb.st_mode)) {
                     closedir(d);
 
                     /* path_result is NULL means 'which' is used interactively,

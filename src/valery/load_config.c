@@ -19,10 +19,8 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 
 #include "valery/load_config.h"
-#include "valery/env.h"
 
 
 static int find_pos(char look_for, char *str)

@@ -19,7 +19,7 @@
 
 #include "builtins/builtins.h"
 
-int help()
+int help(void)
 {
     printf("valery - Unix-like shell written by Nicolai Brand (https://lytix.dev) 2022\n"
            "\nThe goal of the project is to be a playground in order to learn how to write memory-safe, "
@@ -33,7 +33,7 @@ int help()
         printf("%s  ", builtin_names[i]);
     }
 
-    printf("\n\nUse the -c option to execute a command directly when envoking valery. Example: './valery -c \"ls\"'\n");
+    printf("\n\nUse the -c option to execute a command directly when invoking valery. Example: './valery -c \"ls\"'\n");
 
     printf("\n");
     return 0;

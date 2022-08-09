@@ -21,10 +21,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/types.h>
 
 #include "valery/histfile.h"
-#include "valery.h"
 
 
 struct hist_t *hist_t_malloc(char *full_path_to_hist_file)

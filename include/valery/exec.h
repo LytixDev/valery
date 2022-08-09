@@ -77,9 +77,9 @@ typedef struct exec_ctx {
 
 /* functions */
 /*
- * forks the process and attempts to executes the given program.
+ * forks the process and attempts to execute the given program.
  * calls the builtin 'which' (builtin/which.c) to get the full program path.
- * returns 0 if succesfull, else 1.
+ * returns 0 if successful, else 1.
  */
 int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t *env, struct exec_ctx *e_ctx);
 
@@ -101,7 +101,7 @@ void terminate_pipe(struct exec_ctx *e_ctx);
 void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_type);
 
 /*
- * how the three aformentioned functions relate to each other:
+ * how the three aforementioned functions relate to each other:
  *
  * [tokenized buffer] -> valery_parse_tokens() -> valery_eval_tokens() -> valery_exec_program();
  */

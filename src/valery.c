@@ -18,21 +18,15 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
 #include <termios.h>
-#include <memory.h>
 
 #include "valery.h"
 #include "valery/load_config.h"
-#include "valery/env.h"
 #include "valery/prompt.h"
-#include "valery/histfile.h"
 #include "valery/exec.h"
-#include "valery/lexer.h"
 #include "builtins/builtins.h"
 
 
@@ -41,7 +35,7 @@ static struct termios originalt, newt;
 static bool INTERACTIVE;
 
 
-void disable_term_flags()
+void disable_term_flags(void)
 {
     tcgetattr(STDIN_FILENO, &originalt);
     newt = originalt;
@@ -54,14 +48,15 @@ void disable_term_flags()
     tcsetattr(STDIN_FILENO, TCSANOW, &newt);
 }
 
-void enable_term_flags()
+void enable_term_flags(void)
 {
     tcsetattr(STDIN_FILENO, TCSANOW, &originalt);
 }
 
-static void catch_exit_signal()
+static void catch_exit_signal(int signal)
 {
-    received_sigint = 1;
+    if (signal == SIGINT)
+        received_sigint = 1;
 }
 
 int valery(char *arg)

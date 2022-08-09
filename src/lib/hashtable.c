@@ -15,13 +15,11 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <stdio.h>
+
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 
 #include "lib/hashtable.h"
-#include "valery/env.h"
 
 
 static unsigned int hasher(char *str)
@@ -35,7 +33,7 @@ static unsigned int hasher(char *str)
     return hash % HT_TABLE_SIZE;
 }
 
-struct ht_t *ht_malloc()
+struct ht_t *ht_malloc(void)
 {
     struct ht_t *ht = malloc(sizeof(struct ht_t));
     ht->items = malloc(sizeof(ht_item_t*) * HT_TABLE_SIZE);

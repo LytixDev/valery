@@ -84,14 +84,14 @@ extern const operands_t operands[TOTAL_OPERANDS];
 
 /* functions */
 /* returns a pointer to a malloced token_t object with DEFAULT_TOKEN_SIZE size str */
-struct token_t *token_t_malloc();
+struct token_t *token_t_malloc(void);
 
 void token_t_free(struct token_t *t);
 
 void token_t_resize(struct token_t *t, size_t new_capacity);
 
 /* returns a pointer to a malloced tokenized_str_t object with STARTING_TOKENS amount of token_t */
-struct tokenized_str_t *tokenized_str_t_malloc();
+struct tokenized_str_t *tokenized_str_t_malloc(void);
 
 void tokenized_str_t_free(struct tokenized_str_t *ts);
 
@@ -150,7 +150,7 @@ operands_t which_operand(bool candidates[TOTAL_OPERANDS]);
 void print_syntax_error(const char *buf_start, char *buf_err, char *msg);
 
 /*
- * splits the input buffer into tokens based using operands in operands_str as delimeters.
+ * splits the input buffer into tokens based using operands in operands_str as delimiters.
  */
 int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer);
 

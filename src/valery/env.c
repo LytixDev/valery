@@ -19,15 +19,12 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <pwd.h>
-#include <sys/types.h>
 
 #include "valery/env.h"
-#include "lib/hashtable.h"
 #include "builtins/builtins.h"
-#include "valery/load_config.h"
 
 
-struct env_t *env_t_malloc()
+struct env_t *env_t_malloc(void)
 {
     struct env_t *env = (env_t *) malloc(sizeof(env_t));
     env->exit_code = 0;

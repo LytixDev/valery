@@ -27,7 +27,7 @@
 #include "valery.h"
 
 
-int get_arrow_type()
+int get_arrow_type(void)
 {
     /*
        Arrow keys takes up three chars in the buffer.

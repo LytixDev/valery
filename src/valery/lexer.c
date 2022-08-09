@@ -66,7 +66,7 @@ const operands_t operands[] = {
 };
 
 
-struct token_t *token_t_malloc()
+struct token_t *token_t_malloc(void)
 {
     struct token_t *t = (struct token_t *) malloc(sizeof(struct token_t));
     t->str = (char *) malloc(DEFAULT_TOKEN_SIZE * sizeof(char));
@@ -91,7 +91,7 @@ void token_t_resize(struct token_t *t, size_t new_capacity)
     t->str_capacity = new_capacity;
 }
 
-struct tokenized_str_t *tokenized_str_t_malloc() 
+struct tokenized_str_t *tokenized_str_t_malloc(void)
 {
     struct tokenized_str_t *ts = (struct tokenized_str_t *) malloc(sizeof(struct tokenized_str_t));
 
@@ -328,7 +328,7 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
     /*
      * finalize last token.
      * if it has O_NONE type then it has not been already finalized.
-     * if skip flag is set then there was no closing qoutation mark, so throw syntax error 
+     * if skip flag is set then there was no closing quotation mark, so throw syntax error
      */
     token_t_done(t);
 
@@ -340,7 +340,7 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
         return -1;
     } else if (which_operand(candidates) != O_NONE) {
         //TODO: does not work properly
-        //print_syntax_error(buf_start, buffer - 2, "excpected another token after this operand");
+        //print_syntax_error(buf_start, buffer - 2, "expected another token after this operand");
         //return -1;
     }
 
@@ -354,7 +354,7 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
     int pos = 0;
 
     switch (c) {
-        /* do not parse chars inside qoutation marks, unless qoutation mark is escaped with backslash */
+        /* do not parse chars inside quotation marks, unless quotation mark is escaped with backslash */
         case '"':
             if (*p_flags & PF_QUOTE)
                 *p_flags ^= PF_QUOTE;

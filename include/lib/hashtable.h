@@ -1,11 +1,11 @@
 /*
- *  Hashtable implementantion in C.
+ *  Hashtable implementation in C.
  *  Part of valery.
  *
  *  Inspired by:
- *  Python's dict implementantion.
+ *  Python's dict implementation.
  *      <https://github.com/python/cpython/blob/main/Objects/dictobject.c>
- *  Engineer Man's hashtable implementantion.
+ *  Engineer Man's hashtable implementation.
  *      <https://github.com/engineer-man/youtube/tree/master/077>
  *   
  *  Copyright (C) 2022 Nicolai Brand 

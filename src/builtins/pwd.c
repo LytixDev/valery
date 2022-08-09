@@ -20,7 +20,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <limits.h>
 #include <stdbool.h>
 
 #include "builtins/builtins.h"

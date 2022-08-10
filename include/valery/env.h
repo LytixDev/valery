@@ -19,11 +19,15 @@
 #define ENV
 
 #include <stdbool.h>
+#include <sys/types.h>
 
 #include "lib/hashtable.h"
 
 
 /* variables */
+#define UID_ROOT 0
+#define SYM_ROOT '#'
+#define SYM_USR '$'
 #define MAX_ENV_LEN 4096
 #define CONFIG_NAME ".valeryrc"
 #define HISTFILE_NAME ".valery_hist"
@@ -38,13 +42,15 @@ typedef struct env_var_t {
 
 
 typedef struct env_t {
-    char *PATH; /* colon seperated string of all paths */
     char **paths;
     int path_size;
     int path_capacity;
     int exit_code;
+    uid_t uid;
+    char ps1[MAX_ENV_LEN];
 
     struct ht_t *env_vars;
+    //struct ht_t *env_vars;
     char **environ;     /* list of environment variables on the form: ["KEY=VALUE", ... ] */
     bool env_update;    /* set to true if a env_var has changed, and environ is not updated */
     int env_size;
@@ -82,6 +88,8 @@ void env_rm(struct env_t *env, char *key);
 /* calls ht_set() */
 void env_set(struct env_t *env, char *key, char *value);
 
+void env_update(struct env_t *env);
+
 /*
  * updates environment variables PWD and OLDPWD.
  * sets OLDPWD to PWD, and then updates PWD to the current working directory.
@@ -89,6 +97,10 @@ void env_set(struct env_t *env, char *key, char *value);
  */
 void env_update_pwd(struct env_t *env);
 
+void env_update_ps1(struct env_t *env);
+
 int set_home_dir(struct env_t *env);
+
+void set_uid(struct env_t *env);
 
 #endif

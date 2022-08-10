@@ -70,8 +70,9 @@ int valery(char *arg)
 
         /* main loop */
         while (1) {
-            env_update_pwd(env);
-            prompt(hist, env_get(env, "PS1"), input_buffer);
+            env_update(env);
+            //prompt(hist, env_get(env, "PS1"), input_buffer);
+            prompt(hist, env->ps1, input_buffer);
 
             /* skip exec if ctrl+c is caught */
             if (received_sigint) {
@@ -120,6 +121,11 @@ int main(int argc, char *argv[])
     if (argc > 1) {
         if (strcmp(argv[1], "--help") == 0) {
             help();
+            return 0;
+        }
+
+        if (strcmp(argv[1], "--license") == 0) {
+            license();
             return 0;
         }
 

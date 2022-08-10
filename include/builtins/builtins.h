@@ -69,5 +69,7 @@ int pwd(char result[4096]);
 
 int help(void);
 
+void license(void);
+
 
 #endif

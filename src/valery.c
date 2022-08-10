@@ -70,7 +70,6 @@ int valery(char *arg)
         /* main loop */
         while (1) {
             env_update(env);
-            //prompt(hist, env_get(env, "PS1"), input_buffer);
             prompt(hist, env->ps1, input_buffer);
 
             /* skip exec if ctrl+c is caught */

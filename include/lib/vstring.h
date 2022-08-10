@@ -23,13 +23,13 @@
 /*
  * Helper functions when dealing with strings.
  *
- * NOTE: All functions that take 'char buf[]' WILL modify the argument
+ * NOTE: All functions that take 'char buf[]' WILL mutate the argument
  * passed in. All functions that take 'const char *str' leave the
  * argument unchanged.
  *
- * NOTE: Passing NULL as parameters is undefined behaviour.
+ * NOTE: Passing NULL as an argument is undefined behaviour.
  *
- * TODO: Function are not memory safe.
+ * TODO: Functions are not memory safe.
  */
 
 /* functions */

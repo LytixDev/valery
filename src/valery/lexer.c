@@ -88,7 +88,6 @@ void token_t_free(struct token_t *t)
 
 void token_t_resize(struct token_t *t, size_t new_capacity)
 {
-    //TODO: only works when INCREASING size
     t->str = (char *) realloc(t->str, new_capacity * sizeof(char));
     t->str_capacity = new_capacity;
 }
@@ -118,10 +117,20 @@ void tokenized_str_t_free(struct tokenized_str_t *ts)
 
 void tokenized_str_t_resize(struct tokenized_str_t *ts, size_t new_capacity)
 {
-    //TODO: only works when INCREASING size
-    ts->tokens = (struct token_t **) realloc(ts->tokens, new_capacity * sizeof(struct token_t *));
-    for (size_t i = ts->capacity; i < new_capacity; i++)
-        ts->tokens[i] = token_t_malloc();
+    if (new_capacity == ts->capacity)
+        return;
+
+    bool increase = new_capacity > ts->capacity ? true : false;
+
+    if (increase) {
+        ts->tokens = (struct token_t **) realloc(ts->tokens, new_capacity * sizeof(struct token_t *));
+        for (size_t i = ts->capacity; i < new_capacity; i++)
+            ts->tokens[i] = token_t_malloc();
+    } else {
+        for (size_t i = ts->capacity - 1; i > new_capacity; i--)
+            token_t_free(ts->tokens[i]);
+        ts->tokens = (struct token_t **) realloc(ts->tokens, new_capacity * sizeof(struct token_t *));
+    }
 
     ts->capacity = new_capacity;
 }
@@ -129,7 +138,12 @@ void tokenized_str_t_resize(struct tokenized_str_t *ts, size_t new_capacity)
 /* clears the object and prepares it for a new loop */
 void tokenized_str_t_clear(struct tokenized_str_t *ts)
 {
+    if (ts->capacity > STARTING_TOKENS * 2)
+        tokenized_str_t_resize(ts, STARTING_TOKENS);
+
     for (size_t i = 0; i < ts->size + 1; i++) {
+        if (ts->tokens[i]->str_capacity > DEFAULT_TOKEN_SIZE * 2)
+            token_t_resize(ts->tokens[i], DEFAULT_TOKEN_SIZE);
         ts->tokens[i]->str_len = 0;
         ts->tokens[i]->type = O_NONE;
     }

@@ -22,20 +22,8 @@
 
 #include "valery/env.h"
 #include "valery/load_config.h"
+#include "lib/vstring.h"
 
-
-static int find_pos(char look_for, const char *str)
-{
-    int found_pos = 0;
-
-    while (str[found_pos] != '\0') {
-        if (str[found_pos] == look_for)
-            return found_pos;
-        found_pos++;
-    }
-
-    return -1;
-}
 
 int parse_config(struct env_t *env)
 {
@@ -67,7 +55,7 @@ int parse_config(struct env_t *env)
         if (buf[0] == '#')
             continue;
 
-        found_pos = find_pos('=', buf);
+        found_pos = vstr_find_first_c(buf, '=');
         if (found_pos != -1) {
             /*TODO: improve this */
             unsigned long str_len = strlen(buf);

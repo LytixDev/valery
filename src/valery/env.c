@@ -23,6 +23,7 @@
 
 #include "valery/env.h"
 #include "builtins/builtins.h"
+#include "lib/vstring.h"
 
 
 struct env_t *env_t_malloc(void)
@@ -136,22 +137,6 @@ void env_update(struct env_t *env)
 {
     env_update_pwd(env);
     env_update_ps1(env);
-}
-
-char *vstr_starts_with(char *str, char *substr)
-{
-    char *s1 = str;
-    char *s2 = substr;
-    char c1, c2;
-
-    do {
-        c1 = *s1++;
-        c2 = *s2++;
-        if (c2 == '\0')
-        return s1;
-    } while (c1 == c2);
-
-    return NULL;
 }
 
 void env_update_ps1(struct env_t *env)

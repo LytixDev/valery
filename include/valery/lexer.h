@@ -156,7 +156,5 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer);
  */
 bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, unsigned int *p_flags);
 
-char *trim_edge(char *str, char c);
-
 
 #endif

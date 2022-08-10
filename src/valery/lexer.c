@@ -26,6 +26,8 @@
 #include "valery/lexer.h"
 #include "valery/env.h"
 #include "valery.h"
+#include "lib/vstring.h"
+
 
 /*
  * enum representation is found in lexer.h.
@@ -155,7 +157,7 @@ void token_t_done(struct token_t *t)
     /* terminate string */
     token_t_append_char(t, 0);
     /* remove leading and trailing spaces */
-    t->str_start = trim_edge(t->str, ' ');
+    t->str_start = vstr_trim_edges(t->str, ' ');
 }
 
 void token_t_pop_char(struct token_t *t)
@@ -419,22 +421,3 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
     return false;
 }
 
-char *trim_edge(char *str, char c)
-{
-    char *str_cpy = str;
-    char *str_start;
-
-    /* trim all chars from start of string */
-    while (*str_cpy == c) str_cpy++;
-    str_start = str_cpy;
-
-    /* move pointer to end of str */
-    while (*str_cpy != 0) str_cpy++;
-
-    /* trim all chars from end of string */
-    while (*--str_cpy == c && str_cpy != str);
-    /* terminate string after on match */
-    *(++str_cpy) = 0;
-
-    return str_start;
-}

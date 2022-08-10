@@ -14,6 +14,7 @@ CFLAGS = -I include -Wall -Wpedantic -Wextra -Wshadow -std=c99
 .PHONY: clean tags bear $(OBJDIR)
 TARGET = valery
 
+all: $(TARGET)
 
 $(OBJDIR)/%.o: %.c Makefile | $(OBJDIR)
 	@cp $(RC) ~

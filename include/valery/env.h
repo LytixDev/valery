@@ -53,7 +53,7 @@ typedef struct env_t {
 
 
 /* functions */
-struct env_t *env_t_malloc();
+struct env_t *env_t_malloc(void);
 
 void env_t_free(struct env_t *env);
 

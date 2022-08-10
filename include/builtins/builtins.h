@@ -67,7 +67,7 @@ int history(struct hist_t *hist, bool print_all);
  */
 int pwd(char result[4096]);
 
-int help();
+int help(void);
 
 
 #endif

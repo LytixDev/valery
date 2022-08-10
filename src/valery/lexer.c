@@ -66,7 +66,7 @@ const operands_t operands[] = {
 };
 
 
-struct token_t *token_t_malloc()
+struct token_t *token_t_malloc(void)
 {
     struct token_t *t = (struct token_t *) malloc(sizeof(struct token_t));
     t->str = (char *) malloc(DEFAULT_TOKEN_SIZE * sizeof(char));
@@ -91,7 +91,7 @@ void token_t_resize(struct token_t *t, size_t new_capacity)
     t->str_capacity = new_capacity;
 }
 
-struct tokenized_str_t *tokenized_str_t_malloc() 
+struct tokenized_str_t *tokenized_str_t_malloc(void)
 {
     struct tokenized_str_t *ts = (struct tokenized_str_t *) malloc(sizeof(struct tokenized_str_t));
 
@@ -164,11 +164,6 @@ void token_t_pop_char(struct token_t *t)
         t->str[--(t->str_len)] = 0;
 }
 
-void tokenized_str_t_append_char(struct tokenized_str_t *ts, char c)
-{
-    token_t_append_char(ts->tokens[ts->size], c);
-}
-
 struct token_t *tokenized_str_t_next(struct tokenized_str_t *ts)
 {
     if (++(ts->size) >= ts->capacity)
@@ -201,7 +196,7 @@ void tokenized_str_t_print(struct tokenized_str_t *ts)
     }
 }
 
-operands_t which_operand(bool candidates[TOTAL_OPERANDS])
+operands_t which_operand(const bool candidates[TOTAL_OPERANDS])
 {
     for (int i = 0; i < TOTAL_OPERANDS; i++) {
         if (candidates[i] == true)
@@ -224,13 +219,13 @@ int update_candidates(char c, size_t pos, bool candidates[TOTAL_OPERANDS], int *
     return *total_candidates;
 }
 
-void print_syntax_error(const char *buf_start, char *buf_err, char *msg)
+void print_syntax_error(const char *buf_start, const char *buf_err, char *msg)
 {
     fprintf(stderr, "valery: syntax error near: '%c'\n", *buf_err);
     fprintf(stderr, "%s\n", buf_start);
 
-    int offset = buf_err - buf_start - 1 > 0 ? buf_err - buf_start - 1: 0;
-    for (int i = 0; i < offset; i++)
+    long offset = buf_err - buf_start - 1 > 0 ? buf_err - buf_start - 1: 0;
+    for (long i = 0; i < offset; i++)
         fprintf(stderr, " ");
     fprintf(stderr, "^ %s\n", msg);
 }
@@ -305,14 +300,14 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
                         }
                     }
 
-                    /* execution enters here means operand was expected, but not found, i.e syntax error */
+                    /* execution enters here means operand was expected, but not found, i.e. syntax error */
                     print_syntax_error(buf_start, buffer, "unexpected token");
                     return -1;
                 }
             } while ((c = *buffer++) != 0);
 
         finished_op:
-            /* only finalize token if we broke out of the loop (i.e operand was found and buffer not ended) */
+            /* only finalize token if we broke out of the loop (i.e. operand was found and buffer not ended) */
             if (*buffer != 0) {
                 token_t_done(t);
                 t = tokenized_str_t_next(ts);
@@ -328,7 +323,7 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
     /*
      * finalize last token.
      * if it has O_NONE type then it has not been already finalized.
-     * if skip flag is set then there was no closing qoutation mark, so throw syntax error 
+     * if skip flag is set then there was no closing quotation mark, so throw syntax error
      */
     token_t_done(t);
 
@@ -340,7 +335,7 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
         return -1;
     } else if (which_operand(candidates) != O_NONE) {
         //TODO: does not work properly
-        //print_syntax_error(buf_start, buffer - 2, "excpected another token after this operand");
+        //print_syntax_error(buf_start, buffer - 2, "expected another token after this operand");
         //return -1;
     }
 
@@ -350,9 +345,11 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
 bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, unsigned int *p_flags)
 {
     char env_key[MAX_ENV_LEN];
+    char *home_dir;
     int pos = 0;
+
     switch (c) {
-        /* do not parse chars inside qoutation marks, unless qoutation mark is escaped with backslash */
+        /* do not parse chars inside quotation marks, unless quotation mark is escaped with backslash */
         case '"':
             if (*p_flags & PF_QUOTE)
                 *p_flags ^= PF_QUOTE;
@@ -408,6 +405,13 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
 
             break;
 
+        /* expand ̃'~' into $HOME */
+        case '~':
+            home_dir = env_get(env, "HOME");
+            if (home_dir != NULL)
+                token_t_append_str(t, home_dir);
+            break;
+
         default:
             return true;
     }
@@ -433,13 +437,4 @@ char *trim_edge(char *str, char c)
     *(++str_cpy) = 0;
 
     return str_start;
-}
-
-char peek(char *buffer)
-{
-    if (++(*buffer) == 0) {
-        buffer--;
-        return -1;
-    } else
-        return *buffer--;
 }

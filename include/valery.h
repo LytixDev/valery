@@ -34,8 +34,8 @@
 #endif
 
 /* functions */
-void disable_term_flags();
+void disable_term_flags(void);
 
-void enable_term_flags();
+void enable_term_flags(void);
 
 #endif

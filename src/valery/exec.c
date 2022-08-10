@@ -24,9 +24,6 @@
 
 #include "valery/lexer.h"
 #include "valery/exec.h"
-#include "valery/histfile.h"
-#include "valery/env.h"
-#include "valery.h"
 #include "builtins/builtins.h"
 
 
@@ -34,7 +31,7 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
 {
     int status;
     int rc;
-    int return_code = 0;
+    int return_code;
     char *found_path;
     char *command_with_path;
     char tmp[1024];
@@ -52,7 +49,7 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     if (rc == COMMAND_IS_PATH) {
         command_with_path = program_name;
     } else {
-        /* command has been found in path and found_path should poit to the address containg the string */
+        /* command has been found in path and found_path should point to the address containing the string */
         //TODO: make memory save
         snprintf(tmp, 1024, "%s/%s", found_path, program_name);
         command_with_path = tmp;
@@ -134,7 +131,7 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
     token_t *t;
     operands_t next_type;
     int argv_cap = 8;
-    int argc = 0;
+    int argc;
     char **argv = (char **) malloc(8 * sizeof(char *));
     /* initialize exec_ctx to have vacant streams */
     exec_ctx e_ctx = { .flags = SF_ADAM_VACANT | SF_SETH_VACANT, .read_stream = ST_NONE, .write_stream = ST_NONE };
@@ -165,7 +162,7 @@ void new_pipe(struct exec_ctx *e_ctx)
 {
     int rc;
     stream_t st;
-    /* pipe first non vacant stream */
+    /* pipe first non-vacant stream */
     if (e_ctx->flags & SF_ADAM_VACANT) {
         st = ST_ADAM;
         e_ctx->flags ^= SF_ADAM_VACANT;

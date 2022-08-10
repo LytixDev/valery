@@ -19,13 +19,11 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 
 #include "valery/load_config.h"
-#include "valery/env.h"
 
 
-static int find_pos(char look_for, char *str)
+static int find_pos(char look_for, const char *str)
 {
     int found_pos = 0;
 
@@ -42,7 +40,7 @@ int parse_config(struct env_t *env)
 {
     /*
      * TODO: look for config in various places, f.ex: ~/.config/ 
-     * NOTE: parsing the config should idelly be done identically to how
+     * NOTE: parsing the config should ideally be done identically to how
      * input buffers given from te prompt are parsed, but at this point,
      * that whole event loop is not robust enough to handle that.
      */

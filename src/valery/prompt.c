@@ -1,6 +1,6 @@
 /*
  *  Displays a prompt for the user to type in commands. Operates on the
- *  buffer inputet by the user.
+ *  buffer inputted by the user.
  * 
  *  Copyright (C) 2022 Nicolai Brand 
  *
@@ -27,7 +27,7 @@
 #include "valery.h"
 
 
-int get_arrow_type()
+int get_arrow_type(void)
 {
     /*
        Arrow keys takes up three chars in the buffer.

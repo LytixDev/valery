@@ -47,7 +47,7 @@ typedef enum {
 /* functions */
 
 /* returns the type of arrow consumed from the terminal input buffer */
-int get_arrow_type();
+int get_arrow_type(void);
 
 int move_cursor_horizontally(keycode_t arrow_type, int cur_pos, int buf_len);
 

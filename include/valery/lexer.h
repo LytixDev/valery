@@ -84,14 +84,14 @@ extern const operands_t operands[TOTAL_OPERANDS];
 
 /* functions */
 /* returns a pointer to a malloced token_t object with DEFAULT_TOKEN_SIZE size str */
-struct token_t *token_t_malloc();
+struct token_t *token_t_malloc(void);
 
 void token_t_free(struct token_t *t);
 
 void token_t_resize(struct token_t *t, size_t new_capacity);
 
 /* returns a pointer to a malloced tokenized_str_t object with STARTING_TOKENS amount of token_t */
-struct tokenized_str_t *tokenized_str_t_malloc();
+struct tokenized_str_t *tokenized_str_t_malloc(void);
 
 void tokenized_str_t_free(struct tokenized_str_t *ts);
 
@@ -115,11 +115,7 @@ void token_t_append_char(struct token_t *t, char c);
 /* replaces the last char in the char array with the sentinel null byte */
 void token_t_pop_char(struct token_t *t);
 
-
-/* calls token_t_append_char() using the endmost token */
-void tokenized_str_t_append_char(struct tokenized_str_t *ts, char c);
-
-/* 
+/*
  * increments size and returns a pointer to the next token_t
  * calls tokenized_str_t_resize() if necessary.
  */
@@ -144,13 +140,13 @@ int update_candidates(char c, size_t pos, bool candidates[TOTAL_OPERANDS], int *
  * returns the first operand set to true in the list
  * returns O_NONE if no operand is set to true
  */
-operands_t which_operand(bool candidates[TOTAL_OPERANDS]);
+operands_t which_operand(const bool candidates[TOTAL_OPERANDS]);
 
 /* prints a nice syntax error to stderr */
-void print_syntax_error(const char *buf_start, char *buf_err, char *msg);
+void print_syntax_error(const char *buf_start, const char *buf_err, char *msg);
 
 /*
- * splits the input buffer into tokens based using operands in operands_str as delimeters.
+ * splits the input buffer into tokens based using operands in operands_str as delimiters.
  */
 int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer);
 
@@ -161,8 +157,6 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer);
 bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, unsigned int *p_flags);
 
 char *trim_edge(char *str, char c);
-
-char peek(char *buffer);
 
 
 #endif

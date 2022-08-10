@@ -31,27 +31,9 @@
 
 
 static volatile int received_sigint = 0;
-static struct termios originalt, newt;
+struct termios originalt, newt;
 static bool INTERACTIVE;
 
-
-void disable_term_flags(void)
-{
-    tcgetattr(STDIN_FILENO, &originalt);
-    newt = originalt;
-    /* change so buffer don't require new line or similar to return */
-    newt.c_lflag &= ~ICANON;          
-    newt.c_cc[VTIME] = 0;
-    newt.c_cc[VMIN] = 1;
-    /* turn of echo */
-    newt.c_lflag &= ~ECHO;
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-}
-
-void enable_term_flags(void)
-{
-    tcsetattr(STDIN_FILENO, TCSANOW, &originalt);
-}
 
 static void catch_exit_signal(int signal)
 {
@@ -85,7 +67,6 @@ int valery(char *arg)
         hist = hist_t_malloc(hist_file_path);
 
         signal(SIGINT, catch_exit_signal);
-        disable_term_flags();
 
         /* main loop */
         while (1) {
@@ -123,7 +104,6 @@ int valery(char *arg)
         /* free and write to file before exiting */
         hist_t_write(hist);
         hist_t_free(hist);
-        enable_term_flags();
     } else {
         rc = tokenize(ts, env, arg);
         if (rc == 0)

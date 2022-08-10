@@ -46,6 +46,10 @@ typedef enum {
 
 /* functions */
 
+void prompt_term_init(void);
+
+void prompt_term_end(void);
+
 /* returns the type of arrow consumed from the terminal input buffer */
 int get_arrow_type(void);
 

@@ -127,12 +127,14 @@ void tokenized_str_t_resize(struct tokenized_str_t *ts, size_t new_capacity)
         for (size_t i = ts->capacity; i < new_capacity; i++)
             ts->tokens[i] = token_t_malloc();
     } else {
-        for (size_t i = ts->capacity - 1; i > new_capacity; i--)
+        for (size_t i = ts->capacity - 1; i >= new_capacity; i--)
             token_t_free(ts->tokens[i]);
         ts->tokens = (struct token_t **) realloc(ts->tokens, new_capacity * sizeof(struct token_t *));
     }
 
     ts->capacity = new_capacity;
+    if (ts->size > ts->capacity)
+        ts->size = ts->capacity;
 }
 
 /* clears the object and prepares it for a new loop */
@@ -203,7 +205,7 @@ void token_t_print(struct token_t *t)
 /* just for debugging */
 void tokenized_str_t_print(struct tokenized_str_t *ts)
 {
-    print_debug("metadata: total tokens: %ld, total tokens allocated: %ld\n\n", ts->size + 1, ts->capacity);
+    print_debug("metadata: total tokens: %ld, total tokens allocated: %ld\n\n", ts->size, ts->capacity);
 
     for (size_t i = 0; i < ts->size; i++) {
         printf("num: '%ld', ", i);

@@ -72,8 +72,8 @@ typedef struct token_t {
 
 typedef struct tokenized_str_t {
     struct token_t **tokens;  /* list of the tokens */
-    size_t size;              /* total tokens occupied / in use. NOTE: starts at 0. */
-    size_t capacity;          /* total tokens allocated. NOTE: starts at 0. */
+    size_t size;              /* total tokens occupied / in use */
+    size_t capacity;          /* total tokens allocated */
 } tokenized_str_t;
 
 

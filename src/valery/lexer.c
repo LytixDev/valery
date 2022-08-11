@@ -141,7 +141,7 @@ void tokenized_str_t_clear(struct tokenized_str_t *ts)
     if (ts->capacity > STARTING_TOKENS * 2)
         tokenized_str_t_resize(ts, STARTING_TOKENS);
 
-    for (size_t i = 0; i < ts->size + 1; i++) {
+    for (size_t i = 0; i < ts->size; i++) {
         if (ts->tokens[i]->str_capacity > DEFAULT_TOKEN_SIZE * 2)
             token_t_resize(ts->tokens[i], DEFAULT_TOKEN_SIZE);
         ts->tokens[i]->str_len = 0;
@@ -183,9 +183,9 @@ void token_t_pop_char(struct token_t *t)
 struct token_t *tokenized_str_t_next(struct tokenized_str_t *ts)
 {
     if (++(ts->size) >= ts->capacity)
-        tokenized_str_t_resize(ts, ts->capacity + 32);
+        tokenized_str_t_resize(ts, ts->capacity * 2);
 
-    return ts->tokens[ts->size];
+    return ts->tokens[ts->size - 1];
 }
 
 void token_t_print(struct token_t *t)
@@ -205,7 +205,7 @@ void tokenized_str_t_print(struct tokenized_str_t *ts)
 {
     print_debug("metadata: total tokens: %ld, total tokens allocated: %ld\n\n", ts->size + 1, ts->capacity);
 
-    for (size_t i = 0; i < ts->size + 1; i++) {
+    for (size_t i = 0; i < ts->size; i++) {
         printf("num: '%ld', ", i);
         token_t_print(ts->tokens[i]);
         printf("\n");
@@ -259,7 +259,7 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
     /* amount of values in candidates set to true */
     int total_candidates;
     size_t candidate_len = 0;                  /* keeps track of length of tokens that are possible operands */
-    token_t *t = ts->tokens[ts->size]; /* the current token we are modifying */
+    token_t *t = ts->tokens[(++ts->size) - 1]; /* the current token we are modifying */
     unsigned int p_flags = 0;
 
     while ((c = *buffer++) != 0) {

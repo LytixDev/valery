@@ -140,19 +140,22 @@ void tokenized_str_t_resize(struct tokenized_str_t *ts, size_t new_capacity)
 /* clears the object and prepares it for a new loop */
 void tokenized_str_t_clear(struct tokenized_str_t *ts)
 {
+    /* downsize if it has grown to large, maybe useful
     if (ts->capacity > STARTING_TOKENS * 2)
         tokenized_str_t_resize(ts, STARTING_TOKENS);
+    */
 
     for (size_t i = 0; i < ts->size; i++) {
+        /* downsize if it has grown to large, maybe useful
         if (ts->tokens[i]->str_capacity > DEFAULT_TOKEN_SIZE * 2)
             token_t_resize(ts->tokens[i], DEFAULT_TOKEN_SIZE);
+            */
         ts->tokens[i]->str_len = 0;
         ts->tokens[i]->type = O_NONE;
     }
 
     ts->size = 0;
 }
-
 
 void token_t_append_char(struct token_t *t, char c)
 {

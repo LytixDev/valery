@@ -26,6 +26,8 @@
 #include "valery/lexer.h"
 #include "valery/env.h"
 #include "valery.h"
+#include "lib/vstring.h"
+
 
 /*
  * enum representation is found in lexer.h.
@@ -86,7 +88,6 @@ void token_t_free(struct token_t *t)
 
 void token_t_resize(struct token_t *t, size_t new_capacity)
 {
-    //TODO: only works when INCREASING size
     t->str = (char *) realloc(t->str, new_capacity * sizeof(char));
     t->str_capacity = new_capacity;
 }
@@ -116,25 +117,45 @@ void tokenized_str_t_free(struct tokenized_str_t *ts)
 
 void tokenized_str_t_resize(struct tokenized_str_t *ts, size_t new_capacity)
 {
-    //TODO: only works when INCREASING size
-    ts->tokens = (struct token_t **) realloc(ts->tokens, new_capacity * sizeof(struct token_t *));
-    for (size_t i = ts->capacity; i < new_capacity; i++)
-        ts->tokens[i] = token_t_malloc();
+    if (new_capacity == ts->capacity)
+        return;
+
+    bool increase = new_capacity > ts->capacity ? true : false;
+
+    if (increase) {
+        ts->tokens = (struct token_t **) realloc(ts->tokens, new_capacity * sizeof(struct token_t *));
+        for (size_t i = ts->capacity; i < new_capacity; i++)
+            ts->tokens[i] = token_t_malloc();
+    } else {
+        for (size_t i = ts->capacity - 1; i >= new_capacity; i--)
+            token_t_free(ts->tokens[i]);
+        ts->tokens = (struct token_t **) realloc(ts->tokens, new_capacity * sizeof(struct token_t *));
+    }
 
     ts->capacity = new_capacity;
+    if (ts->size > ts->capacity)
+        ts->size = ts->capacity;
 }
 
 /* clears the object and prepares it for a new loop */
 void tokenized_str_t_clear(struct tokenized_str_t *ts)
 {
-    for (size_t i = 0; i < ts->size + 1; i++) {
+    /* downsize if it has grown to large, maybe useful
+    if (ts->capacity > STARTING_TOKENS * 2)
+        tokenized_str_t_resize(ts, STARTING_TOKENS);
+    */
+
+    for (size_t i = 0; i < ts->size; i++) {
+        /* downsize if it has grown to large, maybe useful
+        if (ts->tokens[i]->str_capacity > DEFAULT_TOKEN_SIZE * 2)
+            token_t_resize(ts->tokens[i], DEFAULT_TOKEN_SIZE);
+            */
         ts->tokens[i]->str_len = 0;
         ts->tokens[i]->type = O_NONE;
     }
 
     ts->size = 0;
 }
-
 
 void token_t_append_char(struct token_t *t, char c)
 {
@@ -155,7 +176,7 @@ void token_t_done(struct token_t *t)
     /* terminate string */
     token_t_append_char(t, 0);
     /* remove leading and trailing spaces */
-    t->str_start = trim_edge(t->str, ' ');
+    t->str_start = vstr_trim_edges(t->str, ' ');
 }
 
 void token_t_pop_char(struct token_t *t)
@@ -167,9 +188,9 @@ void token_t_pop_char(struct token_t *t)
 struct token_t *tokenized_str_t_next(struct tokenized_str_t *ts)
 {
     if (++(ts->size) >= ts->capacity)
-        tokenized_str_t_resize(ts, ts->capacity + 32);
+        tokenized_str_t_resize(ts, ts->capacity * 2);
 
-    return ts->tokens[ts->size];
+    return ts->tokens[ts->size - 1];
 }
 
 void token_t_print(struct token_t *t)
@@ -187,9 +208,9 @@ void token_t_print(struct token_t *t)
 /* just for debugging */
 void tokenized_str_t_print(struct tokenized_str_t *ts)
 {
-    print_debug("metadata: total tokens: %ld, total tokens allocated: %ld\n\n", ts->size + 1, ts->capacity);
+    print_debug("metadata: total tokens: %ld, total tokens allocated: %ld\n\n", ts->size, ts->capacity);
 
-    for (size_t i = 0; i < ts->size + 1; i++) {
+    for (size_t i = 0; i < ts->size; i++) {
         printf("num: '%ld', ", i);
         token_t_print(ts->tokens[i]);
         printf("\n");
@@ -243,7 +264,7 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
     /* amount of values in candidates set to true */
     int total_candidates;
     size_t candidate_len = 0;                  /* keeps track of length of tokens that are possible operands */
-    token_t *t = ts->tokens[ts->size]; /* the current token we are modifying */
+    token_t *t = ts->tokens[(++ts->size) - 1]; /* the current token we are modifying */
     unsigned int p_flags = 0;
 
     while ((c = *buffer++) != 0) {
@@ -419,22 +440,3 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
     return false;
 }
 
-char *trim_edge(char *str, char c)
-{
-    char *str_cpy = str;
-    char *str_start;
-
-    /* trim all chars from start of string */
-    while (*str_cpy == c) str_cpy++;
-    str_start = str_cpy;
-
-    /* move pointer to end of str */
-    while (*str_cpy != 0) str_cpy++;
-
-    /* trim all chars from end of string */
-    while (*--str_cpy == c && str_cpy != str);
-    /* terminate string after on match */
-    *(++str_cpy) = 0;
-
-    return str_start;
-}

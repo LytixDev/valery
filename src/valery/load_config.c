@@ -20,21 +20,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "valery/env.h"
 #include "valery/load_config.h"
+#include "lib/vstring.h"
 
-
-static int find_pos(char look_for, const char *str)
-{
-    int found_pos = 0;
-
-    while (str[found_pos] != '\0') {
-        if (str[found_pos] == look_for)
-            return found_pos;
-        found_pos++;
-    }
-
-    return -1;
-}
 
 int parse_config(struct env_t *env)
 {
@@ -66,7 +55,7 @@ int parse_config(struct env_t *env)
         if (buf[0] == '#')
             continue;
 
-        found_pos = find_pos('=', buf);
+        found_pos = vstr_find_first_c(buf, '=');
         if (found_pos != -1) {
             /*TODO: improve this */
             unsigned long str_len = strlen(buf);
@@ -75,10 +64,7 @@ int parse_config(struct env_t *env)
             key[found_pos] = '\0';
             val[str_len - found_pos - 2] = '\0';
 
-            if (strcmp(key, "PATH") == 0)
-                strcpy(env->PATH, val);
-            else
-                env_set(env, key, val);
+            env_set(env, key, val);
         }
 
     }
@@ -101,14 +87,20 @@ int get_config_path(struct env_t *env, char config_path[MAX_ENV_LEN])
 
 void unwrap_paths(struct env_t *env)
 {
+    char *paths = env_get(env, "PATH");
+    if (paths == NULL) {
+        fprintf(stderr, "valery: no PATH variable found in .valeryrc\n");
+        return;
+    }
+
     const char delim[] = ":";
-    char *path = strtok(env->PATH, delim);
+    char *path = strtok(paths, delim);
     
     while (path != NULL) {
         if (env->path_size == env->path_capacity - 1)
             env_t_path_increase(env, env->path_capacity + 5);
        
-        strcpy(env->paths[env->path_size++], path);
+        strncpy(env->paths[env->path_size++], path, MAX_ENV_LEN);
         path = strtok(NULL, delim);
     }
 }

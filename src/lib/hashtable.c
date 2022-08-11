@@ -37,7 +37,7 @@ struct ht_t *ht_malloc(void)
 {
     struct ht_t *ht = malloc(sizeof(struct ht_t));
     ht->items = malloc(sizeof(ht_item_t*) * HT_TABLE_SIZE);
-    memset(ht->keys, 0, HT_TABLE_SIZE);
+    memset(ht->keys, 0, HT_TABLE_SIZE * sizeof(unsigned int));
 
     for (int i = 0; i < HT_TABLE_SIZE; i++)
         ht->items[i] = NULL;

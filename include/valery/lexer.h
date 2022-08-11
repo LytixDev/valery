@@ -72,8 +72,8 @@ typedef struct token_t {
 
 typedef struct tokenized_str_t {
     struct token_t **tokens;  /* list of the tokens */
-    size_t size;              /* total blocks of tokens occupied / in use */
-    size_t capacity;          /* total blocks of tokens allocated */
+    size_t size;              /* total tokens occupied / in use */
+    size_t capacity;          /* total tokens allocated */
 } tokenized_str_t;
 
 
@@ -155,8 +155,6 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer);
  * returns true if char is special and was dealt with, else false.
  */
 bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, unsigned int *p_flags);
-
-char *trim_edge(char *str, char c);
 
 
 #endif

@@ -33,9 +33,4 @@
 #define print_debug(...) ((void) 0)
 #endif
 
-/* functions */
-void disable_term_flags(void);
-
-void enable_term_flags(void);
-
-#endif
+#endif /* VALERY */

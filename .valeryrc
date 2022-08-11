@@ -1,7 +1,8 @@
 # example valeryc
 
-PS1=>
+PS1=\C[\D]\E\$
 PATH=/usr/bin:/home/nic/.local/share/valery/bin
 EDITOR=nvim
 TERMINAL=st
 BROWSER=firefox
+TERM=st-256color

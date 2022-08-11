@@ -19,9 +19,11 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <pwd.h>
+#include <string.h>
 
 #include "valery/env.h"
 #include "builtins/builtins.h"
+#include "lib/vstring.h"
 
 
 struct env_t *env_t_malloc(void)
@@ -35,7 +37,6 @@ struct env_t *env_t_malloc(void)
 
     env->path_capacity = STARTING_PATHS;
     env->path_size = 0;
-    env->PATH = (char *) malloc(MAX_ENV_LEN * sizeof(char));
 
     env->env_vars = ht_malloc();
     env->env_update = false;
@@ -47,6 +48,7 @@ struct env_t *env_t_malloc(void)
 
 
     set_home_dir(env);
+    set_uid(env);
 
     return env;
 }
@@ -60,7 +62,6 @@ void env_t_free(struct env_t *env)
         free(env->paths[i]);
 
     free(env->paths);
-    free(env->PATH);
 
     for (int i = 0; i < env->env_capacity; i++)
         free(env->environ[i]);
@@ -132,6 +133,86 @@ void env_t_path_increase(struct env_t *env, int new_len) {
     env->path_capacity = new_len;
 }
 
+void env_update(struct env_t *env)
+{
+    env_update_pwd(env);
+    env_update_ps1(env);
+}
+
+void env_update_ps1(struct env_t *env)
+{
+    char default_ps1[] = ">";
+    char *ps1 = env_get(env, "PS1");
+    if (ps1 == NULL)
+        strncpy(env->ps1, default_ps1, 1024);
+
+    /* parse PS1 */
+    char c;
+    char ps1_tmp[1024];
+    int pos = 0;
+    bool escape = false;
+    while ((c = *ps1++) != 0) {
+        if (c == '\\') {
+            escape = true;
+            continue;
+        }
+        if (!escape) {
+            ps1_tmp[pos++] = c;
+            continue;
+        }
+
+        switch (c) {
+            char *home;
+            char *cw;
+            char *res;
+            uid_t uid;
+            case '$':
+                uid = env->uid;
+                if (uid == UID_ROOT)
+                    ps1_tmp[pos++] = SYM_ROOT;
+                else
+                    ps1_tmp[pos++] = SYM_USR;
+                break;
+
+            case 'D':
+                home = env_get(env, "HOME");
+                cw = env_get(env, "PWD");
+
+                if (cw == NULL)
+                    break;
+                if (home != NULL) {
+                    /* try to replace HOME with ~ */
+                    res = vstr_starts_with(cw, home);
+                    if (res != NULL) {
+                        ps1_tmp[pos++] = '~';
+                        ps1_tmp[pos++] = '/';
+                        /* move cw to end of HOME */
+                        cw = res;
+                    }
+                }
+
+                while ((c = *cw++) != 0)
+                    ps1_tmp[pos++] = c;
+                break;
+
+            case 'C':
+                strncat(ps1_tmp, "\033[0;36m", 8);
+                pos += 7;
+                break;
+
+            case 'E':
+                strncat(ps1_tmp, "\033[0m", 5);
+                pos += 4;
+                break;
+        }
+
+        escape = false;
+    }
+
+    ps1_tmp[pos] = 0;
+    strncpy(env->ps1, ps1_tmp, 1024);
+}
+
 void env_update_pwd(struct env_t *env)
 {
     char *old = env_get(env, "PWD");
@@ -162,4 +243,12 @@ int set_home_dir(struct env_t *env)
     
     env_set(env, "HOME", homedir);
     return 0;
+}
+
+void set_uid(struct env_t *env)
+{
+    env->uid = getuid();
+    char uid_tmp[32];
+    snprintf(uid_tmp, 32, "%d", (unsigned int) env->uid);
+    env_set(env, "UID", uid_tmp);
 }

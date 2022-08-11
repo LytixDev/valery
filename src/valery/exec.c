@@ -136,11 +136,11 @@ int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hi
     /* initialize exec_ctx to have vacant streams */
     exec_ctx e_ctx = { .flags = SF_ADAM_VACANT | SF_SETH_VACANT, .read_stream = ST_NONE, .write_stream = ST_NONE };
 
-    for (size_t i = 0; i <= ts->size; i++) {
+    for (size_t i = 0; i < ts->size; i++) {
         t = ts->tokens[i];
 
         /* only look ahead in if it is not the last token */
-        if (i != ts->size)
+        if (i != ts->size - 1)
             next_type = ts->tokens[i + 1]->type;
         else
             next_type = O_NONE;

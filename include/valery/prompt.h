@@ -46,16 +46,14 @@ typedef enum {
 
 /* functions */
 
+void prompt_term_init(void);
+
+void prompt_term_end(void);
+
 /* returns the type of arrow consumed from the terminal input buffer */
 int get_arrow_type(void);
 
 int move_cursor_horizontally(keycode_t arrow_type, int cur_pos, int buf_len);
-
-/* merge a char at any position into a char array */
-void insert_char_to_str(char buf[COMMAND_LEN], char c, int index);
-
-/* removes char at index from buf */
-void remove_char_from_str(char buf[COMMAND_LEN], int index);
 
 /* prints the ps1 and the buffer */
 void print_prompt(char *ps1, char *buf);

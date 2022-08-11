@@ -20,12 +20,35 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
+#include <unistd.h>
+#include <termios.h>
 
 #include "valery/prompt.h"
 #include "valery/histfile.h"
 #include "valery.h"
+#include "lib/vstring.h"
 
+
+extern struct termios originalt, newt;
+
+
+void prompt_term_init(void)
+{
+    tcgetattr(STDIN_FILENO, &originalt);
+    newt = originalt;
+    /* change so buffer don't require new line or similar to return */
+    newt.c_lflag &= ~ICANON;
+    newt.c_cc[VTIME] = 0;
+    newt.c_cc[VMIN] = 1;
+    /* turn of echo */
+    newt.c_lflag &= ~ECHO;
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+}
+
+void prompt_term_end(void)
+{
+    tcsetattr(STDIN_FILENO, TCSANOW, &originalt);
+}
 
 int get_arrow_type(void)
 {
@@ -59,24 +82,6 @@ int move_cursor_horizontally(keycode_t arrow_type, int cur_pos, int buf_len)
     return cur_pos;
 }
 
-/* inserts char at any point in the char array */
-void insert_char_to_str(char buf[COMMAND_LEN], char c, int index)
-{
-    char tmp[COMMAND_LEN];
-    strncpy(tmp, buf, index);
-    tmp[index] = c;
-    strcpy(tmp + index + 1, buf + index); 
-    strcpy(buf, tmp);
-}
-
-void remove_char_from_str(char buf[COMMAND_LEN], int index)
-{
-    char tmp[COMMAND_LEN];
-    strncpy(tmp, buf, index - 1);
-    strcpy(tmp + index - 1, buf + index); 
-    strcpy(buf, tmp);
-}
-
 void print_prompt(char *ps1, char *buf)
 {
     printf("%s %s", ps1, buf);
@@ -96,6 +101,7 @@ int prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN])
 {
     int ch;
     int arrow_type;
+    int ret = 0;
     size_t max_len = COMMAND_LEN;
     readfrom_t rc;
     histaction_t action;
@@ -103,6 +109,7 @@ int prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN])
     /* the size of the buffer being used, not the size allocated */
     size_t buf_len = 0;
 
+    prompt_term_init();
     print_prompt(ps1, buf);
     /* reset position in history to bottom of queue */
     hist_t_reset_pos(hist);
@@ -111,13 +118,14 @@ int prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN])
         /* return if buffer cannot store more chars */
         if (buf_len == max_len) {
             buf[--buf_len] = 0;
-            return 1;
+            ret = 1;
+            goto ret;
         }
 
         switch (ch) {
             case BACKSPACE:
                 if (cur_pos > 0) {
-                    remove_char_from_str(buf, cur_pos);
+                    vstr_remove_idx(buf, COMMAND_LEN, cur_pos);
                     cur_pos--;
                     buf_len--;
                 }
@@ -153,7 +161,7 @@ int prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN])
             default:
                 if (cur_pos != buf_len) {
                     /* insert char at any position of the buffer */
-                    insert_char_to_str(buf, ch, cur_pos++); 
+                    vstr_insert_c(buf, COMMAND_LEN, ch, cur_pos++);
                     buf_len++;
                 } else {
                     /* no special keys have been pressed this session, so append char to input buffer */
@@ -164,6 +172,8 @@ int prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN])
         update_prompt(ps1, buf, buf_len - cur_pos);
     }
 
+ret:
     putchar('\n');
-    return 0;
+    prompt_term_end();
+    return ret;
 }

@@ -23,6 +23,7 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "valery/histfile.h"
 #include "valery/lexer.h"
 #include "valery/env.h"
 #include "valery.h"
@@ -438,4 +439,27 @@ bool special_char(struct env_vars_t *env_vars, struct token_t *t, char c, char *
     }
 
     return false;
+}
+
+int str_to_argv(char *str, char **argv, int *argv_cap)
+{
+    print_debug("converting '%s' into argv\n", str);
+    int argc = 0;
+
+    while (*str != 0) {
+        if (*str == ' ') {
+            *str = 0;
+            /* start next argv on last backspace */
+            while (*(++str) == ' ');
+            argv[argc++] = str;
+            if (argc >= *argv_cap) {
+                *argv_cap += 8;
+                argv = (char **) realloc(argv, *argv_cap * sizeof(char *));
+            }
+        } else {
+            str++;
+        }
+    }
+
+    return argc;
 }

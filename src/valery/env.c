@@ -79,6 +79,8 @@ struct env_t *env_t_malloc(void)
     env->env_vars = env_vars_malloc();
     env->paths = paths_malloc();
     env->aliases = ht_malloc();
+    /* TODO: remove this, just for testing */
+    ht_set(env->aliases, "ls", "ls --color=auto");
 
     env->exit_code = 0;
     set_home_dir(env->env_vars);
@@ -98,6 +100,11 @@ void env_t_free(struct env_t *env)
     free(env);
 }
 
+char *alias_get(struct env_t *env, char *key)
+{
+    return (char *) ht_get(env->aliases, key);
+}
+
 char *env_get(struct env_vars_t *env_vars, char *key)
 {
     return (char *) ht_get(env_vars->ht, key);
@@ -110,6 +117,7 @@ struct ht_item_t *env_geth(struct env_vars_t *env_vars, unsigned int hash)
 
 void env_set(struct env_vars_t *env_vars, char *key, char *value)
 {
+    print_debug("set env var '%s'='%s'", key, value);
     ht_set(env_vars->ht, key, value);
     env_vars->update = true;
 }
@@ -258,7 +266,6 @@ void env_update_pwd(struct env_vars_t *env_vars)
     //TODO: check if actually need to update
     //env->env_vars->update = true;
 }
-
 
 int set_home_dir(struct env_vars_t *env_vars)
 {

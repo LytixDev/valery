@@ -40,7 +40,7 @@ typedef struct env_vars_t {
     char **environ;     /* list of environment variables on the form: ["KEY=VALUE", ... ] */
     int size;
     int capacity;
-    bool update;    /* set to true if a env_var has changed, and environ is not updated */
+    bool update;        /* set to true if an environment variable has changed, and environ is not outdated */
 } env_vars_t;
 
 
@@ -107,5 +107,6 @@ int set_home_dir(struct env_vars_t *env_vars);
 
 void path_increase(struct paths_t *p, int new_len);
 
+char *alias_get(struct env_t *env, char *key);
 
 #endif

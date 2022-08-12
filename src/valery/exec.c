@@ -154,6 +154,7 @@ int valery_parse_tokens(struct source_t *ts, struct env_t *env, struct hist_t *h
         }
     }
 
+
     free(argv);
     return 0;
 }
@@ -222,25 +223,3 @@ void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_
     }
 }
 
-int str_to_argv(char *str, char **argv, int *argv_cap)
-{
-    print_debug("converting '%s' into argv\n", str);
-
-    int argc = 0;
-
-    while (*str != 0) {
-        if (*str == ' ') {
-            *str = 0;
-            /* start next argv on last backspace */
-            while (*(++str) == ' ');
-            argv[argc++] = str;
-            if (argc >= *argv_cap) {
-                *argv_cap += 8;
-                argv = (char **) realloc(argv, *argv_cap * sizeof(char *));
-            }
-        } else {
-            str++;
-        }
-    }
-    return argc;
-}

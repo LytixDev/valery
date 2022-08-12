@@ -156,5 +156,7 @@ int tokenize(struct source_t *ts, struct env_vars_t *env_vars, char *buffer);
  */
 bool special_char(struct env_vars_t *env_vars, struct token_t *t, char c, char **buffer, unsigned int *p_flags);
 
+int str_to_argv(char *str, char **argv, int *argv_cap);
+
 
 #endif

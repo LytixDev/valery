@@ -69,7 +69,7 @@ void ht_set(struct ht_t *ht, char *key, void *value);
 /* returns the value corresponding to the given key */
 void *ht_get(struct ht_t *ht, char *key);
 
-/* returns the first item stored with the given hash parameter */
+/* returns the first item stored with the given hash argument */
 struct ht_item_t *ht_geth(struct ht_t *ht, unsigned int hash);
 
 /* removes and frees the item the hashtable */

@@ -77,7 +77,7 @@ struct ht_item_t *env_geth(struct env_t *env, unsigned int hash);
 /*
  * generates the environment variables needed when executing a program on the form:
  * "KEY=VALUE". This is stored in env->environ. 
- * The given env_str parameter is populated with pointers to the all entries of 
+ * The given env_str argument is populated with pointers to the all entries of 
  * env->environ. Last entry in env_str is set to NULL.
  */
 void env_gen(struct env_t *env, char *env_str[env->env_capacity]);

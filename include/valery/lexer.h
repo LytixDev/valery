@@ -107,7 +107,7 @@ void tokenized_str_t_clear(struct tokenized_str_t *ts);
 void token_t_append_str(struct token_t *t, char *str);
 
 /*
- * adds the char parameter to the end of the str.
+ * adds the char argument to the end of the str.
  * calls token_t_resize() if str is not large enough.
  */
 void token_t_append_char(struct token_t *t, char c);
@@ -128,8 +128,8 @@ void token_t_print(struct token_t *t);
 void tokenized_str_t_print(struct tokenized_str_t *ts);
 
 /*
- * goes through each operand and checks if the char at the 'pos' input parameter matches 
- * the char 'c' input parameter. If they don't match, the candidate for that operand
+ * goes through each operand and checks if the char at the 'pos' input argument matches 
+ * the char 'c' argument. If they don't match, the candidate for that operand
  * is set to false if it was true and decrements total_candidates.
  *
  * returns the value of total_candidates.
@@ -151,7 +151,7 @@ void print_syntax_error(const char *buf_start, const char *buf_err, char *msg);
 int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer);
 
 /*
- * checks if the given char c parameter is a special char, and deals with it accordingly.
+ * checks if the given char c argument is a special char, and deals with it accordingly.
  * returns true if char is special and was dealt with, else false.
  */
 bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, unsigned int *p_flags);

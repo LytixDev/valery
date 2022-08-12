@@ -42,7 +42,7 @@ static void catch_exit_signal(int signal)
 
 int valery(char *arg)
 {
-    struct tokenized_str_t *ts;
+    struct source_t *ts;
     struct hist_t *hist = NULL;
     struct env_t *env = env_t_malloc();
     int rc;
@@ -54,7 +54,7 @@ int valery(char *arg)
         return 1;
     }
 
-    /* create tokenized_str_t object. Will reused same object every loop. */
+    /* create source_t object. Will reused same object every loop. */
     ts = tokenized_str_t_malloc();
 
     if (INTERACTIVE) {

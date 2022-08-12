@@ -126,7 +126,7 @@ bool valery_eval_token(char *program_name, char *argv[], int argc, struct env_t 
     return true;
 }
 
-int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hist_t *hist)
+int valery_parse_tokens(struct source_t *ts, struct env_t *env, struct hist_t *hist)
 {
     token_t *t;
     operands_t next_type;

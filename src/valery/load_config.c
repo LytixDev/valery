@@ -25,7 +25,7 @@
 #include "lib/vstring.h"
 
 
-int parse_config(struct env_t *env)
+int parse_config(struct env_vars_t *env_vars, struct paths_t *p)
 {
     /*
      * TODO: look for config in various places, f.ex: ~/.config/ 
@@ -42,7 +42,7 @@ int parse_config(struct env_t *env)
     int found_pos;
     int rc;
 
-    rc = get_config_path(env, config_path);
+    rc = get_config_path(config_path, env_get(env_vars, "HOME"));
     if (rc == 1)
         return 1;
 
@@ -64,20 +64,20 @@ int parse_config(struct env_t *env)
             key[found_pos] = '\0';
             val[str_len - found_pos - 2] = '\0';
 
-            env_set(env, key, val);
+            env_set(env_vars, key, val);
         }
 
     }
+
     fclose(fp);
-    unwrap_paths(env);
+    unwrap_paths(p, (char *) env_get(env_vars, "PATH"));
     return 0;
 }
 
-int get_config_path(struct env_t *env, char config_path[MAX_ENV_LEN])
+int get_config_path(char result[MAX_ENV_LEN], char *HOME)
 {
-    char *HOME = env_get(env, "HOME");
     if (HOME != NULL) {
-        snprintf(config_path, MAX_ENV_LEN, "%s/%s", HOME, CONFIG_NAME);
+        snprintf(result, MAX_ENV_LEN, "%s/%s", HOME, CONFIG_NAME);
         return 0;
     } else {
         fprintf(stderr, "VALERY ERROR: could not find HOME environment variable\n");
@@ -85,22 +85,21 @@ int get_config_path(struct env_t *env, char config_path[MAX_ENV_LEN])
     }
 }
 
-void unwrap_paths(struct env_t *env)
+void unwrap_paths(struct paths_t *p, char *PATHS)
 {
-    char *paths = env_get(env, "PATH");
-    if (paths == NULL) {
+    if (PATHS == NULL) {
         fprintf(stderr, "valery: no PATH variable found in .valeryrc\n");
         return;
     }
 
     const char delim[] = ":";
-    char *path = strtok(paths, delim);
+    char *path = strtok(PATHS, delim);
     
     while (path != NULL) {
-        if (env->path_size == env->path_capacity - 1)
-            env_t_path_increase(env, env->path_capacity + 5);
+        if (p->size == p->capacity - 1)
+            path_increase(p, p->capacity * 2);
        
-        strncpy(env->paths[env->path_size++], path, MAX_ENV_LEN);
+        strncpy(p->paths[p->size++], path, MAX_ENV_LEN);
         path = strtok(NULL, delim);
     }
 }

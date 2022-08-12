@@ -36,10 +36,10 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     char *command_with_path;
     char tmp[1024];
 
-    char *environ[env->env_capacity];
-    env_gen(env, environ);
+    char *environ[env->env_vars->capacity];
+    env_gen(env->env_vars, environ);
 
-    rc = which_single(program_name, env->paths, env->path_size, &found_path);
+    rc = which_single(program_name, env->paths->paths, env->paths->size, &found_path);
     if (!(rc == COMMAND_IN_PATH || rc == COMMAND_IS_PATH)) {
         fprintf(stderr, "valery: command not found '%s'\n", program_name);
         env->exit_code = 1;
@@ -110,7 +110,7 @@ bool valery_eval_token(char *program_name, char *argv[], int argc, struct env_t 
     int rc;
     /* check if program is shell builtin */
     if (strcmp(program_name, "which") == 0)
-        rc = which(argv, argc, env->paths, env->path_size);
+        rc = which(argv, argc, env->paths->paths, env->paths->size);
     else if (strcmp(program_name, "cd") == 0)
         rc = cd(argv[0]);
     else if (strcmp(program_name, "history") == 0)

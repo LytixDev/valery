@@ -251,7 +251,7 @@ void print_syntax_error(const char *buf_start, const char *buf_err, char *msg)
     fprintf(stderr, "^ %s\n", msg);
 }
 
-int tokenize(struct source_t *ts, struct env_t *env, char *buffer)
+int tokenize(struct source_t *ts, struct env_vars_t *env_vars, char *buffer)
 {
     char c;
     /* always points to first address of buffer */
@@ -279,7 +279,7 @@ int tokenize(struct source_t *ts, struct env_t *env, char *buffer)
             continue;
         }
 
-        if (!special_char(env, t, c, &buffer, &p_flags))
+        if (!special_char(env_vars, t, c, &buffer, &p_flags))
             continue;
 
         if (!(p_flags & PF_QUOTE) && update_candidates(c, 0, candidates, &total_candidates)) {
@@ -363,7 +363,7 @@ int tokenize(struct source_t *ts, struct env_t *env, char *buffer)
     return 0;
 }
 
-bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, unsigned int *p_flags)
+bool special_char(struct env_vars_t *env_vars, struct token_t *t, char c, char **buffer, unsigned int *p_flags)
 {
     char env_key[MAX_ENV_LEN];
     char *home_dir;
@@ -397,7 +397,7 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
                 }
             }
             env_key[pos] = 0;
-            char *env_value = env_get(env, env_key);
+            char *env_value = env_get(env_vars, env_key);
 
             if (env_value != NULL)
                 token_t_append_str(t, env_value);
@@ -419,7 +419,7 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
                 return true;
             }
 
-            char *PWD = env_get(env, "PWD");
+            char *PWD = env_get(env_vars, "PWD");
             /* copy pwd into token */
             if (PWD != NULL)
                 token_t_append_str(t, PWD);
@@ -428,7 +428,7 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
 
         /* expand ̃'~' into $HOME */
         case '~':
-            home_dir = env_get(env, "HOME");
+            home_dir = env_get(env_vars, "HOME");
             if (home_dir != NULL)
                 token_t_append_str(t, home_dir);
             break;
@@ -439,4 +439,3 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
 
     return false;
 }
-

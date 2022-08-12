@@ -148,13 +148,13 @@ void print_syntax_error(const char *buf_start, const char *buf_err, char *msg);
 /*
  * splits the input buffer into tokens based using operands in operands_str as delimiters.
  */
-int tokenize(struct source_t *ts, struct env_t *env, char *buffer);
+int tokenize(struct source_t *ts, struct env_vars_t *env_vars, char *buffer);
 
 /*
  * checks if the given char c argument is a special char, and deals with it accordingly.
  * returns true if char is special and was dealt with, else false.
  */
-bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, unsigned int *p_flags);
+bool special_char(struct env_vars_t *env_vars, struct token_t *t, char c, char **buffer, unsigned int *p_flags);
 
 
 #endif

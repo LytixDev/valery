@@ -47,7 +47,7 @@ int valery(char *arg)
     struct env_t *env = env_t_malloc();
     int rc;
 
-    rc = parse_config(env);
+    rc = parse_config(env->env_vars, env->paths);
     if (rc == 1) {
         fprintf(stderr, "error parsing .valeryrc");
         env_t_free(env);
@@ -61,7 +61,7 @@ int valery(char *arg)
         char input_buffer[COMMAND_LEN] = {0};
         char hist_file_path[MAX_ENV_LEN] = {0};
 
-        snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env_get(env, "HOME"), HISTFILE_NAME);
+        snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env_get(env->env_vars, "HOME"), HISTFILE_NAME);
         /* establish a connection to the hist file */
         hist = hist_t_malloc(hist_file_path);
 
@@ -87,7 +87,7 @@ int valery(char *arg)
                 break;
 
             /* loop enters here means ordinary command was typed in */
-            rc = tokenize(ts, env, input_buffer);
+            rc = tokenize(ts, env->env_vars, input_buffer);
 #ifdef DEBUG
         tokenized_str_t_print(ts);
 #endif /* DEBUG */
@@ -104,7 +104,7 @@ int valery(char *arg)
         hist_t_write(hist);
         hist_t_free(hist);
     } else {
-        rc = tokenize(ts, env, arg);
+        rc = tokenize(ts, env->env_vars, arg);
         if (rc == 0)
             valery_parse_tokens(ts, env, hist);
     }

@@ -26,28 +26,62 @@
 #include "lib/vstring.h"
 
 
+static struct env_vars_t *env_vars_malloc(void)
+{
+    struct env_vars_t *env_vars = (struct env_vars_t *) malloc(sizeof(struct env_vars_t));
+    env_vars->ht = ht_malloc();
+    env_vars->update = false;
+    env_vars->capacity = HT_TABLE_SIZE;
+    env_vars->size = 0;
+
+    env_vars->environ = (char **) malloc(env_vars->capacity * sizeof(char *));
+    for (int i = 0; i < env_vars->capacity; i++)
+        env_vars->environ[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
+
+    return env_vars;
+}
+
+static void env_vars_free(struct env_vars_t *env_vars)
+{
+    ht_free(env_vars->ht);
+
+    for (int i = 0; i < env_vars->capacity; i++)
+        free(env_vars->environ[i]);
+
+    free(env_vars->environ);
+    free(env_vars);
+}
+
+static struct paths_t *paths_malloc(void)
+{
+    struct paths_t *p = (struct paths_t *) malloc(sizeof(struct paths_t));
+    p->paths = (char **) malloc(STARTING_PATHS * sizeof(char *));
+    for (int i = 0; i < STARTING_PATHS; i++)
+        p->paths[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
+
+    p->capacity = STARTING_PATHS;
+    p->size = 0;
+    return p;
+}
+
+static void paths_free(struct paths_t *p)
+{
+    for (int i = 0; i < p->capacity; i++)
+        free(p->paths[i]);
+
+    free(p->paths);
+    free(p);
+}
+
 struct env_t *env_t_malloc(void)
 {
     struct env_t *env = (env_t *) malloc(sizeof(env_t));
+    env->env_vars = env_vars_malloc();
+    env->paths = paths_malloc();
+    env->aliases = ht_malloc();
+
     env->exit_code = 0;
-
-    env->paths = (char **) malloc(STARTING_PATHS * sizeof(char *));
-    for (int i = 0; i < STARTING_PATHS; i++)
-        env->paths[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
-
-    env->path_capacity = STARTING_PATHS;
-    env->path_size = 0;
-
-    env->env_vars = ht_malloc();
-    env->env_update = false;
-    env->env_capacity = HT_TABLE_SIZE;
-    env->env_size = 0;
-    env->environ = (char **) malloc(env->env_capacity * sizeof(char *));
-    for (int i = 0; i < env->env_capacity; i++)
-        env->environ[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
-
-
-    set_home_dir(env);
+    set_home_dir(env->env_vars);
     set_uid(env);
 
     return env;
@@ -57,57 +91,50 @@ void env_t_free(struct env_t *env)
 {
     if (env == NULL)
         return;
-    
-    for (int i = 0; i < env->path_capacity; i++)
-        free(env->paths[i]);
 
-    free(env->paths);
-
-    for (int i = 0; i < env->env_capacity; i++)
-        free(env->environ[i]);
-
-    free(env->environ);
-    ht_free(env->env_vars);
+    env_vars_free(env->env_vars);
+    paths_free(env->paths);
+    ht_free(env->aliases);
     free(env);
 }
 
-char *env_get(struct env_t *env, char *key)
+char *env_get(struct env_vars_t *env_vars, char *key)
 {
-    return (char *) ht_get(env->env_vars, key);
+    return (char *) ht_get(env_vars->ht, key);
 }
 
-struct ht_item_t *env_geth(struct env_t *env, unsigned int hash)
+struct ht_item_t *env_geth(struct env_vars_t *env_vars, unsigned int hash)
 {
-    return ht_geth(env->env_vars, hash);
+    return ht_geth(env_vars->ht, hash);
 }
 
-void env_set(struct env_t *env, char *key, char *value)
+void env_set(struct env_vars_t *env_vars, char *key, char *value)
 {
-    ht_set(env->env_vars, key, value);
-    env->env_update = true;
+    ht_set(env_vars->ht, key, value);
+    env_vars->update = true;
 }
 
-void env_rm(struct env_t *env, char *key)
+void env_rm(struct env_vars_t *env_vars, char *key)
 {
-    ht_rm(env->env_vars, key);
-    env->env_update = true;
+    ht_rm(env_vars->ht, key);
+    env_vars->update = true;
 }
 
-void env_gen(struct env_t *env, char *env_str[env->env_capacity])
+void env_gen(struct env_vars_t *env_vars, char *env_str[env_vars->capacity])
 {
     int i;
 
-    if (env->env_update) {
+    if (env_vars->update) {
         struct ht_item_t *item;
         i = 0;
 
-        for (int hash = 0; hash < env->env_capacity; hash++) {
-            if (env->env_vars->keys[hash] != 0) {
-                item = env_geth(env, hash);
+        for (int hash = 0; hash < env_vars->capacity; hash++) {
+            if (env_vars->ht->keys[hash] != 0) {
+                item = env_geth(env_vars, hash);
                 /* hash table may have collisions */
                 while (item != NULL) {
-                    snprintf(env->environ[i], MAX_ENV_LEN, "%s=%s", item->key, (char *) item->value);
-                    env_str[i] = env->environ[i];
+                    snprintf(env_vars->environ[i], MAX_ENV_LEN, "%s=%s", item->key, (char *) item->value);
+                    env_str[i] = env_vars->environ[i];
                     i++;
                     item = item->next;
                 }
@@ -115,34 +142,34 @@ void env_gen(struct env_t *env, char *env_str[env->env_capacity])
         }
 
         env_str[i] = NULL;
-        env->env_size = --i;
-        env->env_update = false;
+        env_vars->size = --i;
+        env_vars->update = false;
     } else {
-        for (i = 0; i < env->env_size; i++) {
-            env_str[i] = env->environ[i];
+        for (i = 0; i < env_vars->size; i++) {
+            env_str[i] = env_vars->environ[i];
         }
         env_str[i] = NULL;
     }
 }
 
-void env_t_path_increase(struct env_t *env, int new_len) {
-    env->paths = (char **) realloc(env->paths, new_len * sizeof(char *));
-    for (int i = env->path_capacity; i < new_len; i++)
-        env->paths[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
+void path_increase(struct paths_t *p, int new_len) {
+    p->paths = (char **) realloc(p->paths, new_len * sizeof(char *));
+    for (int i = p->capacity; i < new_len; i++)
+        p->paths[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
 
-    env->path_capacity = new_len;
+    p->capacity = new_len;
 }
 
 void env_update(struct env_t *env)
 {
-    env_update_pwd(env);
+    env_update_pwd(env->env_vars);
     env_update_ps1(env);
 }
 
 void env_update_ps1(struct env_t *env)
 {
     char default_ps1[] = ">";
-    char *ps1 = env_get(env, "PS1");
+    char *ps1 = env_get(env->env_vars, "PS1");
     if (ps1 == NULL)
         strncpy(env->ps1, default_ps1, 1024);
 
@@ -175,8 +202,8 @@ void env_update_ps1(struct env_t *env)
                 break;
 
             case 'D':
-                home = env_get(env, "HOME");
-                cw = env_get(env, "PWD");
+                home = env_get(env->env_vars, "HOME");
+                cw = env_get(env->env_vars, "PWD");
 
                 if (cw == NULL)
                     break;
@@ -213,27 +240,27 @@ void env_update_ps1(struct env_t *env)
     strncpy(env->ps1, ps1_tmp, 1024);
 }
 
-void env_update_pwd(struct env_t *env)
+void env_update_pwd(struct env_vars_t *env_vars)
 {
-    char *old = env_get(env, "PWD");
+    char *old = env_get(env_vars, "PWD");
     char result[4096];
     if (pwd(result) == 1)
         return;
 
     /* update OLDPWD first, because pointer to old will be changed */
     if (old != NULL)
-        env_set(env, "OLDPWD", old);
+        env_set(env_vars, "OLDPWD", old);
     else
-        env_set(env, "OLDPWD", result);
+        env_set(env_vars, "OLDPWD", result);
 
-    env_set(env, "PWD", result);
+    env_set(env_vars, "PWD", result);
 
     //TODO: check if actually need to update
-    env->env_update = true;
+    //env->env_vars->update = true;
 }
 
 
-int set_home_dir(struct env_t *env)
+int set_home_dir(struct env_vars_t *env_vars)
 {
     struct passwd *pw = getpwuid(getuid());
     char *homedir = pw->pw_dir;
@@ -241,7 +268,7 @@ int set_home_dir(struct env_t *env)
     if (homedir == NULL)
         return 1;
     
-    env_set(env, "HOME", homedir);
+    env_set(env_vars, "HOME", homedir);
     return 0;
 }
 
@@ -250,5 +277,5 @@ void set_uid(struct env_t *env)
     env->uid = getuid();
     char uid_tmp[32];
     snprintf(uid_tmp, 32, "%d", (unsigned int) env->uid);
-    env_set(env, "UID", uid_tmp);
+    env_set(env->env_vars, "UID", uid_tmp);
 }

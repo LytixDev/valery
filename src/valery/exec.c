@@ -154,7 +154,6 @@ int valery_parse_tokens(struct source_t *ts, struct env_t *env, struct hist_t *h
         }
     }
 
-
     free(argv);
     return 0;
 }

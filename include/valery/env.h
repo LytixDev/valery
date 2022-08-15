@@ -35,26 +35,30 @@
 
 
 /* types */
-typedef struct env_var_t {
-    char *name;
-    char *val;
-} env_var_t;
+typedef struct env_vars_t {
+    struct ht_t *ht;    /* the hashtable that stores the environment variables */
+    char **environ;     /* list of environment variables on the form: ["KEY=VALUE", ... ] */
+    int size;
+    int capacity;
+    bool update;        /* set to true if an environment variable has changed, and environ is not outdated */
+} env_vars_t;
+
+
+typedef struct paths_t {
+    char **paths;
+    int size;
+    int capacity;
+} paths_t;
 
 
 typedef struct env_t {
-    char **paths;
-    int path_size;
-    int path_capacity;
+    struct env_vars_t *env_vars;
+    struct paths_t *paths;  /* unwrapped PATH environment variable */
+    struct ht_t *aliases;
+
+    char ps1[MAX_ENV_LEN];
     int exit_code;
     uid_t uid;
-    char ps1[MAX_ENV_LEN];
-
-    struct ht_t *env_vars;
-    //struct ht_t *env_vars;
-    char **environ;     /* list of environment variables on the form: ["KEY=VALUE", ... ] */
-    bool env_update;    /* set to true if a env_var has changed, and environ is not updated */
-    int env_size;
-    int env_capacity;
 } env_t;
 
 
@@ -63,44 +67,46 @@ struct env_t *env_t_malloc(void);
 
 void env_t_free(struct env_t *env);
 
-void env_t_path_increase(struct env_t *env, int new_len);
-
-/* returns a pointer to allocated memory for the corresponding value to the given key */
-char *env_get(struct env_t *env, char *key);
-
-/*
- * returns a pointer to the first allocated ht_item_t corresponding to the given key.
- * note: there may be multiple items allocated under the same hash.
- */
-struct ht_item_t *env_geth(struct env_t *env, unsigned int hash);
-
-/*
- * generates the environment variables needed when executing a program on the form:
- * "KEY=VALUE". This is stored in env->environ. 
- * The given env_str parameter is populated with pointers to the all entries of 
- * env->environ. Last entry in env_str is set to NULL.
- */
-void env_gen(struct env_t *env, char *env_str[env->env_capacity]);
-
-/* calls ht_rm() */
-void env_rm(struct env_t *env, char *key);
-
-/* calls ht_set() */
-void env_set(struct env_t *env, char *key, char *value);
+void set_uid(struct env_t *env);
 
 void env_update(struct env_t *env);
+
+void env_update_ps1(struct env_t *env);
 
 /*
  * updates environment variables PWD and OLDPWD.
  * sets OLDPWD to PWD, and then updates PWD to the current working directory.
  * OLDPWD is set to the current working directory if PWD was NULL.
  */
-void env_update_pwd(struct env_t *env);
+void env_update_pwd(struct env_vars_t *env_vars);
 
-void env_update_ps1(struct env_t *env);
+/* returns a pointer to allocated memory for the corresponding value to the given key */
+char *env_get(struct env_vars_t *env_vars, char *key);
 
-int set_home_dir(struct env_t *env);
+/*
+ * returns a pointer to the first allocated ht_item_t corresponding to the given key.
+ * note: there may be multiple items allocated under the same hash.
+ */
+struct ht_item_t *env_geth(struct env_vars_t *env_vars, unsigned int hash);
 
-void set_uid(struct env_t *env);
+/* calls ht_rm() */
+void env_rm(struct env_vars_t *env_vars, char *key);
+
+/* calls ht_set() */
+void env_set(struct env_vars_t *env_vars, char *key, char *value);
+
+/*
+ * generates the environment variables needed when executing a program on the form:
+ * "KEY=VALUE". This is stored in env->environ.
+ * The given env_str argument is populated with pointers to the all entries of
+ * env->environ. Last entry in env_str is set to NULL.
+ */
+void env_gen(struct env_vars_t *env_vars, char *env_str[env_vars->capacity]);
+
+int set_home_dir(struct env_vars_t *env_vars);
+
+void path_increase(struct paths_t *p, int new_len);
+
+char *alias_get(struct env_t *env, char *key);
 
 #endif

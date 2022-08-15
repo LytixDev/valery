@@ -90,9 +90,7 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
 bool valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *env, struct hist_t *hist);
 
 /* parses the tokens and calls eval on them accordingly */
-int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hist_t *hist);
-
-int str_to_argv(char *str, char **argv, int *argv_cap);
+int valery_parse_tokens(struct source_t *ts, struct env_t *env, struct hist_t *hist);
 
 void new_pipe(struct exec_ctx *e_ctx);
 

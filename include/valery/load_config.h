@@ -24,10 +24,15 @@
 
 /* functions */
 
-int get_config_path(struct env_t *env, char config_path[MAX_ENV_LEN]);
+int parse_config(struct env_vars_t *env_vars, struct paths_t *p);
 
-void unwrap_paths(struct env_t *env);
+/*
+ * copies the config path into the result argument if it is found.
+ * returns 0 if config was found, else 1.
+ */
+int get_config_path(char result[MAX_ENV_LEN], char *HOME);
 
-int parse_config(struct env_t *env);
+void unwrap_paths(struct paths_t *p, char *PATHS);
+
 
 #endif

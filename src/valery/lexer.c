@@ -23,6 +23,7 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "valery/histfile.h"
 #include "valery/lexer.h"
 #include "valery/env.h"
 #include "valery.h"
@@ -92,9 +93,9 @@ void token_t_resize(struct token_t *t, size_t new_capacity)
     t->str_capacity = new_capacity;
 }
 
-struct tokenized_str_t *tokenized_str_t_malloc(void)
+struct source_t *tokenized_str_t_malloc(void)
 {
-    struct tokenized_str_t *ts = (struct tokenized_str_t *) malloc(sizeof(struct tokenized_str_t));
+    struct source_t *ts = (struct source_t *) malloc(sizeof(struct source_t));
 
     ts->tokens = (struct token_t **) malloc(STARTING_TOKENS * sizeof(struct token_t *));
     for (int i = 0; i < STARTING_TOKENS; i++)
@@ -106,7 +107,7 @@ struct tokenized_str_t *tokenized_str_t_malloc(void)
     return ts;
 }
 
-void tokenized_str_t_free(struct tokenized_str_t *ts)
+void tokenized_str_t_free(struct source_t *ts)
 {
     for (size_t i = 0; i < ts->capacity; i++)
         token_t_free(ts->tokens[i]);
@@ -115,7 +116,7 @@ void tokenized_str_t_free(struct tokenized_str_t *ts)
     free(ts);
 }
 
-void tokenized_str_t_resize(struct tokenized_str_t *ts, size_t new_capacity)
+void tokenized_str_t_resize(struct source_t *ts, size_t new_capacity)
 {
     if (new_capacity == ts->capacity)
         return;
@@ -138,7 +139,7 @@ void tokenized_str_t_resize(struct tokenized_str_t *ts, size_t new_capacity)
 }
 
 /* clears the object and prepares it for a new loop */
-void tokenized_str_t_clear(struct tokenized_str_t *ts)
+void tokenized_str_t_clear(struct source_t *ts)
 {
     /* downsize if it has grown to large, maybe useful
     if (ts->capacity > STARTING_TOKENS * 2)
@@ -185,7 +186,7 @@ void token_t_pop_char(struct token_t *t)
         t->str[--(t->str_len)] = 0;
 }
 
-struct token_t *tokenized_str_t_next(struct tokenized_str_t *ts)
+struct token_t *tokenized_str_t_next(struct source_t *ts)
 {
     if (++(ts->size) >= ts->capacity)
         tokenized_str_t_resize(ts, ts->capacity * 2);
@@ -206,7 +207,7 @@ void token_t_print(struct token_t *t)
 }
 
 /* just for debugging */
-void tokenized_str_t_print(struct tokenized_str_t *ts)
+void tokenized_str_t_print(struct source_t *ts)
 {
     print_debug("metadata: total tokens: %ld, total tokens allocated: %ld\n\n", ts->size, ts->capacity);
 
@@ -251,7 +252,7 @@ void print_syntax_error(const char *buf_start, const char *buf_err, char *msg)
     fprintf(stderr, "^ %s\n", msg);
 }
 
-int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
+int tokenize(struct source_t *ts, struct env_vars_t *env_vars, char *buffer)
 {
     char c;
     /* always points to first address of buffer */
@@ -279,7 +280,7 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
             continue;
         }
 
-        if (!special_char(env, t, c, &buffer, &p_flags))
+        if (!special_char(env_vars, t, c, &buffer, &p_flags))
             continue;
 
         if (!(p_flags & PF_QUOTE) && update_candidates(c, 0, candidates, &total_candidates)) {
@@ -363,7 +364,7 @@ int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer)
     return 0;
 }
 
-bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, unsigned int *p_flags)
+bool special_char(struct env_vars_t *env_vars, struct token_t *t, char c, char **buffer, unsigned int *p_flags)
 {
     char env_key[MAX_ENV_LEN];
     char *home_dir;
@@ -397,7 +398,7 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
                 }
             }
             env_key[pos] = 0;
-            char *env_value = env_get(env, env_key);
+            char *env_value = env_get(env_vars, env_key);
 
             if (env_value != NULL)
                 token_t_append_str(t, env_value);
@@ -419,7 +420,7 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
                 return true;
             }
 
-            char *PWD = env_get(env, "PWD");
+            char *PWD = env_get(env_vars, "PWD");
             /* copy pwd into token */
             if (PWD != NULL)
                 token_t_append_str(t, PWD);
@@ -428,7 +429,7 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
 
         /* expand ̃'~' into $HOME */
         case '~':
-            home_dir = env_get(env, "HOME");
+            home_dir = env_get(env_vars, "HOME");
             if (home_dir != NULL)
                 token_t_append_str(t, home_dir);
             break;
@@ -440,3 +441,25 @@ bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, u
     return false;
 }
 
+int str_to_argv(char *str, char **argv, int *argv_cap)
+{
+    print_debug("converting '%s' into argv\n", str);
+    int argc = 0;
+
+    while (*str != 0) {
+        if (*str == ' ') {
+            *str = 0;
+            /* start next argv on last backspace */
+            while (*(++str) == ' ');
+            argv[argc++] = str;
+            if (argc >= *argv_cap) {
+                *argv_cap += 8;
+                argv = (char **) realloc(argv, *argv_cap * sizeof(char *));
+            }
+        } else {
+            str++;
+        }
+    }
+
+    return argc;
+}

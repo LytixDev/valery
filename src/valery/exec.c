@@ -36,10 +36,10 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     char *command_with_path;
     char tmp[1024];
 
-    char *environ[env->env_capacity];
-    env_gen(env, environ);
+    char *environ[env->env_vars->capacity];
+    env_gen(env->env_vars, environ);
 
-    rc = which_single(program_name, env->paths, env->path_size, &found_path);
+    rc = which_single(program_name, env->paths->paths, env->paths->size, &found_path);
     if (!(rc == COMMAND_IN_PATH || rc == COMMAND_IS_PATH)) {
         fprintf(stderr, "valery: command not found '%s'\n", program_name);
         env->exit_code = 1;
@@ -110,7 +110,7 @@ bool valery_eval_token(char *program_name, char *argv[], int argc, struct env_t 
     int rc;
     /* check if program is shell builtin */
     if (strcmp(program_name, "which") == 0)
-        rc = which(argv, argc, env->paths, env->path_size);
+        rc = which(argv, argc, env->paths->paths, env->paths->size);
     else if (strcmp(program_name, "cd") == 0)
         rc = cd(argv[0]);
     else if (strcmp(program_name, "history") == 0)
@@ -126,7 +126,7 @@ bool valery_eval_token(char *program_name, char *argv[], int argc, struct env_t 
     return true;
 }
 
-int valery_parse_tokens(struct tokenized_str_t *ts, struct env_t *env, struct hist_t *hist)
+int valery_parse_tokens(struct source_t *ts, struct env_t *env, struct hist_t *hist)
 {
     token_t *t;
     operands_t next_type;
@@ -222,25 +222,3 @@ void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_
     }
 }
 
-int str_to_argv(char *str, char **argv, int *argv_cap)
-{
-    print_debug("converting '%s' into argv\n", str);
-
-    int argc = 0;
-
-    while (*str != 0) {
-        if (*str == ' ') {
-            *str = 0;
-            /* start next argv on last backspace */
-            while (*(++str) == ' ');
-            argv[argc++] = str;
-            if (argc >= *argv_cap) {
-                *argv_cap += 8;
-                argv = (char **) realloc(argv, *argv_cap * sizeof(char *));
-            }
-        } else {
-            str++;
-        }
-    }
-    return argc;
-}

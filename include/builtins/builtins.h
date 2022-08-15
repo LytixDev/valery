@@ -42,7 +42,7 @@ extern char *builtin_names[total_builtin_functions];
 int which(char **program_names, int program_count, char **paths, int path_count);
 
 /*
- * if which is used interactively, pass NULL as the path_result parameter.
+ * if which is used interactively, pass NULL as the path_result argument.
  * if path_result is not NULL, assumes the function is not used interactively.
  * in this case, the program does not print the result, but instead puts the 
  * address of the path from paths into path_result if it is found.

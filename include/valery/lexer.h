@@ -70,11 +70,11 @@ typedef struct token_t {
 } token_t;
 
 
-typedef struct tokenized_str_t {
+typedef struct source_t {
     struct token_t **tokens;  /* list of the tokens */
     size_t size;              /* total tokens occupied / in use */
     size_t capacity;          /* total tokens allocated */
-} tokenized_str_t;
+} source_t;
 
 
 /* extern variable definitions */
@@ -90,24 +90,24 @@ void token_t_free(struct token_t *t);
 
 void token_t_resize(struct token_t *t, size_t new_capacity);
 
-/* returns a pointer to a malloced tokenized_str_t object with STARTING_TOKENS amount of token_t */
-struct tokenized_str_t *tokenized_str_t_malloc(void);
+/* returns a pointer to a malloced source_t object with STARTING_TOKENS amount of token_t */
+struct source_t *tokenized_str_t_malloc(void);
 
-void tokenized_str_t_free(struct tokenized_str_t *ts);
+void tokenized_str_t_free(struct source_t *ts);
 
-void tokenized_str_t_resize(struct tokenized_str_t *ts, size_t new_capacity);
+void tokenized_str_t_resize(struct source_t *ts, size_t new_capacity);
 
 /*
  * 'cleans' the object and makes it act as though it has just been malloced.
  * does not actually wipe any token_t->str, but if sentinel null byte is
  * correctly set it does not matter.
  */
-void tokenized_str_t_clear(struct tokenized_str_t *ts);
+void tokenized_str_t_clear(struct source_t *ts);
 
 void token_t_append_str(struct token_t *t, char *str);
 
 /*
- * adds the char parameter to the end of the str.
+ * adds the char argument to the end of the str.
  * calls token_t_resize() if str is not large enough.
  */
 void token_t_append_char(struct token_t *t, char c);
@@ -119,17 +119,17 @@ void token_t_pop_char(struct token_t *t);
  * increments size and returns a pointer to the next token_t
  * calls tokenized_str_t_resize() if necessary.
  */
-struct token_t *tokenized_str_t_next(struct tokenized_str_t *ts);
+struct token_t *tokenized_str_t_next(struct source_t *ts);
 
 /* just for debugging */
 void token_t_print(struct token_t *t);
 
 /* just for debugging */
-void tokenized_str_t_print(struct tokenized_str_t *ts);
+void tokenized_str_t_print(struct source_t *ts);
 
 /*
- * goes through each operand and checks if the char at the 'pos' input parameter matches 
- * the char 'c' input parameter. If they don't match, the candidate for that operand
+ * goes through each operand and checks if the char at the 'pos' input argument matches 
+ * the char 'c' argument. If they don't match, the candidate for that operand
  * is set to false if it was true and decrements total_candidates.
  *
  * returns the value of total_candidates.
@@ -148,13 +148,15 @@ void print_syntax_error(const char *buf_start, const char *buf_err, char *msg);
 /*
  * splits the input buffer into tokens based using operands in operands_str as delimiters.
  */
-int tokenize(struct tokenized_str_t *ts, struct env_t *env, char *buffer);
+int tokenize(struct source_t *ts, struct env_vars_t *env_vars, char *buffer);
 
 /*
- * checks if the given char c parameter is a special char, and deals with it accordingly.
+ * checks if the given char c argument is a special char, and deals with it accordingly.
  * returns true if char is special and was dealt with, else false.
  */
-bool special_char(struct env_t *env, struct token_t *t, char c, char **buffer, unsigned int *p_flags);
+bool special_char(struct env_vars_t *env_vars, struct token_t *t, char c, char **buffer, unsigned int *p_flags);
+
+int str_to_argv(char *str, char **argv, int *argv_cap);
 
 
 #endif

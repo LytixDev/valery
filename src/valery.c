@@ -25,7 +25,7 @@
 #include "valery.h"
 #include "valery/load_config.h"
 #include "valery/prompt.h"
-#include "valery/exec.h"
+#include "valery/interpreter/exec.h"
 #include "builtins/builtins.h"
 
 

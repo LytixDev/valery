@@ -15,13 +15,13 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef LEXER
-#define LEXER
+#ifndef VALERY_LEXER_H
+#define VALERY_LEXER_H
 
 #include <stddef.h>
 #include <stdbool.h>
 
-#include "valery/env.h"
+#include "../env.h"
 
 #define DEFAULT_TOKEN_SIZE 128
 #define STARTING_TOKENS 8
@@ -159,4 +159,4 @@ bool special_char(struct env_vars_t *env_vars, struct token_t *t, char c, char *
 int str_to_argv(char *str, char **argv, int *argv_cap);
 
 
-#endif
+#endif /* VALERY_LEXER_H */

@@ -22,8 +22,8 @@
 #include <string.h>
 #include "sys/wait.h"
 
-#include "valery/lexer.h"
-#include "valery/exec.h"
+#include "valery/interpreter/lexer.h"
+#include "valery/interpreter/exec.h"
 #include "builtins/builtins.h"
 
 

@@ -23,8 +23,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "valery/histfile.h"
-#include "valery/lexer.h"
+#include "valery/interpreter/lexer.h"
 #include "valery/env.h"
 #include "valery.h"
 #include "lib/vstring.h"

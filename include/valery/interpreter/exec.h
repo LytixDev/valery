@@ -15,12 +15,12 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef EXEC
-#define EXEC
+#ifndef VALERY_EXEC_H
+#define VALERY_EXEC_H
 
-#include "valery/lexer.h"
-#include "valery/histfile.h"
-#include "valery/env.h"
+#include "lexer.h"
+#include "../histfile.h"
+#include "../env.h"
 
 #define CHILD_PID 0
 #define READ_END 0
@@ -104,4 +104,4 @@ void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_
  * [tokenized buffer] -> valery_parse_tokens() -> valery_eval_tokens() -> valery_exec_program();
  */
 
-#endif
+#endif /* VALERY_EXEC_H */

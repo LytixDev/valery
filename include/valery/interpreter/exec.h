@@ -96,7 +96,7 @@ void new_pipe(struct exec_ctx *e_ctx);
 
 void terminate_pipe(struct exec_ctx *e_ctx);
 
-void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_type);
+void update_exec_flags(struct exec_ctx *e_ctx, ttype_t type, ttype_t next_type);
 
 /*
  * how the three aforementioned functions relate to each other:

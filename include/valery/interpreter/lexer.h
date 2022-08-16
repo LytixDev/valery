@@ -43,28 +43,69 @@ typedef enum parse_flags {
 } parse_flags;
 
 /* see definition of *operands[] in lexer.c for string representation of the operands */
-typedef enum operands_t {
-    O_NONE = -1,  /* special case: string is not an operand */
-    O_PIPE,
-    O_OR,
-    O_AMP,
-    O_AND,
-    O_OUTP,
-    O_OUPP,
-    O_INP,
-    O_INPP,
-    O_SEMI,
-    O_INPAR,
-    O_OUTPAR,
-    O_INBRA,
-    O_OUTBRA
+/* token types */
+typedef enum ttype_t {
+    /* single-character tokens. */
+    T_LPAREN,
+    T_RPAREN,
+    T_LBRACE,
+    T_RBRACE,
+    T_COMMA,
+    T_DOT,
+    T_MINUS,
+    T_PLUS,
+    T_SEMICOLON,
+    T_SLASH,
+    T_STAR,
+
+    /* one or two character tokens */
+    T_BANG,
+    T_BANG_EQUAL,
+    T_EQUAL,
+    T_EQUAL_EQUAL,
+    T_GREATER,
+    T_GREATER_EQUAL,
+    T_LESS,
+    T_LESS_EQUAL,
+    T_LBRACKET,
+    T_LBRACKET_LBRACKET,
+    T_RBRACKET,
+    T_RBRACKET_RBRACKET,
+
+    /* literals */
+    T_IDENTIFIER,
+    T_STRING,
+    T_NUMBER,
+    T_BUILTIN,
+
+    /* keywords */
+    T_DO,
+    T_DONE,
+    T_CASE,
+    T_ESAC,
+    T_FUNCTION,
+    T_SELECT,
+    T_UNTIL,
+    T_IF,
+    T_ELIF,
+    T_FI,
+    T_THEN,
+    T_WHILE,
+    T_ELSE,
+    T_FOR,
+    T_IN,
+    T_TIME,
+    T_RETURN,
+
+
+    T_EOF
 } operands_t;
 
 
 typedef struct token_t {
     char *str;                /* the actual token string */
     char *str_start;          /* points to the start of the string */
-    enum operands_t type;     /* the semantic intepretation of the token */
+    enum ttype_t type;     /* the semantic intepretation of the token */
     size_t str_len;           /* the current len of the token string without counting terminating null byte */
     size_t str_capacity;      /* the allocated capcity of the token string */
 } token_t;
@@ -79,7 +120,7 @@ typedef struct source_t {
 
 /* extern variable definitions */
 extern const char *operands_str[TOTAL_OPERANDS];
-extern const operands_t operands[TOTAL_OPERANDS];
+extern const ttype_t operands[TOTAL_OPERANDS];
 
 
 /* functions */
@@ -140,7 +181,7 @@ int update_candidates(char c, size_t pos, bool candidates[TOTAL_OPERANDS], int *
  * returns the first operand set to true in the list
  * returns O_NONE if no operand is set to true
  */
-operands_t which_operand(const bool candidates[TOTAL_OPERANDS]);
+ttype_t which_operand(const bool candidates[TOTAL_OPERANDS]);
 
 /* prints a nice syntax error to stderr */
 void print_syntax_error(const char *buf_start, const char *buf_err, char *msg);

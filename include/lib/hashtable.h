@@ -24,47 +24,63 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef LIB_HASHTABLE
-#define LIB_HASHTABLE
+#ifndef LIB_HASHTABLE_H
+#define LIB_HASHTABLE_H
 
 #include <stdlib.h>
 
-/* variables */
-#define HT_TABLE_SIZE 64
-
 /*
- * if HT_VALUE_IS_STR is defined, ht_item_malloc will call strlen to allocate the space
- * necessary, instead of using the default_value_size.
+ * NOTE: This implementation can take store any type of data.
+ *       Heap allocated values should be allocated before inserting into
+ *       the hashtable. After insertion it can be safelly freed, as the
+ *       implementation makes a deep copy of the datatype, however, nested
+ *       allocations will not be copied.
  */
-#define HT_VALUE_IS_STR
-#define HT_VALUE_SIZE 1024      /* unused in this case */
+
+/* vars */
+
+#define HT_KEY_LIST /* if defined then ht_t will store a list of items stored per hash */
+
 
 /* types */
+
 typedef struct ht_item_t {
     char *key;
     void *value;
+    void (*free_func)(void *);  /* the free function used for freeing 'value' */
     struct ht_item_t *next;
 } ht_item_t;
 
 
 typedef struct ht_t {
     struct ht_item_t **items;
-    unsigned int keys[HT_TABLE_SIZE];   /* how many items that are stored per hash */
+    size_t capacity;    /* bucket capacity */
+#ifdef HT_KEY_LIST
+    size_t *keys;       /* amount of items stored per hash */
+#endif
 } ht_t;
 
 
 /* functions */
-struct ht_t *ht_malloc(void);
+
+struct ht_t *ht_malloc(size_t capacity);
 
 /* frees the entire ht and all items associated with it */
 void ht_free(struct ht_t *ht);
 
 /*
- * allocates space a new ht_item_t, computes the hash, and slots the 
+ * Allocates space for a new ht_item_t, computes the hash, and slots the 
  * item into the given 'ht_t *ht' hashtable. Frees and overrides previous
- * item with if there is an item with the exact same key.
+ * item if there is an item with the exact same key.
+ *
+ * mem_size argument should be the size of the value argument in bytes.
+ *
+ * If free_func argument is NULL, the value will be freed (later on) using
+ * the standard free() function.
+ * Provide a free_func argument for more complex types where free() is not
+ * sufficient.
  */
-void ht_set(struct ht_t *ht, char *key, void *value);
+void ht_set(struct ht_t *ht, char *key, void *value, size_t mem_size, void (*free_func)(void *));
 
 /* returns the value corresponding to the given key */
 void *ht_get(struct ht_t *ht, char *key);
@@ -75,4 +91,4 @@ struct ht_item_t *ht_geth(struct ht_t *ht, unsigned int hash);
 /* removes and frees the item the hashtable */
 void ht_rm(struct ht_t *ht, char *key);
 
-#endif /* LIB_HASHTABLE */
+#endif /* LIB_HASHTABLE_H */

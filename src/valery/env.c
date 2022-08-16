@@ -29,9 +29,9 @@
 static struct env_vars_t *env_vars_malloc(void)
 {
     struct env_vars_t *env_vars = (struct env_vars_t *) malloc(sizeof(struct env_vars_t));
-    env_vars->ht = ht_malloc();
+    env_vars->ht = ht_malloc(ENV_HT_SIZE);
     env_vars->update = false;
-    env_vars->capacity = HT_TABLE_SIZE;
+    env_vars->capacity = ENV_HT_SIZE;
     env_vars->size = 0;
 
     env_vars->environ = (char **) malloc(env_vars->capacity * sizeof(char *));
@@ -78,9 +78,9 @@ struct env_t *env_t_malloc(void)
     struct env_t *env = (env_t *) malloc(sizeof(env_t));
     env->env_vars = env_vars_malloc();
     env->paths = paths_malloc();
-    env->aliases = ht_malloc();
+    env->aliases = ht_malloc(ALIASES_HT_SIZE);
     /* TODO: remove this, just for testing */
-    ht_set(env->aliases, "ls", "ls --color=auto");
+    ht_set(env->aliases, "ls", "ls --color=auto", 16, NULL);
 
     env->exit_code = 0;
     set_home_dir(env->env_vars);
@@ -118,7 +118,7 @@ struct ht_item_t *env_geth(struct env_vars_t *env_vars, unsigned int hash)
 void env_set(struct env_vars_t *env_vars, char *key, char *value)
 {
     print_debug("set env var '%s'='%s'", key, value);
-    ht_set(env_vars->ht, key, value);
+    ht_set(env_vars->ht, key, value, strlen(value) + 1, NULL);
     env_vars->update = true;
 }
 

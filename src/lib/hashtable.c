@@ -186,6 +186,10 @@ void ht_rm(struct ht_t *ht, char *key)
 
             /* free the deleted ht_item */
             free(item->key);
+
+            if (item->free_func != NULL)
+                item->free_func(item->value);
+
             free(item->value);
             free(item);
 

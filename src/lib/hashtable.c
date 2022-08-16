@@ -22,7 +22,7 @@
 #include "lib/hashtable.h"
 
 
-static unsigned int hasher(char *str)
+static unsigned int hasher(char *str, size_t upper_bound)
 {
     unsigned char c;
     unsigned int hash = 0;
@@ -30,16 +30,17 @@ static unsigned int hasher(char *str)
     while ((c = *str++) != 0)
 	hash += (hash << 5) + c;
 
-    return hash % HT_TABLE_SIZE;
+    return hash % upper_bound;
 }
 
-struct ht_t *ht_malloc(void)
+struct ht_t *ht_malloc(size_t capacity)
 {
     struct ht_t *ht = malloc(sizeof(struct ht_t));
-    ht->items = malloc(sizeof(ht_item_t*) * HT_TABLE_SIZE);
-    memset(ht->keys, 0, HT_TABLE_SIZE * sizeof(unsigned int));
+    ht->capacity = capacity;
+    ht->items = malloc(ht->capacity * sizeof(ht_item_t*));
+    ht->keys = calloc(ht->capacity, sizeof(size_t));
 
-    for (int i = 0; i < HT_TABLE_SIZE; i++)
+    for (size_t i = 0; i < ht->capacity; i++)
         ht->items[i] = NULL;
 
     return ht;
@@ -50,10 +51,14 @@ void ht_free(struct ht_t *ht)
     struct ht_item_t *item;
     struct ht_item_t *prev;
 
-    for (int i = 0; i < HT_TABLE_SIZE; i++) {
+    for (size_t i = 0; i < ht->capacity; i++) {
         item = ht->items[i];
         while (item != NULL) {
             free(item->key);
+
+            if (item->free_func != NULL)
+                item->free_func(item->value);
+
             free(item->value);
             prev = item;
             item = item->next;
@@ -61,35 +66,37 @@ void ht_free(struct ht_t *ht)
         }
     }
     free(ht->items);
+    free(ht->keys);
     free(ht);
 }
 
-static struct ht_item_t *ht_item_malloc(char *key, void *value)
+static struct ht_item_t *ht_item_malloc(char *key, void *value, size_t mem_size)
 {
     struct ht_item_t *ht_item = malloc(sizeof(struct ht_item_t));
     ht_item->key = malloc(strlen(key) + 1);
     strcpy(ht_item->key, key);
-#ifdef HT_VALUE_IS_STR
-    ht_item->value = malloc(strlen(value) + 1);
-    strcpy(ht_item->value, (char *) value);
-#else
-    ht_item->value = malloc(HT_VALUE_SIZE);
-    memcpy(item->value, value, HT_VALUE_SIZE);
-#endif
+
+    ht_item->value = malloc(mem_size);
+    memcpy(ht_item->value, value, mem_size);
+
     ht_item->next = NULL;
     return ht_item;
 }
 
-void ht_set(struct ht_t *ht, char *key, void *value)
+void ht_set(struct ht_t *ht, char *key, void *value, size_t mem_size, void (*free_func)(void *))
 {
-    unsigned int hash = hasher(key);
+    unsigned int hash = hasher(key, ht->capacity);
     /* add hash to list of keys */
     ht->keys[hash] += 1;
+
+    struct ht_item_t *found;
     struct ht_item_t *item = ht->items[hash];
 
     /* no ht_item means hash empty, insert immediately */
     if (item == NULL) {
-        ht->items[hash] = ht_item_malloc(key, value);
+        found = ht_item_malloc(key, value, mem_size);
+        found->free_func = free_func;
+        ht->items[hash] = found;
         return;
     }
 
@@ -101,15 +108,11 @@ void ht_set(struct ht_t *ht, char *key, void *value)
      */
     while (item != NULL) {
         if (strcmp(item->key, key) == 0) {
-            /* match found, replace value */
+            /* match found, replace value and free_func */
             free(item->value);
-#ifdef HT_VALUE_IS_STR
-            item->value = malloc(strlen(value) + 1);
-            strcpy(item->value, (char *) value);
-#else
-            item->value = malloc(HT_VALUE_SIZE);
-            memcpy(item->value, value, HT_VALUE_SIZE);
-#endif
+            item->value = malloc(mem_size);
+            memcpy(item->value, value, mem_size);
+            item->free_func = free_func;
             return;
         }
 
@@ -118,12 +121,12 @@ void ht_set(struct ht_t *ht, char *key, void *value)
     }
 
     /* end of chain reached without a match, add new */
-    prev->next = ht_item_malloc(key, value);
+    prev->next = ht_item_malloc(key, value, mem_size);
 }
 
 void *ht_get(struct ht_t *ht, char *key)
 {
-    unsigned int hash = hasher(key);
+    unsigned int hash = hasher(key, ht->capacity);
     struct ht_item_t *item = ht->items[hash];
 
     if (item == NULL)
@@ -147,7 +150,7 @@ struct ht_item_t *ht_geth(struct ht_t *ht, unsigned int hash)
 
 void ht_rm(struct ht_t *ht, char *key)
 {
-    unsigned int hash = hasher(key);
+    unsigned int hash = hasher(key, ht->capacity);
     struct ht_item_t *item = ht->items[hash];
 
     if (item == NULL)

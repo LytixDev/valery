@@ -29,32 +29,25 @@
 
 #include <stdlib.h>
 
-/* variables */
-#define HT_TABLE_SIZE 64
-
-/*
- * if HT_VALUE_IS_STR is defined, ht_item_malloc will call strlen to allocate the space
- * necessary, instead of using the default_value_size.
- */
-#define HT_VALUE_IS_STR
-#define HT_VALUE_SIZE 1024      /* unused in this case */
 
 /* types */
 typedef struct ht_item_t {
     char *key;
     void *value;
+    void (*free_func)(void *);
     struct ht_item_t *next;
 } ht_item_t;
 
 
 typedef struct ht_t {
     struct ht_item_t **items;
-    unsigned int keys[HT_TABLE_SIZE];   /* how many items that are stored per hash */
+    size_t capacity;
+    size_t *keys;   /* how many items that are stored per hash */
 } ht_t;
 
 
 /* functions */
-struct ht_t *ht_malloc(void);
+struct ht_t *ht_malloc(size_t capacity);
 
 /* frees the entire ht and all items associated with it */
 void ht_free(struct ht_t *ht);
@@ -64,7 +57,7 @@ void ht_free(struct ht_t *ht);
  * item into the given 'ht_t *ht' hashtable. Frees and overrides previous
  * item with if there is an item with the exact same key.
  */
-void ht_set(struct ht_t *ht, char *key, void *value);
+void ht_set(struct ht_t *ht, char *key, void *value, size_t mem_size, void (*free_func)(void *));
 
 /* returns the value corresponding to the given key */
 void *ht_get(struct ht_t *ht, char *key);

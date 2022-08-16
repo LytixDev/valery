@@ -38,7 +38,9 @@ struct ht_t *ht_malloc(size_t capacity)
     struct ht_t *ht = malloc(sizeof(struct ht_t));
     ht->capacity = capacity;
     ht->items = malloc(ht->capacity * sizeof(ht_item_t*));
+#ifdef HT_KEY_LIST
     ht->keys = calloc(ht->capacity, sizeof(size_t));
+#endif
 
     for (size_t i = 0; i < ht->capacity; i++)
         ht->items[i] = NULL;
@@ -66,7 +68,10 @@ void ht_free(struct ht_t *ht)
         }
     }
     free(ht->items);
+
+#ifdef HT_KEY_LIST
     free(ht->keys);
+#endif
     free(ht);
 }
 
@@ -87,7 +92,9 @@ void ht_set(struct ht_t *ht, char *key, void *value, size_t mem_size, void (*fre
 {
     unsigned int hash = hasher(key, ht->capacity);
     /* add hash to list of keys */
+#ifdef HT_KEY_LIST
     ht->keys[hash] += 1;
+#endif
 
     struct ht_item_t *found;
     struct ht_item_t *item = ht->items[hash];
@@ -181,7 +188,10 @@ void ht_rm(struct ht_t *ht, char *key)
             free(item->key);
             free(item->value);
             free(item);
+
+#ifdef HT_KEY_LIST
             ht->keys[hash] -= 1;
+#endif
 
             return;
         }

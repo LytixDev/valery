@@ -78,7 +78,18 @@ void ht_free(struct ht_t *ht);
  * If free_func argument is NULL, the value will be freed (later on) using
  * the standard free() function.
  * Provide a free_func argument for more complex types where free() is not
- * sufficient.
+ * sufficient. The free_func should not free the type itself, but only its
+ * members.
+ * example
+ *
+ * void foo_free(void *p)
+ * {
+ *      struct foo *foo_object = (struct foo*)p;
+ *      free(p->member1);
+ *      free(p->member2);
+ *      // DO NOT DO THIS: 'free(p)', it will be done by automatically by
+ *      // the implementation
+ * }
  */
 void ht_set(struct ht_t *ht, char *key, void *value, size_t mem_size, void (*free_func)(void *));
 

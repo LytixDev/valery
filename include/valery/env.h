@@ -32,6 +32,8 @@
 #define CONFIG_NAME ".valeryrc"
 #define HISTFILE_NAME ".valery_hist"
 #define STARTING_PATHS 5
+#define ENV_HT_SIZE 64
+#define ALIASES_HT_SIZE 32
 
 
 /* types */

@@ -23,27 +23,27 @@
 
 /* vars */
 
-const char *keywords[] = {
-    "do",       /* T_DO             */
-    "done",     /* T_DONE           */
-    "case",     /* T_CASE           */
-    "esac",     /* T_ESAC           */
-    "function", /* T_FUNCTION       */
-    "select",   /* T_SELECT         */
-    "until",    /* T_UNTIL          */
-    "if",       /* T_IF             */
-    "elif",     /* T_ELIF           */
-    "fi",       /* T_FI             */
-    "then",     /* T_THEN           */
-    "while",    /* T_WHILE          */
-    "else",     /* T_ELSE           */
-    "for",      /* T_FOR            */
-    "in",       /* T_IN             */
-    "time",     /* T_TIME           */
-    "return",   /* T_RETURN         */
-};
+//const char *keywords[] = {
+//    "do",       /* T_DO             */
+//    "done",     /* T_DONE           */
+//    "case",     /* T_CASE           */
+//    "esac",     /* T_ESAC           */
+//    "function", /* T_FUNCTION       */
+//    "select",   /* T_SELECT         */
+//    "until",    /* T_UNTIL          */
+//    "if",       /* T_IF             */
+//    "elif",     /* T_ELIF           */
+//    "fi",       /* T_FI             */
+//    "then",     /* T_THEN           */
+//    "while",    /* T_WHILE          */
+//    "else",     /* T_ELSE           */
+//    "for",      /* T_FOR            */
+//    "in",       /* T_IN             */
+//    "time",     /* T_TIME           */
+//    "return",   /* T_RETURN         */
+//};
 
-const int keywords_len = 17;
+//const int keywords_len = 17;
 
 
 /* types */
@@ -101,7 +101,7 @@ typedef enum ttype_t {
     T_TIME,
     T_RETURN,
 
-
+    T_UNKNOWN,
     T_EOF
 } operands_t;
 
@@ -110,9 +110,10 @@ typedef struct token_t {
     enum ttype_t type;
     char *lexeme;
     void *literal;
-    size_t size;
-    size_t capaxity;
+    size_t literal_size;
     size_t line;
+    //size_t lexeme_size;
+    //size_t offset;
 } token_t;
 
 
@@ -124,6 +125,14 @@ typedef struct lex_t {
 
 
 /* functions */
+
+struct lex_t *lex_malloc(void);
+
+void tokenize(struct lex_t *lx, char *source);
+
+void scan_token(struct lex_t *lx, char *source);
+
+void lex_dump(struct lex_t *lx);
 
 
 #endif /* !VALERY_NLEXER_H */

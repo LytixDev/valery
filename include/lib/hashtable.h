@@ -32,7 +32,7 @@
 /*
  * NOTE: This implementation can take store any type of data.
  *       Heap allocated values should be allocated before inserting into
- *       the hashtable. After insertion it can be safelly freed, as the
+ *       the hashtable. After insertion, it can be safely freed, as the
  *       implementation makes a deep copy of the datatype, however, nested
  *       allocations will not be copied.
  */

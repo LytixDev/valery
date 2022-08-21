@@ -5,7 +5,7 @@
 
 int main()
 {
-    char *buffer = "|| if && &";
+    char *buffer = "(===#hey\n) \"item crate\"";
     struct lex_t *lx = lex_malloc();
     tokenize(lx, buffer);
 }

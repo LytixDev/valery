@@ -19,6 +19,7 @@
 #define VALERY_NLEXER_H
 
 #include <stddef.h>
+#include <stdbool.h>
 
 
 /* vars */
@@ -130,10 +131,13 @@ struct lex_t *lex_malloc(void);
 
 void tokenize(struct lex_t *lx, char *source);
 
-void scan_token(struct lex_t *lx, char *source);
+void scan_token(struct lex_t *lx);
 
 void lex_dump(struct lex_t *lx);
 
+// t
+
+void addToken(struct lex_t *lx, enum ttype_t type);
 
 #endif /* !VALERY_NLEXER_H */
 

@@ -18,17 +18,17 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "lib/hashtable.h"
 
 
-static unsigned int hasher(char *str, size_t upper_bound)
+static int32_t hasher(void *key, size_t key_size, size_t upper_bound)
 {
-    unsigned char c;
-    unsigned int hash = 0;
+    int32_t hash = 0;
 
-    while ((c = *str++) != 0)
-	hash += (hash << 5) + c;
+    for (size_t i = 0; i < key_size; i++)
+	hash += (hash << 5) + ((int8_t *)key)[i];
 
     return hash % upper_bound;
 }
@@ -39,7 +39,7 @@ struct ht_t *ht_malloc(size_t capacity)
     ht->capacity = capacity;
     ht->items = malloc(ht->capacity * sizeof(ht_item_t*));
 #ifdef HT_KEY_LIST
-    ht->keys = calloc(ht->capacity, sizeof(size_t));
+    ht->keys = calloc(ht->capacity, sizeof(int32_t));
 #endif
 
     for (size_t i = 0; i < ht->capacity; i++)
@@ -75,11 +75,11 @@ void ht_free(struct ht_t *ht)
     free(ht);
 }
 
-static struct ht_item_t *ht_item_malloc(char *key, void *value, size_t mem_size)
+static struct ht_item_t *ht_item_malloc(void *key, size_t key_size, void *value, size_t mem_size)
 {
     struct ht_item_t *ht_item = malloc(sizeof(struct ht_item_t));
-    ht_item->key = malloc(strlen(key) + 1);
-    strcpy(ht_item->key, key);
+    ht_item->key = malloc(key_size);
+    memcpy(ht_item->key, key, key_size);
 
     ht_item->value = malloc(mem_size);
     memcpy(ht_item->value, value, mem_size);
@@ -88,9 +88,9 @@ static struct ht_item_t *ht_item_malloc(char *key, void *value, size_t mem_size)
     return ht_item;
 }
 
-void ht_set(struct ht_t *ht, char *key, void *value, size_t mem_size, void (*free_func)(void *))
+void ht_set(struct ht_t *ht, void *key, size_t key_size, void *value, size_t mem_size, void (*free_func)(void *))
 {
-    unsigned int hash = hasher(key, ht->capacity);
+    int32_t hash = hasher(key, key_size, ht->capacity);
     /* add hash to list of keys */
 #ifdef HT_KEY_LIST
     ht->keys[hash] += 1;
@@ -101,8 +101,9 @@ void ht_set(struct ht_t *ht, char *key, void *value, size_t mem_size, void (*fre
 
     /* no ht_item means hash empty, insert immediately */
     if (item == NULL) {
-        found = ht_item_malloc(key, value, mem_size);
+        found = ht_item_malloc(key, key_size, value, mem_size);
         found->free_func = free_func;
+        found->key_size = key_size;
         ht->items[hash] = found;
         return;
     }
@@ -114,7 +115,7 @@ void ht_set(struct ht_t *ht, char *key, void *value, size_t mem_size, void (*fre
      * reached or a matching key is found
      */
     while (item != NULL) {
-        if (strcmp(item->key, key) == 0) {
+        if (memcmp(item->key, key, item->key_size) == 0) {
             /* match found, replace value and free_func */
             free(item->value);
             item->value = malloc(mem_size);
@@ -128,19 +129,19 @@ void ht_set(struct ht_t *ht, char *key, void *value, size_t mem_size, void (*fre
     }
 
     /* end of chain reached without a match, add new */
-    prev->next = ht_item_malloc(key, value, mem_size);
+    prev->next = ht_item_malloc(key, key_size, value, mem_size);
 }
 
-void *ht_get(struct ht_t *ht, char *key)
+void *ht_get(struct ht_t *ht, void *key, size_t key_size)
 {
-    unsigned int hash = hasher(key, ht->capacity);
+    int32_t hash = hasher(key, key_size, ht->capacity);
     struct ht_item_t *item = ht->items[hash];
 
     if (item == NULL)
         return NULL;
 
     while (item != NULL) {
-        if (strcmp(item->key, key) == 0)
+        if (memcmp(item->key, key, item->key_size) == 0)
             return item->value;
 
         item = item->next;
@@ -155,9 +156,9 @@ struct ht_item_t *ht_geth(struct ht_t *ht, unsigned int hash)
     return ht->items[hash];
 }
 
-void ht_rm(struct ht_t *ht, char *key)
+void ht_rm(struct ht_t *ht, void *key, size_t key_size)
 {
-    unsigned int hash = hasher(key, ht->capacity);
+    int32_t hash = hasher(key, key_size, ht->capacity);
     struct ht_item_t *item = ht->items[hash];
 
     if (item == NULL)
@@ -167,7 +168,7 @@ void ht_rm(struct ht_t *ht, char *key)
     int i = 0;
 
     while (item != NULL) {
-        if (strcmp(item->key, key) == 0) {
+        if (memcmp(item->key, key, item->key_size) == 0) {
             /* first ht_item and no next ht_item */
             if (item->next == NULL && i == 0)
                 ht->items[hash] = NULL;

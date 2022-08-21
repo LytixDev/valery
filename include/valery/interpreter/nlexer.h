@@ -11,8 +11,7 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef VALERY_NLEXER_H
@@ -135,9 +134,7 @@ void scan_token(struct lex_t *lx);
 
 void lex_dump(struct lex_t *lx);
 
-// t
-
-void addToken(struct lex_t *lx, enum ttype_t type);
+void init_keywords();
 
 #endif /* !VALERY_NLEXER_H */
 

@@ -22,6 +22,7 @@
 #include <stdint.h>
 
 #include "valery/interpreter/nlexer.h"
+#include "lib/hashtable.h"
 
 
 size_t start = 0;
@@ -29,6 +30,8 @@ size_t cur = 0;
 size_t end;
 size_t line = 1;
 char *source_cpy = NULL;
+
+ht_t *keywords = NULL;
 
 char *ttype_str[] =  {
     /* single-character tokens. */
@@ -88,6 +91,43 @@ char *ttype_str[] =  {
 };
 
 
+void init_keywords()
+{
+    if (keywords != NULL)
+        return;
+
+    char *keywords_val[] = {
+        "do",
+        "done",
+        "case",
+        "esac",
+        "function",
+        "select",
+        "until",
+        "if",
+        "elif",
+        "fi",
+        "then",
+        "while",
+        "else",
+        "for",
+        "in",
+        "time",
+        "return"
+    };
+
+    char *val;
+    int len = 17;
+    int keyword_start = 27;
+
+    keywords = ht_malloc(32);
+
+    for (int i = 0; i < len; i++) {
+        val = keywords_val[i];
+        ht_set(keywords, ttype_str[keyword_start + i], val, strlen(val) + 1, NULL);
+    }
+}
+
 static bool is_digit(char c)
 {
     return c >= '0' && c <= '9';
@@ -108,6 +148,69 @@ static bool is_alpha_numeric(char c)
 static inline bool eof()
 {
     return source_cpy[cur] == 0;
+}
+
+static struct token_t *token_malloc(enum ttype_t type, char *lexeme, size_t lexeme_size,
+                                    void *literal, size_t literal_size)
+{
+    struct token_t *t = malloc(sizeof(token_t));
+    t->type = type;
+    t->line = line;
+
+    if (lexeme != NULL) {
+        t->lexeme = malloc(lexeme_size + 1);
+        strncpy(t->lexeme, lexeme, lexeme_size);
+    } else {
+        t->lexeme = NULL;
+    }
+
+    t->literal_size = literal_size;
+    if (literal != NULL) {
+        t->literal = malloc(literal_size);
+        memcpy(t->literal, literal, literal_size);
+    } else {
+        t->literal = NULL;
+    }
+
+    return t;
+}
+
+static void token_free(struct token_t *t)
+{
+    free(t->lexeme);
+    if (t->literal != NULL)
+        free(t->literal);
+    free(t);
+}
+
+static void lex_increase(struct lex_t *lx, size_t new_capacity)
+{
+    lx->tokens = realloc(lx->tokens, new_capacity * sizeof(struct token_t *));
+    lx->capacity = new_capacity;
+}
+
+static void add_token_full(struct lex_t *lx, enum ttype_t type, char *lexeme, size_t lexeme_size,
+                           void *literal, size_t literal_size)
+{
+    if (lx->size >= lx->capacity)
+        lex_increase(lx, lx->capacity * 2);
+
+    lx->tokens[lx->size++] = token_malloc(type, lexeme, lexeme_size, literal, literal_size);
+}
+
+static void add_token(struct lex_t *lx, enum ttype_t type)
+{
+    add_token_full(lx, type, source_cpy + start, cur - start, NULL, 0);
+}
+
+
+struct lex_t *lex_malloc(void)
+{
+    struct lex_t *lx = malloc(sizeof(struct lex_t));
+    lx->size = 0;
+    lx->capacity = 32;
+    lx->tokens = malloc(32 * sizeof(struct token_t *));
+    return lx;
 }
 
 static inline char peek(int n)
@@ -146,64 +249,54 @@ static void string(struct lex_t *lx)
     /* close the string */
     cur++;
 
-    /* trim string from quotes */
-    //String value = source.substring(start + 1, current - 1);
-    addToken(lx, T_STRING);
+    /* trim string literal representation from quotes */
+    void *string_literal = source_cpy + start + 1;
+    size_t literal_size = cur - start - 2;
+
+    add_token_full(lx, T_STRING, source_cpy + start, cur - start, string_literal, literal_size);
 }
 
-static struct token_t *token_malloc(enum ttype_t type, void *literal, size_t literal_size)
+static void number(struct lex_t *lx)
 {
-    struct token_t *t = malloc(sizeof(token_t));
-    t->type = type;
-    t->line = line;
+    while (is_digit(peek(0)))
+        cur++;
 
-    if (type != T_EOF) {
-        t->lexeme = malloc(cur - start + 1);
-        strncpy(t->lexeme, source_cpy + start, cur - start);
-    } else {
-        t->lexeme = NULL;
-    }
+    ///* look for '.' determining if there is a fractional part*/
+    //if (peek(0) == '.' && is_digit(peek(1))) {
+    //    /* consume the '.' */
+    //    cur++;
 
-    t->literal_size = literal_size;
-    if (literal_size != 0) {
-        t->literal = malloc(literal_size);
-        memcpy(t->literal, literal, literal_size);
-    } else {
-        t->literal = NULL;
-    }
+    //    while (is_digit(peek(0)))
+    //        cur++;
+    //}
+ 
+    //TODO: use substring instead, and check for error
+    //char sub[cur - start + 1];
+    int32_t literal;
+    char *p;
 
-    return t;
+    literal = strtol(source_cpy + start, &p, 10);
+
+    add_token_full(lx, T_NUMBER, source_cpy + start, cur - start, &literal, sizeof(literal));
 }
 
-static void token_free(struct token_t *t)
+static void identifier(struct lex_t *lx)
 {
-    free(t->lexeme);
-    if (t->literal != NULL)
-        free(t->literal);
-    free(t);
-}
+    while (is_alpha_numeric(peek(0)))
+        cur++;
 
-static void lex_increase(struct lex_t *lx, size_t new_capacity)
-{
-    lx->tokens = realloc(lx->tokens, new_capacity * sizeof(struct token_t *));
-    lx->capacity = new_capacity;
-}
+    size_t len = cur - start;
+    char keyword[len + 1];
+    strncpy(keyword, source_cpy + start, len);
+    keyword[len - 1] = 0;
 
-static void lex_add_token(struct lex_t *lx, enum ttype_t type, void *literal, size_t literal_size)
-{
-    if (lx->size >= lx->capacity)
-        lex_increase(lx, lx->capacity * 2);
+    enum ttype_t *type = NULL;
 
-    lx->tokens[lx->size++] = token_malloc(type, literal, literal_size);
-}
-
-struct lex_t *lex_malloc(void)
-{
-    struct lex_t *lx = malloc(sizeof(struct lex_t));
-    lx->size = 0;
-    lx->capacity = 32;
-    lx->tokens = malloc(32 * sizeof(struct token_t *));
-    return lx;
+    /* if not a reserved keyword, it is a user-defined identifier */
+    if (type == NULL)
+        *type = T_IDENTIFIER;
+    
+    add_token(lx, *type);
 }
 
 void lex_free(struct lex_t *lx)
@@ -225,11 +318,18 @@ void lex_dump(struct lex_t *lx)
         printf("%zu\n\ttype: %s\n\tlexeme: '%s'\n", i, (char *)ttype_str[t->type], t->lexeme);
 
         if (t->literal != NULL) {
-            printf("\tliteral: ");
+            /* print hex representation of literal data */
+            printf("\thex: ");
             for (size_t j = 0; j < t->literal_size; j++)
                 printf("%02x ", ((uint8_t *)t->literal)[j]);
 
             putchar('\n');
+
+            /* print string representation of literal data */
+            if (t->type == T_NUMBER)
+                printf("\tliteral: %d\n", *(int32_t *)t->literal);
+            else
+                printf("\tliteral: %s\n", (char *)t->literal);
         }
 
         putchar('\n');
@@ -237,16 +337,10 @@ void lex_dump(struct lex_t *lx)
 
 }
 
-void addToken(struct lex_t *lx, enum ttype_t type)
-{
-    lex_add_token(lx, type, NULL, 0);
-}
-
 void tokenize(struct lex_t *lx, char *source)
 {
     char c;
     source_cpy = source;
-    // ugly
     end = strlen(source);
 
     while (source_cpy[cur] != 0) {
@@ -255,7 +349,7 @@ void tokenize(struct lex_t *lx, char *source)
     }
 
     /* add sentinel token */
-    lex_add_token(lx, T_EOF, NULL, 0);
+    add_token_full(lx, T_EOF, NULL, 0, NULL, 0);
 
     lex_dump(lx);
 }
@@ -267,15 +361,15 @@ void scan_token(struct lex_t *lx)
     switch (c) {
         /* single character lexems */
         case '(':
-            addToken(lx, T_LPAREN);
+            add_token(lx, T_LPAREN);
             break;
         case ')':
-            addToken(lx, T_RPAREN);
+            add_token(lx, T_RPAREN);
             break;
 
         /* two character lexems */
         case '=':
-            addToken(lx, match('=') ? T_EQUAL_EQUAL : T_EQUAL);
+            add_token(lx, match('=') ? T_EQUAL_EQUAL : T_EQUAL);
             break;
 
         /* ignore comments */
@@ -292,6 +386,7 @@ void scan_token(struct lex_t *lx)
         case '\t':
             break;
 
+        /* increment line on new line */
         case '\n':
             line++;
             break;
@@ -302,6 +397,14 @@ void scan_token(struct lex_t *lx)
             break;
 
         default:
+            if (is_digit(c)) {
+                number(lx);
+            //else if (is_alpha(c))
+            //    identifier();
+            } else {
+                fprintf(stderr, "unexpected char lol\n");
+                exit(1);
+            }
             break;
 
     }

@@ -5,7 +5,9 @@
 
 int main()
 {
-    char *buffer = "(===#hey\n) \"item crate\"";
+    init_keywords();
+
+    char *buffer = "(===#hey\n) \"item crate\" 10";
     struct lex_t *lx = lex_malloc();
     tokenize(lx, buffer);
 }

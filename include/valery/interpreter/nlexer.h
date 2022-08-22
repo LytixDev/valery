@@ -103,7 +103,7 @@ typedef enum ttype_t {
 
     T_UNKNOWN,
     T_EOF
-} operands_t;
+} ttype_t;
 
 
 typedef struct token_t {
@@ -134,7 +134,9 @@ void scan_token(struct lex_t *lx);
 
 void lex_dump(struct lex_t *lx);
 
-void init_keywords();
+void init_identifiers();
+
+void destroy_identifiers();
 
 #endif /* !VALERY_NLEXER_H */
 

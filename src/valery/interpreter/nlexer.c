@@ -31,7 +31,7 @@ size_t end;
 size_t line = 1;
 char *source_cpy = NULL;
 
-ht_t *keywords = NULL;
+struct ht_t *identifiers = NULL;
 
 char *ttype_str[] =  {
     /* single-character tokens. */
@@ -91,12 +91,12 @@ char *ttype_str[] =  {
 };
 
 
-void init_keywords()
+void init_identifiers()
 {
-    if (keywords != NULL)
+    if (identifiers != NULL)
         return;
 
-    char *keywords_val[] = {
+    char *identifiers_str[] = {
         "do",
         "done",
         "case",
@@ -116,16 +116,23 @@ void init_keywords()
         "return"
     };
 
-    char *val;
+    char *key;
+    ttype_t val;
     int len = 17;
     int keyword_start = 27;
 
-    keywords = ht_malloc(32);
+    identifiers = ht_malloc(32);
 
     for (int i = 0; i < len; i++) {
-        val = keywords_val[i];
-        ht_set(keywords, ttype_str[keyword_start + i], val, strlen(val) + 1, NULL);
+        key = identifiers_str[i];
+        val = keyword_start + i;
+        ht_set(identifiers, key, strlen(key) + 1, &val, sizeof(enum ttype_t), NULL);
     }
+}
+
+void destroy_identifiers()
+{
+    ht_free(identifiers);
 }
 
 static bool is_digit(char c)
@@ -287,16 +294,16 @@ static void identifier(struct lex_t *lx)
 
     size_t len = cur - start;
     char keyword[len + 1];
-    strncpy(keyword, source_cpy + start, len);
-    keyword[len - 1] = 0;
+    strncpy(keyword, source_cpy + start, len + 1);
+    keyword[len + 1] = 0;
 
-    enum ttype_t *type = NULL;
 
     /* if not a reserved keyword, it is a user-defined identifier */
+    enum ttype_t *type = ht_get(identifiers, keyword, strlen(keyword) +1);
     if (type == NULL)
-        *type = T_IDENTIFIER;
-    
-    add_token(lx, *type);
+        add_token(lx, T_IDENTIFIER);
+    else
+        add_token(lx, *type);
 }
 
 void lex_free(struct lex_t *lx)
@@ -399,8 +406,8 @@ void scan_token(struct lex_t *lx)
         default:
             if (is_digit(c)) {
                 number(lx);
-            //else if (is_alpha(c))
-            //    identifier();
+            } else if (is_alpha(c)) {
+                identifier(lx);
             } else {
                 fprintf(stderr, "unexpected char lol\n");
                 exit(1);

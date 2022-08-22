@@ -92,15 +92,16 @@ void ht_free(struct ht_t *ht);
  *      // the implementation
  * }
  */
-void ht_set(struct ht_t *ht, void *key, size_t key_size, void *value, size_t mem_size, void (*free_func)(void *));
+void ht_set(struct ht_t *ht, const void *key, size_t key_size, const void *value,
+            size_t mem_size, void (*free_func)(void *));
 
 /* returns the value corresponding to the given key */
-void *ht_get(struct ht_t *ht, void *key, size_t key_size);
+void *ht_get(struct ht_t *ht, const void *key, size_t key_size);
 
 /* returns the first item stored with the given hash argument */
 struct ht_item_t *ht_geth(struct ht_t *ht, unsigned int hash);
 
 /* removes and frees the item the hashtable */
-void ht_rm(struct ht_t *ht, void *key, size_t key_size);
+void ht_rm(struct ht_t *ht, const void *key, size_t key_size);
 
 #endif /* LIB_HASHTABLE_H */

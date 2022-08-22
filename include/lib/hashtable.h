@@ -29,13 +29,6 @@
 
 #include <stdlib.h>
 
-/*
- * NOTE: This implementation can take store any type of data.
- *       Heap allocated values should be allocated before inserting into
- *       the hashtable. After insertion it can be safelly freed, as the
- *       implementation makes a deep copy of the datatype, however, nested
- *       allocations will not be copied.
- */
 
 /* vars */
 
@@ -45,7 +38,8 @@
 /* types */
 
 typedef struct ht_item_t {
-    char *key;
+    void *key;
+    size_t key_size;            /* total bytes stored in key */
     void *value;
     void (*free_func)(void *);  /* the free function used for freeing 'value' */
     struct ht_item_t *next;
@@ -91,15 +85,16 @@ void ht_free(struct ht_t *ht);
  *      // the implementation
  * }
  */
-void ht_set(struct ht_t *ht, char *key, void *value, size_t mem_size, void (*free_func)(void *));
+void ht_set(struct ht_t *ht, const void *key, size_t key_size, const void *value,
+            size_t mem_size, void (*free_func)(void *));
 
 /* returns the value corresponding to the given key */
-void *ht_get(struct ht_t *ht, char *key);
+void *ht_get(struct ht_t *ht, const void *key, size_t key_size);
 
 /* returns the first item stored with the given hash argument */
 struct ht_item_t *ht_geth(struct ht_t *ht, unsigned int hash);
 
 /* removes and frees the item the hashtable */
-void ht_rm(struct ht_t *ht, char *key);
+void ht_rm(struct ht_t *ht, const void *key, size_t key_size);
 
 #endif /* LIB_HASHTABLE_H */

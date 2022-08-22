@@ -34,9 +34,9 @@ static struct env_vars_t *env_vars_malloc(void)
     env_vars->capacity = ENV_HT_SIZE;
     env_vars->size = 0;
 
-    env_vars->environ = (char **) malloc(env_vars->capacity * sizeof(char *));
+    env_vars->environ = (char **)malloc(env_vars->capacity * sizeof(char *));
     for (int i = 0; i < env_vars->capacity; i++)
-        env_vars->environ[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
+        env_vars->environ[i] = (char *)malloc(MAX_ENV_LEN * sizeof(char));
 
     return env_vars;
 }
@@ -80,7 +80,7 @@ struct env_t *env_t_malloc(void)
     env->paths = paths_malloc();
     env->aliases = ht_malloc(ALIASES_HT_SIZE);
     /* TODO: remove this, just for testing */
-    ht_set(env->aliases, "ls", "ls --color=auto", 16, NULL);
+    ht_set(env->aliases, "ls", 3, "ls --color=auto", 16, NULL);
 
     env->exit_code = 0;
     set_home_dir(env->env_vars);
@@ -102,12 +102,12 @@ void env_t_free(struct env_t *env)
 
 char *alias_get(struct env_t *env, char *key)
 {
-    return (char *) ht_get(env->aliases, key);
+    return (char *)ht_get(env->aliases, key, strlen(key) + 1);
 }
 
 char *env_get(struct env_vars_t *env_vars, char *key)
 {
-    return (char *) ht_get(env_vars->ht, key);
+    return (char *)ht_get(env_vars->ht, key, (strlen(key) + 1) * sizeof(char));
 }
 
 struct ht_item_t *env_geth(struct env_vars_t *env_vars, unsigned int hash)
@@ -118,13 +118,14 @@ struct ht_item_t *env_geth(struct env_vars_t *env_vars, unsigned int hash)
 void env_set(struct env_vars_t *env_vars, char *key, char *value)
 {
     print_debug("set env var '%s'='%s'", key, value);
-    ht_set(env_vars->ht, key, value, strlen(value) + 1, NULL);
+    ht_set(env_vars->ht, key, (strlen(key) + 1) * sizeof(char), value,
+           (strlen(value) + 1) * sizeof(char), NULL);
     env_vars->update = true;
 }
 
 void env_rm(struct env_vars_t *env_vars, char *key)
 {
-    ht_rm(env_vars->ht, key);
+    ht_rm(env_vars->ht, key, (strlen(key) + 1) * sizeof(char));
     env_vars->update = true;
 }
 
@@ -141,7 +142,8 @@ void env_gen(struct env_vars_t *env_vars, char *env_str[env_vars->capacity])
                 item = env_geth(env_vars, hash);
                 /* hash table may have collisions */
                 while (item != NULL) {
-                    snprintf(env_vars->environ[i], MAX_ENV_LEN, "%s=%s", item->key, (char *) item->value);
+                    snprintf(env_vars->environ[i], MAX_ENV_LEN, "%s=%s", (char *)item->key,
+                             (char *)item->value);
                     env_str[i] = env_vars->environ[i];
                     i++;
                     item = item->next;

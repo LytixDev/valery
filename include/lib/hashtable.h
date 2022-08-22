@@ -29,13 +29,6 @@
 
 #include <stdlib.h>
 
-/*
- * NOTE: This implementation can take store any type of data.
- *       Heap allocated values should be allocated before inserting into
- *       the hashtable. After insertion it can be safelly freed, as the
- *       implementation makes a deep copy of the datatype, however, nested
- *       allocations will not be copied.
- */
 
 /* vars */
 
@@ -46,9 +39,9 @@
 
 typedef struct ht_item_t {
     void *key;
+    size_t key_size;            /* total bytes stored in key */
     void *value;
     void (*free_func)(void *);  /* the free function used for freeing 'value' */
-    size_t key_size;
     struct ht_item_t *next;
 } ht_item_t;
 

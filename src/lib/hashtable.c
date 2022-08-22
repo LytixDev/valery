@@ -75,8 +75,8 @@ void ht_free(struct ht_t *ht)
     free(ht);
 }
 
-static struct ht_item_t *ht_item_malloc(const void *key, size_t key_size,
-                                        const void *value, size_t val_size)
+static struct ht_item_t *ht_item_add(const void *key, size_t key_size, const void *value,
+                                     size_t val_size, void (*free_func)(void *))
 {
     struct ht_item_t *ht_item = malloc(sizeof(struct ht_item_t));
     ht_item->key = malloc(key_size);
@@ -86,6 +86,8 @@ static struct ht_item_t *ht_item_malloc(const void *key, size_t key_size,
     memcpy(ht_item->value, value, val_size);
 
     ht_item->next = NULL;
+    ht_item->key_size = key_size;
+    ht_item->free_func = free_func;
     return ht_item;
 }
 
@@ -103,9 +105,7 @@ void ht_set(struct ht_t *ht, const void *key, size_t key_size, const void *value
 
     /* no ht_item means hash empty, insert immediately */
     if (item == NULL) {
-        found = ht_item_malloc(key, key_size, value, val_size);
-        found->free_func = free_func;
-        found->key_size = key_size;
+        found = ht_item_add(key, key_size, value, val_size, free_func);
         ht->items[hash] = found;
         return;
     }
@@ -131,9 +131,7 @@ void ht_set(struct ht_t *ht, const void *key, size_t key_size, const void *value
     }
 
     /* end of chain reached without a match, add new */
-    prev->next = ht_item_malloc(key, key_size, value, val_size);
-    prev->next->free_func = free_func;
-    prev->next->key_size = key_size;
+    prev->next = ht_item_add(key, key_size, value, val_size, free_func);
 }
 
 void *ht_get(struct ht_t *ht, const void *key, size_t key_size)

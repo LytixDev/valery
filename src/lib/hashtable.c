@@ -117,13 +117,15 @@ void ht_set(struct ht_t *ht, const void *key, size_t key_size, const void *value
      * reached or a matching key is found
      */
     while (item != NULL) {
-        if (memcmp(key, item->key, key_size) == 0) {
-            /* match found, replace value and free_func */
-            free(item->value);
-            item->value = malloc(val_size);
-            memcpy(item->value, value, val_size);
-            item->free_func = free_func;
-            return;
+        if (key_size == item->key_size) {
+            if (memcmp(key, item->key, key_size) == 0) {
+                /* match found, replace value and free_func */
+                free(item->value);
+                item->value = malloc(val_size);
+                memcpy(item->value, value, val_size);
+                item->free_func = free_func;
+                return;
+            }
         }
 
         prev = item;
@@ -144,11 +146,9 @@ void *ht_get(struct ht_t *ht, const void *key, size_t key_size)
 
     while (item != NULL) {
         if (key_size != item->key_size)
-            goto next;
-        if (memcmp(key, item->key, key_size) == 0)
-            return item->value;
+            if (memcmp(key, item->key, key_size) == 0)
+                return item->value;
 
-    next:
         item = item->next;
     }
 

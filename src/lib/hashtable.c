@@ -145,7 +145,7 @@ void *ht_get(struct ht_t *ht, const void *key, size_t key_size)
         return NULL;
 
     while (item != NULL) {
-        if (key_size != item->key_size)
+        if (key_size == item->key_size)
             if (memcmp(key, item->key, key_size) == 0)
                 return item->value;
 

@@ -99,7 +99,7 @@ typedef enum ttype_t {
 
 
     T_EOF
-} operands_t;
+} ttype_t;
 
 
 typedef struct token_t {

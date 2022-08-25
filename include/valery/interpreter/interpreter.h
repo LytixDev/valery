@@ -18,4 +18,17 @@
 #ifndef VALERY_INTERPRETER_H
 #define VALERY_INTERPRETER_H
 
+#include "valery/interpreter/parser.h"
+
+
+/* functions */
+
+void *visit_binary(struct binary_t *expr);
+
+void *visit_grouping(struct grouping_t *expr);
+
+void *visit_literal(struct literal_t *expr);
+
+void *visit_unary(struct unary_t *expr);
+
 #endif /* VALERY_INTERPRETER_H */

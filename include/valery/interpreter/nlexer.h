@@ -48,6 +48,7 @@
 
 /* types */
 
+//REMEMBER: update the ttype_str and keyword_start in nlexer.c when adding more types
 typedef enum ttype_t {
     /* single-character tokens. */
     T_LPAREN,
@@ -55,15 +56,20 @@ typedef enum ttype_t {
     T_LBRACE,
     T_RBRACE,
     T_COMMA,
-    T_DOT,
     T_MINUS,
     T_PLUS,
+    T_COLON,
     T_SEMICOLON,
     T_SLASH,
     T_STAR,
 
     /* one or two character tokens */
+    T_DOLLAR,
+    T_DOLLAR_LPAREN,
+    T_AN,
+    T_AN_AN,
     T_BANG,
+    T_BANG_BANG,
     T_BANG_EQUAL,
     T_EQUAL,
     T_EQUAL_EQUAL,
@@ -75,6 +81,8 @@ typedef enum ttype_t {
     T_LBRACKET_LBRACKET,
     T_RBRACKET,
     T_RBRACKET_RBRACKET,
+    T_DOT,
+    T_DOT_DOT,
 
     /* literals */
     T_IDENTIFIER,

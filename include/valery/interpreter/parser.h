@@ -19,4 +19,46 @@
 #ifndef VALERY_PARSER_H
 #define VALERY_PARSER_H
 
+#include "valery/interpreter/nlexer.h"
+#include <stdlib.h>
+
+#define expr_t void
+
+/* types */
+
+typedef struct binary_t {
+    expr_t *left;
+    enum ttype_t token;
+    expr_t *right;
+    void *(*visit)(struct binary_t *);
+} binary_t;
+
+typedef struct grouping_t {
+    expr_t *expr;
+    void *(*visit)(struct grouping_t *);
+} grouping_t;
+
+typedef struct literal_t {
+    void *literal;
+    ttype_t *type; // determines the type of the void *
+    void *(*visit)(struct literal_t *);
+} literal_t;
+
+typedef struct unary_t {
+    enum ttype_t op;
+    expr_t *right;
+    void *(*visit)(struct unary_t *);
+} unary_t;
+
+
+/* functions */
+
+expr_t *parse(struct lex_t *lx);
+
+expr_t *expression_v();
+
+expr_t *unary_v();
+
+expr_t *primary_v();
+
 #endif /* VALERY_PARSER_H */

@@ -25,14 +25,15 @@
 #include "lib/hashtable.h"
 
 
-size_t start = 0;
-size_t cur = 0;
-size_t end;
-size_t line = 1;
-char *source_cpy = NULL;
+static size_t start = 0;
+static size_t cur = 0;
+static size_t end;
+static size_t line = 1;
+static char *source_cpy = NULL;
 
-struct ht_t *identifiers = NULL;
+static struct ht_t *identifiers = NULL;
 
+#ifdef DEBUG
 char *ttype_str[] =  {
     /* single-character tokens. */
     "T_LPAREN",
@@ -40,15 +41,20 @@ char *ttype_str[] =  {
     "T_LBRACE",
     "T_RBRACE",
     "T_COMMA",
-    "T_DOT",
     "T_MINUS",
     "T_PLUS",
+    "T_COLON",
     "T_SEMICOLON",
     "T_SLASH",
     "T_STAR",
 
     /* one or two character tokens */
+    "T_DOLLAR",
+    "T_DOLLAR_LPAREN",
+    "T_AN",
+    "T_AN_AN",
     "T_BANG",
+    "T_BANG_BANG",
     "T_BANG_EQUAL",
     "T_EQUAL",
     "T_EQUAL_EQUAL",
@@ -60,6 +66,8 @@ char *ttype_str[] =  {
     "T_LBRACKET_LBRACKET",
     "T_RBRACKET",
     "T_RBRACKET_RBRACKET",
+    "T_DOT",
+    "T_DOT_DOT",
 
     /* literals */
     "T_IDENTIFIER",
@@ -89,6 +97,7 @@ char *ttype_str[] =  {
     "T_UNKNOWN",
     "T_EOF",
 };
+#endif /* DEBUG */
 
 
 void init_identifiers()
@@ -119,7 +128,7 @@ void init_identifiers()
     char *key;
     ttype_t val;
     int len = 17;
-    int keyword_start = 27;
+    int keyword_start = 34;
 
     identifiers = ht_malloc(32);
 
@@ -133,6 +142,14 @@ void init_identifiers()
 void destroy_identifiers()
 {
     ht_free(identifiers);
+}
+
+static void syntax_error(char c, char *msg)
+{
+    fprintf(stderr, "syntax error in line %zu at char '%c'.\n", line, c);
+    if (msg != NULL)
+        fprintf(stderr, "msg: %s\n", msg); 
+    exit(1);
 }
 
 static bool is_digit(char c)
@@ -152,9 +169,9 @@ static bool is_alpha_numeric(char c)
     return is_alpha(c) || is_digit(c);
 }
 
-static inline bool eof()
+static inline bool eof(int n)
 {
-    return source_cpy[cur] == 0;
+    return source_cpy[cur + n] == 0;
 }
 
 static struct token_t *token_malloc(enum ttype_t type, char *lexeme, size_t lexeme_size,
@@ -229,7 +246,7 @@ static inline char peek(int n)
 
 static bool match(char expected)
 {
-    if (eof())
+    if (eof(0))
         return false;
 
     if(source_cpy[cur] != expected)
@@ -243,15 +260,13 @@ static bool match(char expected)
 static void string(struct lex_t *lx)
 {
     char c;
-    while ((c = peek(0)) != '"' && !eof()) {
+    while ((c = peek(0)) != '"' && !eof(0)) {
         if (c == '\n') line++;
         cur++;
     }
 
-    if (eof()) {
-        fprintf(stderr, "string not terminated\n");
-        exit(1);
-    }
+    if (eof(0))
+        syntax_error(c, "string not terminated");
 
     /* close the string */
     cur++;
@@ -315,6 +330,7 @@ void lex_free(struct lex_t *lx)
     free(lx);
 }
 
+#ifdef DEBUG
 void lex_dump(struct lex_t *lx)
 {
     struct token_t *t;
@@ -343,6 +359,7 @@ void lex_dump(struct lex_t *lx)
     }
 
 }
+#endif
 
 void tokenize(struct lex_t *lx, char *source)
 {
@@ -357,8 +374,6 @@ void tokenize(struct lex_t *lx, char *source)
 
     /* add sentinel token */
     add_token_full(lx, T_EOF, NULL, 0, NULL, 0);
-
-    lex_dump(lx);
 }
 
 void scan_token(struct lex_t *lx)
@@ -373,17 +388,72 @@ void scan_token(struct lex_t *lx)
         case ')':
             add_token(lx, T_RPAREN);
             break;
+        case '{':
+            add_token(lx, T_LBRACE);
+            break;
+        case '}':
+            add_token(lx, T_RBRACE);
+            break;
+        case ';':
+            add_token(lx, T_SEMICOLON);
+            break;
+        case ':':
+            add_token(lx, T_COLON);
+            break;
+        case '*':
+            add_token(lx, T_STAR);
+            break;
+        case '+':
+            add_token(lx, T_PLUS);
+            break;
+        case '-':
+            add_token(lx, T_MINUS);
+            break;
+
 
         /* two character lexems */
+        case '$':
+            add_token(lx, match('(') ? T_DOLLAR_LPAREN : T_DOLLAR);
+            break;
+        case '&':
+            add_token(lx, match('&') ? T_AN_AN : T_AN);
+            break;
+        case '!':
+            if (eof(0)) {
+                syntax_error(c, "end of file");
+                break;
+            }
+
+            char next = peek(0);
+
+            if (next == '!') {
+                cur++;
+                add_token(lx, T_BANG_BANG);
+                break;
+            } else if (next == '=') {
+                cur++;
+                add_token(lx, T_BANG_EQUAL);
+                break;
+            }
+
+            /* no match found */
+            add_token(lx, T_BANG);
+            break;
         case '=':
             add_token(lx, match('=') ? T_EQUAL_EQUAL : T_EQUAL);
             break;
+        case '.':
+            add_token(lx, match('.') ? T_DOT_DOT : T_DOT);
+            break;
+
+
 
         /* ignore comments */
         case '#':
-            while (peek(0) != '\n' && !eof())
+            while (peek(0) != '\n' && !eof(0))
                 cur++;
             break;
+
 
         /* ignore all whitespace */
         case ' ':
@@ -393,10 +463,12 @@ void scan_token(struct lex_t *lx)
         case '\t':
             break;
 
+
         /* increment line on new line */
         case '\n':
             line++;
             break;
+
 
         /* string literal */
         case '"':
@@ -409,8 +481,7 @@ void scan_token(struct lex_t *lx)
             } else if (is_alpha(c)) {
                 identifier(lx);
             } else {
-                fprintf(stderr, "unexpected char lol\n");
-                exit(1);
+                syntax_error(c, NULL);
             }
             break;
 

@@ -3,4 +3,5 @@ stupid simple shell script expression grammar
 expression      ->      unary ;
 unary           ->      "!" unary
                 |       primary ;
-primary         ->      NUMBER | STRING | "true" | "false" | ( "$(" | "(" ) expression ")" ;
+primary         ->      NUMBER | STRING | "true" | "false"
+                |       ( "$(" | "(" ) expression ")" ;

@@ -40,12 +40,13 @@ typedef struct grouping_t {
 
 typedef struct literal_t {
     void *literal;
-    ttype_t *type; // determines the type of the void *
+    size_t literal_size;
+    ttype_t type; // determines the type of the void *
     void *(*visit)(struct literal_t *);
 } literal_t;
 
 typedef struct unary_t {
-    enum ttype_t op;
+    struct token_t operator_;
     expr_t *right;
     void *(*visit)(struct unary_t *);
 } unary_t;
@@ -60,5 +61,11 @@ expr_t *expression_v();
 expr_t *unary_v();
 
 expr_t *primary_v();
+
+expr_t *new_unary(struct token_t operator_, expr_t *right);
+
+expr_t *new_literal(struct token_t t);
+
+expr_t *new_grouping(expr_t *expression);
 
 #endif /* VALERY_PARSER_H */

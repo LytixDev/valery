@@ -34,31 +34,37 @@ static void parse_error(char *msg)
 
 /* architecture stuff */
 
-static struct token_t peek() {
+static struct token_t peek()
+{
     return *lx_cpy->tokens[current];
 }
 
-static bool eof() {
+static bool eof()
+{
     return peek().type == T_EOF;
 }
 
-static bool check(enum ttype_t type) {
+static bool check(enum ttype_t type)
+{
     if (eof()) return false;
     return peek().type == type;
 }
 
-static struct token_t previous() {
+static struct token_t previous()
+{
     if (current == 0)
         parse_error("internal error, current = 0");
     return *lx_cpy->tokens[current - 1];
 }
 
-static struct token_t advance() {
+static struct token_t advance()
+{
     if (!eof()) current++;
     return previous();
 }
 
-static bool match(enum ttype_t *types, size_t n) {
+static bool match(enum ttype_t *types, size_t n)
+{
     for (size_t i = 0; i < n; i++) {
         if (check(types[i])) {
             advance();
@@ -83,14 +89,14 @@ expr_t *expression_v()
 
 expr_t *unary_v()
 {
-/*
- * unary           ->      "!" unary
- *                 |       primary ;
- */
+    /*
+     * unary           ->      "!" unary
+     *                 |       primary ;
+     */
     if (check(T_BANG)) {
-        struct token_t operator = advance();
+        struct token_t operator_ = advance();
         expr_t *right = unary_v();
-        return NULL;
+        return new_unary(operator_, right);
     }
 
     return primary_v();
@@ -98,6 +104,25 @@ expr_t *unary_v()
 
 expr_t *primary_v()
 {
+    /*
+     *  primary         ->      NUMBER | STRING | "true" | "false"
+     *                  |       ( "$(" | "(" ) expression ")" ;
+     */
+
+    enum ttype_t m[] = {T_NUMBER, T_STRING};
+    if (match(m, 2))
+        return new_literal(previous());
+    //TODO: add true and false
+
+    m[0] = T_DOLLAR_LPAREN;
+    m[1] = T_LPAREN;
+
+    if (match(m, 2)) {
+        expr_t *expr = expression_v();
+        consume(T_RPAREN, "expected ')' after expression");
+        return new_grouping(expr);
+    }
+
     return NULL;
 };
 
@@ -109,3 +134,26 @@ expr_t *parse(struct lex_t *lx)
     return expression_v();
 }
 
+expr_t *new_unary(struct token_t operator_, expr_t *right)
+{
+    struct unary_t *expr = malloc(sizeof(struct unary_t));
+    expr->operator_ = operator_;
+    expr->right = right;
+    return expr;
+}
+
+expr_t *new_literal(struct token_t t)
+{
+    struct literal_t *expr = malloc(sizeof(struct literal_t));
+    expr->literal = t.literal;
+    expr->literal_size = t.literal_size;
+    expr->type = t.type;
+    return expr;
+}
+
+expr_t *new_grouping(expr_t *expression)
+{
+    struct grouping_t *expr = malloc(sizeof(struct grouping_t));
+    expr->expr = expression;
+    return expr;
+}

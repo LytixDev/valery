@@ -82,12 +82,12 @@ static struct token_t consume(enum ttype_t type, char *msg) {
 }
 
 
-expr_t *expression_v()
+expr_head *expression_v()
 {
     return unary_v();
 }
 
-expr_t *unary_v()
+expr_head *unary_v()
 {
     /*
      * unary           ->      "!" unary
@@ -95,14 +95,14 @@ expr_t *unary_v()
      */
     if (check(T_BANG)) {
         struct token_t operator_ = advance();
-        expr_t *right = unary_v();
+        expr_head *right = unary_v();
         return new_unary(operator_, right);
     }
 
     return primary_v();
 };
 
-expr_t *primary_v()
+expr_head *primary_v()
 {
     /*
      *  primary         ->      NUMBER | STRING | "true" | "false"
@@ -118,7 +118,7 @@ expr_t *primary_v()
     m[1] = T_LPAREN;
 
     if (match(m, 2)) {
-        expr_t *expr = expression_v();
+        expr_head *expr = expression_v();
         consume(T_RPAREN, "expected ')' after expression");
         return new_grouping(expr);
     }
@@ -127,33 +127,33 @@ expr_t *primary_v()
 };
 
 
-expr_t *parse(struct lex_t *lx)
+expr_head *parse(struct lex_t *lx)
 {
     lx_cpy = lx;
     /* start recursive descent */
     return expression_v();
 }
 
-expr_t *new_unary(struct token_t operator_, expr_t *right)
+expr_head *new_unary(struct token_t operator_, expr_head *right)
 {
     struct unary_t *expr = malloc(sizeof(struct unary_t));
     expr->operator_ = operator_;
     expr->right = right;
-    return expr;
+    return (struct expr_head *)expr;
 }
 
-expr_t *new_literal(struct token_t t)
+expr_head *new_literal(struct token_t t)
 {
     struct literal_t *expr = malloc(sizeof(struct literal_t));
     expr->literal = t.literal;
     expr->literal_size = t.literal_size;
     expr->type = t.type;
-    return expr;
+    return (struct expr_head *)expr;
 }
 
-expr_t *new_grouping(expr_t *expression)
+expr_head *new_grouping(expr_head *expression)
 {
     struct grouping_t *expr = malloc(sizeof(struct grouping_t));
     expr->expr = expression;
-    return expr;
+    return (struct expr_head *)expr;
 }

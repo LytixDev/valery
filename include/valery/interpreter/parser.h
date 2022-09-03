@@ -22,50 +22,62 @@
 #include "valery/interpreter/nlexer.h"
 #include <stdlib.h>
 
-#define expr_t void
+//#define expr_t void
 
 /* types */
 
+typedef enum expr_type {
+    E_BINARY,
+    E_GROUPING,
+    E_LITERAL,
+    E_UNARY
+} expr_type;
+
+typedef struct expr_head {
+    expr_type e_type;
+    void *(*visit)(struct expr_head *);
+} expr_head;
+
 typedef struct binary_t {
-    expr_t *left;
+    expr_head *head;
+    expr_head *left;
     enum ttype_t token;
-    expr_t *right;
-    void *(*visit)(struct binary_t *);
+    expr_head *right;
 } binary_t;
 
 typedef struct grouping_t {
-    expr_t *expr;
-    void *(*visit)(struct grouping_t *);
+    expr_head *head;
+    expr_head *expr;
 } grouping_t;
 
 typedef struct literal_t {
+    expr_head *head;
     void *literal;
     size_t literal_size;
     ttype_t type; // determines the type of the void *
-    void *(*visit)(struct literal_t *);
 } literal_t;
 
 typedef struct unary_t {
+    expr_head *head;
     struct token_t operator_;
-    expr_t *right;
-    void *(*visit)(struct unary_t *);
+    expr_head *right;
 } unary_t;
 
 
 /* functions */
 
-expr_t *parse(struct lex_t *lx);
+expr_head *parse(struct lex_t *lx);
 
-expr_t *expression_v();
+expr_head *expression_v();
 
-expr_t *unary_v();
+expr_head *unary_v();
 
-expr_t *primary_v();
+expr_head *primary_v();
 
-expr_t *new_unary(struct token_t operator_, expr_t *right);
+expr_head *new_unary(struct token_t operator_, expr_head *right);
 
-expr_t *new_literal(struct token_t t);
+expr_head *new_literal(struct token_t t);
 
-expr_t *new_grouping(expr_t *expression);
+expr_head *new_grouping(expr_head *expression);
 
 #endif /* VALERY_PARSER_H */

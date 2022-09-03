@@ -9,7 +9,7 @@ int main()
     init_identifiers();
 
 
-    char *buffer = "10";
+    char *buffer = "!\"hello world!\"";
     struct lex_t *lx = lex_malloc();
     tokenize(lx, buffer);
 
@@ -17,9 +17,9 @@ int main()
     lex_dump(lx);
 #endif
 
-    expr_t *expr = parse(lx);
-    struct literal_t *l = (struct literal_t *)expr;
-    printf("%d\n", *(int *)l->literal);
+    expr_head *expr = parse(lx);
+    struct unary_t *a = (struct unary_t *)expr;
+    printf("%s\n", (char*)((struct literal_t *)a->right)->literal);
 
     destroy_identifiers();
 }

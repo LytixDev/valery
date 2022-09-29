@@ -1,0 +1,15 @@
+stupid simple shell script expression grammar
+
+-- context-free expression grammar --
+
+program         ->      expression* EOF ;
+
+expression      ->      unary ;
+
+unary           ->      "!" unary
+                |       primary ;
+
+primary         ->      NUMBER | STRING | "true" | "false"
+                |       ( "$(" | "(" ) expression ")"
+                |       IDENTIFIER ;
+

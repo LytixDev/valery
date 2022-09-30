@@ -26,8 +26,6 @@ typedef struct lex_t Lex;
 /* functions */
 Lex *tokenize(char *source);
 
-void lex_free(Lex *lx);
-
 void lex_dump(Lex *lx);
 
 

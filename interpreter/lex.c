@@ -152,13 +152,14 @@ const char *tokentype_str[] = {
     "T_EOF",
 };
 
+
+/* types */
+
 struct token_t {
     enum ttype_t type;
-    //TODO: less yolo
-    union {
-        char *lexeme;
-        void *literal;
-    };
+    //TODO: union mayhaps/perchance?
+    char *lexeme;
+    void *literal;
     size_t literal_size;
     //size_t line;
     //size_t lexeme_size;
@@ -229,7 +230,7 @@ static void init_identifiers()
 
     for (int i = 0; i < KEYWORDS_LEN; i++) {
         char *raw_str = identifiers_str[i];
-        ht_set(identifiers, raw_str, strlen(raw_str), &identifiers_name[i], sizeof(TokenType),
+        ht_set(identifiers, raw_str, strlen(raw_str) + 1, &identifiers_name[i], sizeof(TokenType),
                NULL);
     }
 }
@@ -239,37 +240,6 @@ static void destroy_identifiers(void)
     ht_free(identifiers);
 }
 
-/* helper functions */
-static inline bool is_digit(char c)
-{
-    return c >= '0' && c <= '9';
-}
-
-static inline bool is_alpha(char c)
-{
-    return (c >= 'a' && c <= 'z') ||
-           (c >= 'A' && c <= 'Z') ||
-            c == '_';
-}
-
-static bool is_alpha_numeric(char c)
-{
-    return is_alpha(c) || is_digit(c);
-}
-
-/* returns true if current char of source_cpy == expected */
-static bool match(char expected)
-{
-    //TODO: check if out of bounds?
-    if (*source_cpy == expected) {
-        source_cpy++;
-        return true;
-    }
-
-    return false;
-}
-
-//
 //TODO use global properly
 static struct lex_t *lex_malloc(void)
 {
@@ -322,6 +292,87 @@ static inline void add_token_simple(TokenType type)
     add_token(type, NULL, 0, NULL, 0);
 }
 
+/* helper functions */
+static inline bool is_digit(char c)
+{
+    return c >= '0' && c <= '9';
+}
+
+static inline bool is_alpha(char c)
+{
+    return (c >= 'a' && c <= 'z') ||
+           (c >= 'A' && c <= 'Z') ||
+            c == '_';
+}
+
+static bool is_alpha_numeric(char c)
+{
+    return is_alpha(c) || is_digit(c);
+}
+
+/* returns true if current char of source_cpy == expected */
+static bool match(char expected)
+{
+    //TODO: check if out of bounds?
+    if (*source_cpy == expected) {
+        source_cpy++;
+        return true;
+    }
+
+    return false;
+}
+
+static void number_literal()
+{
+    char *literal_start = source_cpy - 1;       // -1 because scan_token() incremented source_cpy
+    while (is_digit(*source_cpy))
+        source_cpy++;
+
+    //TODO look for '.' determining if there is a fractional part
+    //TODO: use substring instead, and check for error
+
+    char *literal_end = source_cpy - 1;         // -1 because we have gone one past the last digit
+    int64_t literal = strtol(literal_start, &literal_end, 10);
+    add_token(T_NUMBER, NULL, 0, &literal, sizeof(literal));
+}
+
+static void string_literal()
+{
+    //TODO: this is rather ugly
+    char c;
+    char *literal_start = source_cpy;           // not -1 because we ignore the first qoute 
+    while ((c = *source_cpy) != 0) {
+        if (c == '"')
+            break;
+        source_cpy++;
+    }
+
+    if (*source_cpy == 0)
+        valery_exit_parse_error("string not terminated");
+
+    size_t literal_size = source_cpy - literal_start;
+    /* close the string by moving past the last qoute */
+    source_cpy++;
+    add_token(T_STRING, NULL, 0, literal_start, literal_size);
+}
+
+static void identifier()
+{
+    char *identifier_start = source_cpy - 1;    // -1 because scan_token() incremented source_cpy
+    while (is_alpha_numeric(*source_cpy))
+        source_cpy++;
+
+    size_t len = source_cpy - identifier_start;
+    char identifier[len];
+    strncpy(identifier, identifier_start, len);
+    identifier[len] = 0;
+
+    /* if not a reserved keyword, it is a user-defined identifier */
+    TokenType *type = ht_get(identifiers, identifier, len + 1);
+    add_token(type == NULL ? T_IDENTIFIER : *type, identifier, len + 1, NULL, 0);
+}
+
+
 /* scans the source code until a non-ambigious token is determined */
 static void scan_token()
 {
@@ -355,6 +406,7 @@ static void scan_token()
         case '-':
             add_token_simple(T_MINUS);
             break;
+
 
         /* two character lexems */
         case '$':
@@ -392,9 +444,38 @@ static void scan_token()
             break;
 
 
+        /* ignore comments */
+        case '#':
+            while (*source_cpy != 0 && *source_cpy != '\n')
+                source_cpy++;
+            break;
 
+
+        /* ignore all whitespace and new-lines */
+        case ' ':
+            break;
+        case '\r':
+            break;
+        case '\t':
+            break;
+        case '\n':
+            break;
+
+
+        /* string literal */
+        case '"':
+            string_literal();
+            break;
+
+        
         default:
-            printf("%c\n", c);
+            if (is_digit(c))
+                number_literal();
+            else if (is_alpha(c))
+                identifier();
+            else
+                valery_exit_parse_error("sucks man");
+            break;
     }
 }
 
@@ -411,22 +492,29 @@ Lex *tokenize(char *source)
 
     /* add sentinel token */
     add_token(T_EOF, NULL, 0, NULL, 0);
-
     destroy_identifiers();
     return lx;
 }
 
-
 void lex_dump(Lex *lx)
 {
-    struct token_t *t;
     printf("--- lex dump ---\n");
-
     Token *token;
     for (size_t i = 0; i < lx->size; i++) {
         token = lx->tokens[i];
-        printf("type: %-12s  lexeme: ", tokentype_str[token->type]);
-        printf("%s", token->lexeme == NULL ? "(null)" : token->lexeme);
+        printf("type: %-16s|", tokentype_str[token->type]);
+        //printf("%s", token->lexeme == NULL ? "(null)" : token->lexeme);
+
+        if (token->literal != NULL) {
+            if (token->type == T_NUMBER)
+                printf(" literal: '%ld'", *(int64_t *)token->literal);
+            else if (token->type == T_STRING)
+                printf(" literal: '%s'", (char *)token->literal);
+        }
+
+        if (token->lexeme != NULL)
+            printf(" lexeme: '%s'", token->lexeme);
+
         putchar('\n');
     }
 }

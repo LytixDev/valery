@@ -25,70 +25,6 @@
 
 
 /* types */
-#define KEYWORDS_LEN 17
-typedef enum ttype_t {
-    /* keywords */
-    T_DO,
-    T_DONE,
-    T_CASE,
-    T_ESAC,
-    T_FUNCTION,
-    T_SELECT,
-    T_UNTIL,
-    T_IF,
-    T_ELIF,
-    T_FI,
-    T_THEN,
-    T_WHILE,
-    T_ELSE,
-    T_FOR,
-    T_IN,
-    T_TIME,
-    T_RETURN,
-
-    /* single-character tokens */
-    T_LPAREN,
-    T_RPAREN,
-    T_LBRACE,
-    T_RBRACE,
-    T_COMMA,
-    T_MINUS,
-    T_PLUS,
-    T_COLON,
-    T_SEMICOLON,
-    T_SLASH,
-    T_STAR,
-
-    /* one or two character tokens */
-    T_DOLLAR,
-    T_DOLLAR_LPAREN,
-    T_ANP,
-    T_ANP_ANP,
-    T_BANG,
-    T_BANG_BANG,
-    T_BANG_EQUAL,
-    T_EQUAL,
-    T_EQUAL_EQUAL,
-    T_GREATER,
-    T_GREATER_EQUAL,
-    T_LESS,
-    T_LESS_EQUAL,
-    T_LBRACKET,
-    T_LBRACKET_LBRACKET,
-    T_RBRACKET,
-    T_RBRACKET_RBRACKET,
-    T_DOT,
-    T_DOT_DOT,
-
-    /* literals */
-    T_IDENTIFIER,
-    T_STRING,
-    T_NUMBER,
-
-    T_UNKNOWN,
-    T_EOF
-} TokenType;
-
 const char *tokentype_str[] = {
     /* keywords */
     "T_DO",
@@ -148,6 +84,7 @@ const char *tokentype_str[] = {
     "T_STRING",
     "T_NUMBER",
 
+    "T_NEWLINE",
     "T_UNKNOWN",
     "T_EOF",
 };
@@ -155,28 +92,11 @@ const char *tokentype_str[] = {
 
 /* types */
 
-struct token_t {
-    enum ttype_t type;
-    //TODO: union mayhaps/perchance?
-    char *lexeme;
-    void *literal;
-    size_t literal_size;
-    //size_t line;
-    //size_t lexeme_size;
-    //size_t offset;
-};
-
-struct lex_t {
-    Token **tokens;           /* list of the tokens */
-    size_t size;              /* total tokens occupied */
-    size_t capacity;          /* total tokens allocated */
-};
-
 
 /* globals */
 static struct ht_t *identifiers = NULL;
 char *source_cpy;
-Lex *lx;
+TokenList *tl;
 
 /* functions */
 
@@ -241,20 +161,20 @@ static void destroy_identifiers(void)
 }
 
 //TODO use global properly
-static struct lex_t *lex_malloc(void)
+static struct token_list_t *token_list_malloc(void)
 {
-    Lex *lx = malloc(sizeof(Lex));
-    lx->size = 0;
-    lx->capacity = 32;
-    lx->tokens = malloc(32 * sizeof(TokenType *));
-    return lx;
+    TokenList *tl = malloc(sizeof(TokenList));
+    tl->size = 0;
+    tl->capacity = 32;
+    tl->tokens = malloc(32 * sizeof(TokenType *));
+    return tl;
 }
 
-static void lex_increase(void)
+static void token_list_increase(void)
 {
-    size_t new_capacity = lx->capacity * 2;
-    lx->tokens = realloc(lx->tokens, new_capacity * sizeof(struct Token *));
-    lx->capacity = new_capacity;
+    size_t new_capacity = tl->capacity * 2;
+    tl->tokens = realloc(tl->tokens, new_capacity * sizeof(struct Token *));
+    tl->capacity = new_capacity;
 }
 
 static Token *token_malloc(TokenType type, char *lexeme, size_t lexeme_size, void *literal,
@@ -281,10 +201,10 @@ static void add_token(TokenType type, char *lexeme, size_t lexeme_size, void *li
                       size_t literal_size)
 {
     Token *token = token_malloc(type, lexeme, lexeme_size, literal, literal_size);
-    if (lx->size >= lx->capacity)
-        lex_increase();
+    if (tl->size >= tl->capacity)
+        token_list_increase();
 
-    lx->tokens[lx->size++] = token_malloc(type, lexeme, lexeme_size, literal, literal_size);
+    tl->tokens[tl->size++] = token_malloc(type, lexeme, lexeme_size, literal, literal_size);
 }
 
 static inline void add_token_simple(TokenType type)
@@ -448,17 +368,23 @@ static void scan_token()
         case '#':
             while (*source_cpy != 0 && *source_cpy != '\n')
                 source_cpy++;
+
+            source_cpy++;       // go past newline
             break;
 
 
-        /* ignore all whitespace and new-lines */
+        /* ignore all whitespace */
         case ' ':
             break;
         case '\r':
             break;
         case '\t':
             break;
+
+
         case '\n':
+            add_token_simple(T_NEWLINE);
+            source_cpy++;
             break;
 
 
@@ -479,9 +405,9 @@ static void scan_token()
     }
 }
 
-Lex *tokenize(char *source)
+TokenList *tokenize(char *source)
 {
-    lx = lex_malloc();          // define global Lex type
+    tl = token_list_malloc();          // define global TokenList type
     source_cpy = source;        // global pointer into the source code for simplicity 
     init_identifiers();
 
@@ -493,15 +419,15 @@ Lex *tokenize(char *source)
     /* add sentinel token */
     add_token(T_EOF, NULL, 0, NULL, 0);
     destroy_identifiers();
-    return lx;
+    return tl;
 }
 
-void lex_dump(Lex *lx)
+void token_list_dump(TokenList *tl)
 {
     printf("--- lex dump ---\n");
     Token *token;
-    for (size_t i = 0; i < lx->size; i++) {
-        token = lx->tokens[i];
+    for (size_t i = 0; i < tl->size; i++) {
+        token = tl->tokens[i];
         printf("type: %-16s|", tokentype_str[token->type]);
         //printf("%s", token->lexeme == NULL ? "(null)" : token->lexeme);
 

@@ -1,15 +1,31 @@
-stupid simple shell script expression grammar
+stupid simple shell script expression grammar for testing purposes
 
 -- context-free expression grammar --
 
-program         ->      expression* EOF ;
+program         ->      line EOF ;
 
-expression      ->      unary ;
+line            ->      statement* ( "\n" )? ;
+
+statement       ->      exprStmt ;
+
+exprStmt;       ->      unary ;
 
 unary           ->      "!" unary
                 |       primary ;
 
 primary         ->      NUMBER | STRING | "true" | "false"
-                |       ( "$(" | "(" ) expression ")"
-                |       IDENTIFIER ;
+                |       ( "$(" | "(" ) exprStmt; ")"                    // subshell
+                |       external ;
 
+external        ->      IDENTIFIER ;                                    // no args yet
+
+
+
+-- simp
+
+program         ->      line EOF ;
+
+line            ->      primary* ( "\n" )? ;
+
+primary         ->      NUMBER | STRING
+                |       IDENTIFIER ;

@@ -16,17 +16,98 @@
 
 #ifndef VALERY_INTERPRETER_LEX_H
 #define VALERY_INTERPRETER_LEX_H
+#include <stddef.h>             // size_t type
 
 
 /* types */
-typedef struct token_t Token;
-typedef struct lex_t Lex;
+
+#define KEYWORDS_LEN 17
+typedef enum ttype_t {
+    /* keywords */
+    T_DO,
+    T_DONE,
+    T_CASE,
+    T_ESAC,
+    T_FUNCTION,
+    T_SELECT,
+    T_UNTIL,
+    T_IF,
+    T_ELIF,
+    T_FI,
+    T_THEN,
+    T_WHILE,
+    T_ELSE,
+    T_FOR,
+    T_IN,
+    T_TIME,
+    T_RETURN,
+
+    /* single-character tokens */
+    T_LPAREN,
+    T_RPAREN,
+    T_LBRACE,
+    T_RBRACE,
+    T_COMMA,
+    T_MINUS,
+    T_PLUS,
+    T_COLON,
+    T_SEMICOLON,
+    T_SLASH,
+    T_STAR,
+
+    /* one or two character tokens */
+    T_DOLLAR,
+    T_DOLLAR_LPAREN,
+    T_ANP,
+    T_ANP_ANP,
+    T_BANG,
+    T_BANG_BANG,
+    T_BANG_EQUAL,
+    T_EQUAL,
+    T_EQUAL_EQUAL,
+    T_GREATER,
+    T_GREATER_EQUAL,
+    T_LESS,
+    T_LESS_EQUAL,
+    T_LBRACKET,
+    T_LBRACKET_LBRACKET,
+    T_RBRACKET,
+    T_RBRACKET_RBRACKET,
+    T_DOT,
+    T_DOT_DOT,
+
+    /* literals */
+    T_IDENTIFIER,
+    T_STRING,
+    T_NUMBER,
+
+    T_NEWLINE,
+    T_UNKNOWN,
+    T_EOF
+} TokenType;
+
+typedef struct token_t {
+    TokenType type;
+    //TODO: union mayhaps/perchance?
+    char *lexeme;
+    void *literal;
+    size_t literal_size;
+    //size_t line;
+    //size_t lexeme_size;
+    //size_t offset;
+} Token;
+
+typedef struct token_list_t {
+    Token **tokens;           /* list of the tokens */
+    size_t size;              /* total tokens occupied */
+    size_t capacity;          /* total tokens allocated */
+} TokenList;
 
 
 /* functions */
-Lex *tokenize(char *source);
+TokenList *tokenize(char *source);
 
-void lex_dump(Lex *lx);
+void token_list_dump(TokenList *tl);
 
 
 #endif /* !VALERY_INTERPRETER_LEX_H */

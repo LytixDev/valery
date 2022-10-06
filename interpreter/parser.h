@@ -17,7 +17,7 @@
 #ifndef VALERY_INTERPRETER_PARSER_H
 #define VALERY_INTERPRETER_PARSER_H
 
-#include "lex.h"        // TokenList type
+#include "lex.h"        // struct tokenlist_t type
 
 /* types */
 typedef struct ast_node_head_t {
@@ -29,7 +29,7 @@ typedef struct stmt_t Stmt;
 
 
 /* functions */
-void *parse(TokenList *tl);
+void *parse(struct tokenlist_t *tl);
 
 void ast_print(Stmt *first);
 

@@ -17,12 +17,12 @@
 #include <stdbool.h>            // bool type
 
 #include "parser.h"
-#include "lex.h"                // TokenList type
+#include "lex.h"                // struct tokenlist_t type
 #include "../vcommon.h"         // errors
 
 
 /* globals */
-TokenList *tl_cpy;
+struct tokenlist_t *tl_cpy;
 size_t tl_pos = 0;      // global for simplicity, may not be ideal going forward
 
 
@@ -40,12 +40,12 @@ struct expr_t {
 static void *ast_line();
 static void *ast_primary();
 
-static Token get_current_token()
+static struct token_t get_current_token()
 {
     return *tl_cpy->tokens[tl_pos];
 }
 
-static bool check(TokenType type)
+static bool check(enum tokentype_t type)
 {
     if (tl_cpy->size >= tl_cpy->capacity)
         return false;
@@ -54,7 +54,7 @@ static bool check(TokenType type)
     return tl_cpy->tokens[tl_pos]->type == type;
 }
 
-static void consume(TokenType type, char *err_msg)
+static void consume(enum tokentype_t type, char *err_msg)
 {
     if (!check(type))
         valery_exit_parse_error(err_msg);
@@ -72,7 +72,7 @@ static void *ast_program()
 static void *ast_line()
 {
     //TODO: ugly
-    for (Token current = get_current_token(); current.type != T_EOF;) {
+    for (struct token_t current = get_current_token(); current.type != T_EOF;) {
     }
     return NULL;
 }
@@ -82,7 +82,7 @@ static void *ast_primary()
     return NULL;
 }
 
-void *parse(TokenList *tl)
+void *parse(struct tokenlist_t *tl)
 {
     tl_cpy = tl;
 

@@ -22,7 +22,7 @@
 /* types */
 
 #define KEYWORDS_LEN 17
-typedef enum ttype_t {
+enum tokentype_t {
     /* keywords */
     T_DO,
     T_DONE,
@@ -84,10 +84,10 @@ typedef enum ttype_t {
     T_NEWLINE,
     T_UNKNOWN,
     T_EOF
-} TokenType;
+};
 
-typedef struct token_t {
-    TokenType type;
+struct token_t {
+    enum tokentype_t type;
     //TODO: union mayhaps/perchance?
     char *lexeme;
     void *literal;
@@ -95,19 +95,19 @@ typedef struct token_t {
     //size_t line;
     //size_t lexeme_size;
     //size_t offset;
-} Token;
+};
 
-typedef struct token_list_t {
-    Token **tokens;           /* list of the tokens */
+struct tokenlist_t {
+    struct token_t **tokens;           /* list of the tokens */
     size_t size;              /* total tokens occupied */
     size_t capacity;          /* total tokens allocated */
-} TokenList;
+};
 
 
 /* functions */
-TokenList *tokenize(char *source);
+struct tokenlist_t *tokenize(char *source);
 
-void token_list_dump(TokenList *tl);
+void token_list_dump(struct tokenlist_t *tl);
 
 
 #endif /* !VALERY_INTERPRETER_LEX_H */

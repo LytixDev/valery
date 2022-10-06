@@ -96,7 +96,7 @@ const char *tokentype_str[] = {
 /* globals */
 static struct ht_t *identifiers = NULL;
 char *source_cpy;
-TokenList *tl;
+struct tokenlist_t *tl;
 
 /* functions */
 
@@ -128,7 +128,7 @@ static void init_identifiers()
         "return"
     };
 
-    TokenType identifiers_name[] = {
+    enum tokentype_t identifiers_name[] = {
         T_DO,
         T_DONE,
         T_CASE,
@@ -150,7 +150,7 @@ static void init_identifiers()
 
     for (int i = 0; i < KEYWORDS_LEN; i++) {
         char *raw_str = identifiers_str[i];
-        ht_set(identifiers, raw_str, strlen(raw_str) + 1, &identifiers_name[i], sizeof(TokenType),
+        ht_set(identifiers, raw_str, strlen(raw_str) + 1, &identifiers_name[i], sizeof(enum tokentype_t),
                NULL);
     }
 }
@@ -161,26 +161,26 @@ static void destroy_identifiers(void)
 }
 
 //TODO use global properly
-static struct token_list_t *token_list_malloc(void)
+static struct tokenlist_t *token_list_malloc(void)
 {
-    TokenList *tl = malloc(sizeof(TokenList));
+    struct tokenlist_t *tl = malloc(sizeof(struct tokenlist_t));
     tl->size = 0;
     tl->capacity = 32;
-    tl->tokens = malloc(32 * sizeof(TokenType *));
+    tl->tokens = malloc(32 * sizeof(enum tokentype_t *));
     return tl;
 }
 
 static void token_list_increase(void)
 {
     size_t new_capacity = tl->capacity * 2;
-    tl->tokens = realloc(tl->tokens, new_capacity * sizeof(struct Token *));
+    tl->tokens = realloc(tl->tokens, new_capacity * sizeof(struct token_t *));
     tl->capacity = new_capacity;
 }
 
-static Token *token_malloc(TokenType type, char *lexeme, size_t lexeme_size, void *literal,
-                           size_t literal_size)
+static struct token_t *token_malloc(enum tokentype_t type, char *lexeme, size_t lexeme_size,
+                                    void *literal, size_t literal_size)
 {
-    Token *token = malloc(sizeof(Token));
+    struct token_t *token = malloc(sizeof(struct token_t));
     token->type = type;
 
     if (lexeme != NULL) {
@@ -197,17 +197,17 @@ static Token *token_malloc(TokenType type, char *lexeme, size_t lexeme_size, voi
     return token;
 }
 
-static void add_token(TokenType type, char *lexeme, size_t lexeme_size, void *literal,
+static void add_token(enum tokentype_t type, char *lexeme, size_t lexeme_size, void *literal,
                       size_t literal_size)
 {
-    Token *token = token_malloc(type, lexeme, lexeme_size, literal, literal_size);
+    struct token_t *token = token_malloc(type, lexeme, lexeme_size, literal, literal_size);
     if (tl->size >= tl->capacity)
         token_list_increase();
 
     tl->tokens[tl->size++] = token_malloc(type, lexeme, lexeme_size, literal, literal_size);
 }
 
-static inline void add_token_simple(TokenType type)
+static inline void add_token_simple(enum tokentype_t type)
 {
     add_token(type, NULL, 0, NULL, 0);
 }
@@ -288,7 +288,7 @@ static void identifier()
     identifier[len] = 0;
 
     /* if not a reserved keyword, it is a user-defined identifier */
-    TokenType *type = ht_get(identifiers, identifier, len + 1);
+    enum tokentype_t *type = ht_get(identifiers, identifier, len + 1);
     add_token(type == NULL ? T_IDENTIFIER : *type, identifier, len + 1, NULL, 0);
 }
 
@@ -405,9 +405,9 @@ static void scan_token()
     }
 }
 
-TokenList *tokenize(char *source)
+struct tokenlist_t *tokenize(char *source)
 {
-    tl = token_list_malloc();          // define global TokenList type
+    tl = token_list_malloc();          // define global struct tokenlist_t type
     source_cpy = source;        // global pointer into the source code for simplicity 
     init_identifiers();
 
@@ -422,10 +422,10 @@ TokenList *tokenize(char *source)
     return tl;
 }
 
-void token_list_dump(TokenList *tl)
+void token_list_dump(struct tokenlist_t *tl)
 {
     printf("--- lex dump ---\n");
-    Token *token;
+    struct token_t *token;
     for (size_t i = 0; i < tl->size; i++) {
         token = tl->tokens[i];
         printf("type: %-16s|", tokentype_str[token->type]);

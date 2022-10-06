@@ -20,17 +20,49 @@
 #include "lex.h"        // struct tokenlist_t type
 
 /* types */
+
+enum ast_type_t {
+    UNARY,
+    BINARY,
+    LITERAL,
+    ENUM_COUNT
+};
+
 typedef struct ast_node_head_t {
-    int type;
+    enum ast_type_t type;
 } ASTNodeHead;
 
-typedef struct expr_t Expr;
-typedef struct stmt_t Stmt;
+
+/* expression types */
+/*
+ * every expression starts with an ASTNodeHead describing its type.
+ */
+typedef ASTNodeHead Expr;
+
+struct ast_unary_t {
+    ASTNodeHead head;
+    struct token_t *op;  // operator
+    Expr *right;
+};
+
+struct ast_binary_t {
+    ASTNodeHead head;
+    Expr *left;
+    struct token_t *op;
+    Expr *right;
+};
+
+struct ast_literal_t {
+    ASTNodeHead head;
+    enum tokentype_t type;
+    void *literal;
+    size_t literal_size;
+};
 
 
 /* functions */
 void *parse(struct tokenlist_t *tl);
 
-void ast_print(Stmt *first);
+void ast_print(ASTNodeHead *first);
 
 #endif /* !VALERY_INTERPRETER_PARSER_H */

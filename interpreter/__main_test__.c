@@ -4,9 +4,10 @@
 
 int main()
 {
-    char *source = "# comment this out\necho \"hello world\" && exit 1";
+    char *source = "!\"hello world\"";
     struct tokenlist_t *lx = tokenize(source);
     token_list_dump(lx);
 
-    Stmt *statement = parse(lx);
+    Expr *expr = parse(lx);
+    ast_print(expr);
 }

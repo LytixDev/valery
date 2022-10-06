@@ -39,6 +39,7 @@ struct expr_t {
 /* functions */
 static void *ast_line();
 static void *ast_primary();
+static void *ast_unary();
 
 static struct token_t get_current_token()
 {
@@ -62,6 +63,25 @@ static void consume(enum tokentype_t type, char *err_msg)
     tl_pos++;
 }
 
+static bool match(enum tokentype_t *types, unsigned int n)
+{
+    enum tokentype_t type;
+    for (unsigned int i = 0; i < n; i++) {
+        type = types[i];
+        if (check(type)) {
+            tl_pos++;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static struct token_t *previous()
+{
+    return tl_cpy->tokens[tl_pos - 1];
+}
+
 static void *ast_program()
 {
     void *line = ast_line();
@@ -71,14 +91,43 @@ static void *ast_program()
 
 static void *ast_line()
 {
-    //TODO: ugly
-    for (struct token_t current = get_current_token(); current.type != T_EOF;) {
+    return ast_unary();
+}
+
+static void *ast_unary()
+{
+    /*
+     * unary           ->      "!" unary
+     *                  |       primary ;
+     */
+
+    enum tokentype_t m[] = { T_BANG };
+    if (match(m, 1)) {
+        struct token_t *op = previous();
+        Expr *right = ast_unary();
+
+        struct ast_unary_t *expr = malloc(sizeof(struct ast_unary_t));
+        expr->head.type = UNARY;
+        expr->op = op;
+        expr->right = right;
+        return expr;
     }
-    return NULL;
+
+    return ast_primary();
 }
 
 static void *ast_primary()
 {
+    enum tokentype_t m[] = { T_STRING, T_NUMBER };
+    if (match(m, 2)) {
+        struct token_t *prev = previous();
+        struct ast_literal_t *expr = malloc(sizeof(struct ast_literal_t));
+        expr->head.type = LITERAL;
+        expr->type = prev->type;
+        expr->literal = prev->literal;
+        expr->literal_size = prev->literal_size;
+        return expr;
+    }
     return NULL;
 }
 
@@ -88,7 +137,5 @@ void *parse(struct tokenlist_t *tl)
 
     /* start recursive descent */
     void *res = ast_program();
-
-
-    return NULL;
+    return res;
 }

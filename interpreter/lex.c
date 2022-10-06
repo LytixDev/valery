@@ -25,7 +25,7 @@
 
 
 /* types */
-const char *tokentype_str[] = {
+const char *tokentype_str[T_ENUM_COUNT] = {
     /* keywords */
     "T_DO",
     "T_DONE",

@@ -83,7 +83,8 @@ enum tokentype_t {
 
     T_NEWLINE,
     T_UNKNOWN,
-    T_EOF
+    T_EOF,
+    T_ENUM_COUNT        /* not an actual type */
 };
 
 struct token_t {
@@ -102,6 +103,9 @@ struct tokenlist_t {
     size_t size;              /* total tokens occupied */
     size_t capacity;          /* total tokens allocated */
 };
+
+
+//const char *tokentype_str[T_ENUM_COUNT];
 
 
 /* functions */

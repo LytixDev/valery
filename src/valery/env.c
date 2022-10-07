@@ -24,6 +24,9 @@
 #include "valery/env.h"
 #include "builtins/builtins.h"
 #include "lib/vstring.h"
+#define NICC_HT_IMPLEMENTATION
+#define HT_KEY_LIST
+#include "lib/nicc/nicc.h"
 
 
 static struct env_vars_t *env_vars_malloc(void)

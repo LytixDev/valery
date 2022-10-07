@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
-#include "lib/hashtable.h"
+#include "lib/nicc/nicc.h"      // hashtable implementation
 
 
 /* variables */

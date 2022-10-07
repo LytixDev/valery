@@ -18,7 +18,6 @@
 #ifndef EXEC
 #define EXEC
 
-#include "valery/lexer.h"
 #include "valery/histfile.h"
 #include "valery/env.h"
 
@@ -90,13 +89,13 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
 bool valery_eval_token(char *program_name, char *argv[], int argc, struct env_t *env, struct hist_t *hist);
 
 /* parses the tokens and calls eval on them accordingly */
-int valery_parse_tokens(struct source_t *ts, struct env_t *env, struct hist_t *hist);
+//int valery_parse_tokens(struct source_t *ts, struct env_t *env, struct hist_t *hist);
 
 void new_pipe(struct exec_ctx *e_ctx);
 
 void terminate_pipe(struct exec_ctx *e_ctx);
 
-void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_type);
+//void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_type);
 
 /*
  * how the three aforementioned functions relate to each other:

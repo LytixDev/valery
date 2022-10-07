@@ -9,6 +9,7 @@ compile_commands.json
 
 # ignore compiled, binary, but not src folder
 valery
+valery-interpreter
 !src/valery
 !include/valery
 

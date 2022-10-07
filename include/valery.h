@@ -14,23 +14,53 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 #ifndef VALERY
 #define VALERY
 
-#include <stdint.h>
 
 
 /* variables */
 #define COMMAND_LEN 1024
 
+
 /* macros */
+
 #ifdef DEBUG
-#define print_debug(...) \
-    do { printf("\033[0;31mDEBUG:\n"); fprintf(stderr, __VA_ARGS__); \
-        printf("\033[0m\n"); } while (0);
+#       define print_debug(...) \
+                do { fprintf(stderr, "\033[0;31mDEBUG:\n"); fprintf(stderr, __VA_ARGS__); \
+                     fprintf(stderr, "\033[0m\n"); } while (0);
 #else
-#define print_debug(...) ((void) 0)
+#       define print_debug(...) ((void) 0)
 #endif
 
-#endif /* VALERY */
+
+/* functions */
+
+void valery_exit(int exit_code);
+
+void valery_exit_parse_error(const char *msg);
+
+void valery_exit_internal_error(char *msg, const char *file, const char *func, const int line);
+#define internal_error_exit(m) valery_exit_internal_error(m, __FILE__, __func__, __LINE__)
+
+void valery_runtime_error(const char *msg, const char *file, const char *func, const int line);
+#define runtime_error(m) valery_runtime_error(m, __FILE__, __func__, __LINE__)
+
+void valery_error(const char *msg, const char *file, const char *func, const int line);
+#define verror(m) valery_error(m, __FILE__, __func__, __LINE__)
+
+
+#ifdef VMALLOC_IMPLEMENTATION
+#       include <stdlib.h>
+void *vmalloc(size_t size)
+{
+    void *tmp = malloc(size);
+    if (tmp == NULL) {
+        internal_error_exit("memory allocation error");
+    }
+    return tmp;
+}
+#endif /* VMALLOC_IMPLEMENTATION*/
+
+
+#endif /* VALERY_H */

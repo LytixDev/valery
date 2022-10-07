@@ -25,7 +25,21 @@ external        ->      IDENTIFIER ;                                    // no ar
 
 program         ->      line EOF ;
 
-line            ->      primary* ( "\n" )? ;
+line            ->      unary* ( "\n" )? ;
+
+unary           ->      "!" unary
+                 |      assignment;
+
+assignment      ->      IDENTIFIER "=" assignment
+                 |      primary ;
 
 primary         ->      NUMBER | STRING
                 |       IDENTIFIER ;
+
+
+
+-- test
+pipe            -> programSequence "|" programSequence
+                |  programSequence ;
+
+programSequence -> IDENTIFIER ( PRIMARY )* ;

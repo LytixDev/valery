@@ -15,8 +15,8 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef VCOMMON_H
-#define VCOMMON_H
+#ifndef VALERY_H
+#define VALERY_H
 
 #include <stdint.h>
 
@@ -38,15 +38,27 @@ void valery_exit(int exit_code);
 
 void valery_exit_parse_error(const char *msg);
 
-void valery_exit_internal_error(const char *file, const char *func, const int line);
-#define internal_error_exit() valery_exit_internal_error(__FILE__, __func__, __LINE__)
+void valery_exit_internal_error(char *msg, const char *file, const char *func, const int line);
+#define internal_error_exit(m) valery_exit_internal_error(m, __FILE__, __func__, __LINE__)
 
 void valery_runtime_error(const char *msg, const char *file, const char *func, const int line);
 #define runtime_error(m) valery_runtime_error(m, __FILE__, __func__, __LINE__)
-
 
 void valery_error(const char *msg, const char *file, const char *func, const int line);
 #define verror(m) valery_error(m, __FILE__, __func__, __LINE__)
 
 
-#endif /* VCOMMON_H */
+#ifdef VMALLOC_IMPLEMENTATION
+#       include <stdlib.h>
+void *vmalloc(size_t size)
+{
+    void *tmp = malloc(size);
+    if (tmp == NULL) {
+        internal_error_exit("memory allocation error");
+    }
+    return tmp;
+}
+#endif /* VMALLOC_IMPLEMENTATION*/
+
+
+#endif /* VALERY_H */

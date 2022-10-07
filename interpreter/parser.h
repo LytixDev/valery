@@ -22,9 +22,11 @@
 /* types */
 
 enum ast_type_t {
+    ASSIGNMENT,
     UNARY,
     BINARY,
     LITERAL,
+    PROGRAM_SEQUENCE,
     ENUM_COUNT
 };
 
@@ -38,6 +40,12 @@ typedef struct ast_node_head_t {
  * every expression starts with an ASTNodeHead describing its type.
  */
 typedef ASTNodeHead Expr;
+
+struct ast_assignment_t {
+    ASTNodeHead head;
+    struct token_t *name;
+    Expr *value;
+};
 
 struct ast_unary_t {
     ASTNodeHead head;
@@ -57,6 +65,13 @@ struct ast_literal_t {
     enum tokentype_t type;
     void *literal;
     size_t literal_size;
+};
+
+struct ast_program_sequence_t {
+    ASTNodeHead head;
+    struct token_t *program_name;
+    Expr **argv;
+    unsigned int argc;
 };
 
 

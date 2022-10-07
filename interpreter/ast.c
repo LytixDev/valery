@@ -21,6 +21,17 @@
 extern const char *tokentype_str[T_ENUM_COUNT];
 static void ast_print_node(ASTNodeHead *expr);
 
+static void assignment_print(struct ast_assignment_t *expr)
+{
+    putchar('(');
+
+    printf("assignment -> ");
+    printf("name: %s ", expr->name->lexeme);
+    ast_print_node(expr->value);
+
+    putchar(')');
+}
+
 
 static void unary_print(struct ast_unary_t *expr)
 {
@@ -39,7 +50,7 @@ static void binary_print(struct ast_binary_t *expr)
 
     printf("binary -> ");
     ast_print_node(expr->left);
-    printf("op: %s ", tokentype_str[expr->op->type]);
+    printf(" op: %s ", tokentype_str[expr->op->type]);
     ast_print_node(expr->right);
 
     putchar(')');
@@ -59,9 +70,27 @@ static void literal_print(struct ast_literal_t *expr)
     putchar(')');
 }
 
+static void program_sequence_print(struct ast_program_sequence_t *expr)
+{
+    putchar('(');
+    
+    printf("progsec -> ");
+    printf("prog: %s ", expr->program_name->lexeme);
+    printf("args: ");
+
+    for (unsigned int i = 0; i < expr->argc; i++)
+        ast_print_node(expr->argv[i]);
+    
+
+    putchar(')');
+}
+
 static void ast_print_node(ASTNodeHead *expr)
 {
     switch (expr->type) {
+        case ASSIGNMENT:
+            assignment_print((struct ast_assignment_t *)expr);
+            break;
         case UNARY:
             unary_print((struct ast_unary_t *)expr);
             break;
@@ -70,6 +99,9 @@ static void ast_print_node(ASTNodeHead *expr)
             break;
         case LITERAL:
             literal_print((struct ast_literal_t *)expr);
+            break;
+        case PROGRAM_SEQUENCE:
+            program_sequence_print((struct ast_program_sequence_t *)expr);
             break;
 
         default:

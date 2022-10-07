@@ -14,12 +14,12 @@
  *  You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <stdlib.h>
-#include <stdbool.h>            // bool type
-#include <stdarg.h>             // va_start, va_arg, va_end 
+#include <stdbool.h>                    // bool type
+#include <stdarg.h>                     // va_start, va_arg, va_end 
 
-#include "parser.h"
-#include "lex.h"                // struct tokenlist_t type
-#include "../valery.h"          // errors
+#include "valery/interpreter/parser.h"
+#include "valery/interpreter/lex.h"     // struct tokenlist_t type
+#include "valery.h"                     // errors
 
 
 /* globals */

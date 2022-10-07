@@ -15,8 +15,8 @@
  */
 #include <stdio.h>
 
-#include "lex.h"
-#include "parser.h"
+#include "valery/interpreter/lex.h"
+#include "valery/interpreter/parser.h"
 
 extern const char *tokentype_str[T_ENUM_COUNT];
 static void ast_print_node(ASTNodeHead *expr);

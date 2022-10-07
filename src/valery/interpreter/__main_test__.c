@@ -1,9 +1,9 @@
-#include "lex.h"
-#include "parser.h"
-#include "interpreter.h"
+#include "valery/interpreter/lex.h"
+#include "valery/interpreter/parser.h"
+#include "valery/interpreter/interpreter.h"
 
 
-int main()
+int main_test()
 {
     char *source = "ls \"my_file\" 10 | wc";
     struct tokenlist_t *tl = tokenize(source);
@@ -16,4 +16,5 @@ int main()
 
     tokenlist_free(tl);
     ast_free(expr);
+    return 0;
 }

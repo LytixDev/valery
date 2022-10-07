@@ -15,8 +15,8 @@
  */
 #include <stdio.h>
 
-#include "lex.h"
-#include "parser.h"
+#include "valery/interpreter/lex.h"
+#include "valery/interpreter/parser.h"
 
 
 static void pipe(struct ast_binary_t *expr)

@@ -18,10 +18,9 @@
 #include <stdio.h>              // debug: printf
 #include <stdbool.h>            // bool type
 
-#include "lex.h"
-#define NICC_HT_IMPLEMENTATION
-#include "../nicc/nicc.h"       // hashtable implementation
-#include "../valery.h"
+#include "valery/interpreter/lex.h"
+#include "lib/nicc/nicc.h"      // hashtable implementation
+#include "valery.h"
 
 
 /* types */

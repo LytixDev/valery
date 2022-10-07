@@ -75,6 +75,8 @@ enum tokentype_t {
     T_RBRACKET_RBRACKET,
     T_DOT,
     T_DOT_DOT,
+    T_PIPE,
+    T_PIPE_PIPE,
 
     /* literals */
     T_IDENTIFIER,

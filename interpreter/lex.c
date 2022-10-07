@@ -21,7 +21,7 @@
 #include "lex.h"
 #define NICC_HT_IMPLEMENTATION
 #include "../nicc/nicc.h"  // hashtable implementation
-#include "../vcommon.h"
+#include "../valery.h"
 
 
 /* types */
@@ -78,6 +78,8 @@ const char *tokentype_str[T_ENUM_COUNT] = {
     "T_RBRACKET_RBRACKET",
     "T_DOT",
     "T_DOT_DOT",
+    "T_PIPE",
+    "T_PIPE_PIPE",
 
     /* literals */
     "T_IDENTIFIER",
@@ -340,6 +342,9 @@ static void scan_token()
             break;
         case '.':
             add_token_simple(match('.') ? T_DOT_DOT : T_DOT);
+            break;
+        case '|':
+            add_token_simple(match('|') ? T_PIPE_PIPE : T_PIPE);
             break;
         case '!':
             if (*source_cpy == 0) {

@@ -18,7 +18,7 @@
 
 #include "parser.h"
 #include "lex.h"                // struct tokenlist_t type
-#include "../vcommon.h"         // errors
+#include "../valery.h"          // errors
 
 
 /* globals */
@@ -39,7 +39,10 @@ struct expr_t {
 /* functions */
 static void *ast_line();
 static void *ast_primary();
+static void *ast_assignment();
 static void *ast_unary();
+static void *ast_pipe();
+static void *ast_program_sequence();
 
 static struct token_t get_current_token()
 {
@@ -82,9 +85,41 @@ static struct token_t *previous()
     return tl_cpy->tokens[tl_pos - 1];
 }
 
+static void *expr_malloc(enum ast_type_t type)
+{
+    Expr *expr;
+    switch (type) {
+        case ASSIGNMENT:
+            expr = malloc(sizeof(struct ast_assignment_t));
+            break;
+
+        case UNARY:
+            expr = malloc(sizeof(struct ast_unary_t));
+            break;
+
+        case BINARY:
+            expr = malloc(sizeof(struct ast_binary_t));
+            break;
+
+        case LITERAL:
+            expr = malloc(sizeof(struct ast_literal_t));
+            break;
+
+        case PROGRAM_SEQUENCE:
+            expr = malloc(sizeof(struct ast_program_sequence_t));
+
+        case ENUM_COUNT:
+            break;
+    }
+
+    expr->type = type;
+    return expr;
+}
+
 static void *ast_program()
 {
-    void *line = ast_line();
+    //void *line = ast_line();
+    void *line = ast_pipe();
     consume(T_EOF, "error 100");
     return line;
 }
@@ -106,11 +141,31 @@ static void *ast_unary()
         struct token_t *op = previous();
         Expr *right = ast_unary();
 
-        struct ast_unary_t *expr = malloc(sizeof(struct ast_unary_t));
-        expr->head.type = UNARY;
+        struct ast_unary_t *expr = expr_malloc(UNARY);
         expr->op = op;
         expr->right = right;
         return expr;
+    }
+
+    return ast_assignment();
+}
+
+static void *ast_assignment()
+{
+    enum tokentype_t m[] = { T_IDENTIFIER };
+    if (match(m, 1)) {
+        struct token_t *identifier = previous();
+        m[0] = T_EQUAL;
+        if (match(m, 1)) {
+            Expr *value = ast_assignment();
+            struct ast_assignment_t *expr = expr_malloc(ASSIGNMENT);
+            expr->name = identifier;
+            expr->value = value;
+            return expr;
+        } else {
+            // broken
+            tl_pos--;
+        }
     }
 
     return ast_primary();
@@ -121,13 +176,56 @@ static void *ast_primary()
     enum tokentype_t m[] = { T_STRING, T_NUMBER };
     if (match(m, 2)) {
         struct token_t *prev = previous();
-        struct ast_literal_t *expr = malloc(sizeof(struct ast_literal_t));
-        expr->head.type = LITERAL;
+        struct ast_literal_t *expr = expr_malloc(LITERAL);
         expr->type = prev->type;
         expr->literal = prev->literal;
         expr->literal_size = prev->literal_size;
         return expr;
     }
+    return NULL;
+}
+
+static void *ast_pipe()
+{
+    Expr *left = ast_program_sequence();
+    enum tokentype_t m[] = { T_PIPE };
+    if (match(m, 1)) {
+        struct token_t *op = previous();
+        Expr *right = ast_program_sequence();
+        struct ast_binary_t *expr = expr_malloc(BINARY);
+        expr->left = left;
+        expr->op = op;
+        expr->right = right;
+        return expr;
+    }
+
+    return left;
+}
+
+static void *ast_program_sequence()
+{
+    enum tokentype_t m[3] = { T_IDENTIFIER, T_NUMBER, T_STRING };
+    if (match(m, 1)) {
+        struct token_t *program_name = previous();
+        unsigned int argc = 0;
+        Expr **argv = malloc(sizeof(Expr *) * 32);
+        Expr *arg;
+        while (match(m, 3)) {
+            tl_pos--;
+            arg = ast_primary();
+            argv[argc++] = arg;
+            if (argc == 32) {
+                valery_exit_parse_error("too many args");
+            }
+        }
+
+        struct ast_program_sequence_t *expr = expr_malloc(PROGRAM_SEQUENCE);
+        expr->program_name = program_name;
+        expr->argv = argv;
+        expr->argc = argc;
+        return expr;
+    }
+
     return NULL;
 }
 

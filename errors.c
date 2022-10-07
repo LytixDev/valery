@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "vcommon.h"
+#include "valery.h"
 
 
 void valery_exit(int exit_code)
@@ -31,10 +31,10 @@ void valery_exit_parse_error(const char *msg)
     exit(1);
 }
 
-void valery_exit_internal_error(const char *file, const char *func, const int line)
+void valery_exit_internal_error(char *msg, const char *file, const char *func, const int line)
 {
-    fprintf(stderr, "valery: internal error caused by line '%d' in function '%s' in file '%s'.\n",
-            line, func, file);
+    fprintf(stderr, "valery: internal error %s caused by line '%d' in function '%s' in file '%s'.\n",
+            msg, line, func, file);
     exit(1);
 }
 

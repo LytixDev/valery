@@ -422,7 +422,7 @@ struct tokenlist_t *tokenize(char *source)
 
     /* add sentinel token */
     add_token(T_EOF, NULL, 0, NULL, 0);
-    destroy_identifiers();
+    //destroy_identifiers();
     return tl;
 }
 

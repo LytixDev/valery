@@ -27,6 +27,8 @@
 #include "valery/prompt.h"
 #include "valery/exec.h"
 #include "builtins/builtins.h"
+#include "valery/interpreter/lex.h"
+#include "valery/interpreter/parser.h"
 
 
 static volatile int received_sigint = 0;
@@ -42,7 +44,6 @@ static void catch_exit_signal(int signal)
 
 int valery(char *arg)
 {
-    struct source_t *ts;
     struct hist_t *hist = NULL;
     struct env_t *env = env_t_malloc();
     int rc;
@@ -83,14 +84,15 @@ int valery(char *arg)
             else if (strcmp(input_buffer, "exit") == 0)
                 break;
 
-            /* loop enters here means ordinary command was typed in */
-            //rc = tokenize(ts, env->env_vars, input_buffer);
-            //if (rc == 0)
-            //    valery_parse_tokens(ts, env, hist);
+            /* loop enters here means "ordinary" commands were typed in */
+            struct tokenlist_t *tl = tokenize(input_buffer);
+            tokenlist_dump(tl);
+            ASTNodeHead *expr = parse(tl);
+            ast_print(expr);
 
         /* clears all buffers */
         end_loop:
-            //tokenized_str_t_clear(ts);
+            //TODO free it all!
             memset(input_buffer, 0, COMMAND_LEN);
         }
 
@@ -98,13 +100,13 @@ int valery(char *arg)
         hist_t_write(hist);
         hist_t_free(hist);
     } else {
-        //rc = tokenize(ts, env->env_vars, arg);
-        //if (rc == 0)
-        //    valery_parse_tokens(ts, env, hist);
+        struct tokenlist_t *tl = tokenize(arg);
+        tokenlist_dump(tl);
+        ASTNodeHead *expr = parse(tl);
+        ast_print(expr);
     }
 
     env_t_free(env);
-    //tokenized_str_t_free(ts);
     return rc;
 }
 

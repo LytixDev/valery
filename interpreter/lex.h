@@ -102,6 +102,7 @@ struct token_t {
 
 struct tokenlist_t {
     struct token_t **tokens;           /* list of the tokens */
+    size_t pos;
     size_t size;              /* total tokens occupied */
     size_t capacity;          /* total tokens allocated */
 };
@@ -113,7 +114,9 @@ struct tokenlist_t {
 /* functions */
 struct tokenlist_t *tokenize(char *source);
 
-void token_list_dump(struct tokenlist_t *tl);
+void tokenlist_dump(struct tokenlist_t *tl);
+
+void tokenlist_free(struct tokenlist_t *tl);
 
 
 #endif /* !VALERY_INTERPRETER_LEX_H */

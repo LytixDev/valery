@@ -36,6 +36,7 @@ typedef struct ast_node_head_t {
 
 
 /* expression types */
+
 /*
  * every expression starts with an ASTNodeHead describing its type.
  */
@@ -76,8 +77,11 @@ struct ast_program_sequence_t {
 
 
 /* functions */
-void *parse(struct tokenlist_t *tl);
+Expr *parse(struct tokenlist_t *tl);
+
+void ast_free(Expr *starting_node);
 
 void ast_print(ASTNodeHead *first);
+
 
 #endif /* !VALERY_INTERPRETER_PARSER_H */

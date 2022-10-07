@@ -5,9 +5,10 @@
 int main()
 {
     char *source = "ls \"my_file\" 10 | wc";
-    struct tokenlist_t *lx = tokenize(source);
-    token_list_dump(lx);
+    struct tokenlist_t *tl = tokenize(source);
+    tokenlist_dump(tl);
 
-    Expr *expr = parse(lx);
+    Expr *expr = parse(tl);
     ast_print(expr);
+    tokenlist_free(tl);
 }

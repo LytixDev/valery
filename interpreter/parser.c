@@ -15,6 +15,7 @@
  */
 #include <stdlib.h>
 #include <stdbool.h>            // bool type
+#include <stdarg.h>             // va_start, va_arg, va_end 
 
 #include "parser.h"
 #include "lex.h"                // struct tokenlist_t type
@@ -22,40 +23,70 @@
 
 
 /* globals */
-struct tokenlist_t *tl_cpy;
-size_t tl_pos = 0;      // global for simplicity, may not be ideal going forward
-
-
-/* types */
-struct stmt_t {
-    ASTNodeHead head;
-};
-
-struct expr_t {
-    ASTNodeHead head;
-};
+struct tokenlist_t *tokenlist; // global for simplicity, may not be ideal going forward
 
 
 /* functions */
-static void *ast_line();
-static void *ast_primary();
-static void *ast_assignment();
-static void *ast_unary();
-static void *ast_pipe();
-static void *ast_program_sequence();
+static void *ast_line(void);
+static void *ast_primary(void);
+static void *ast_assignment(void);
+static void *ast_unary(void);
+static void *ast_pipe(void);
+static void *ast_program_sequence(void);
 
-static struct token_t get_current_token()
+
+static inline struct token_t get_current_token(void)
 {
-    return *tl_cpy->tokens[tl_pos];
+    return *tokenlist->tokens[tokenlist->pos];
 }
 
-static bool check(enum tokentype_t type)
+static inline bool check(enum tokentype_t type)
 {
-    if (tl_cpy->size >= tl_cpy->capacity)
+    if (tokenlist->size >= tokenlist->capacity)
         return false;
 
-    // should this be abstracted out?
-    return tl_cpy->tokens[tl_pos]->type == type;
+    return tokenlist->tokens[tokenlist->pos]->type == type;
+}
+
+/*
+ * @returns true if next token is any of the given arguments, else false.
+ */
+static bool check_either(unsigned int n, ...)
+{
+    enum tokentype_t type;
+    va_list args;
+    va_start(args, n);
+
+    for (unsigned int i = 0; i < n; i++) {
+        type = va_arg(args, enum tokentype_t);
+        if (check(type))
+            return true;
+    }
+
+    va_end(args);
+    return false;
+};
+
+/*
+ * consumes the next token if its type is one of the given arguments.
+ * @returns true if successfully consumed a token, else false.
+ */
+static bool match(unsigned int n, ...)
+{
+    enum tokentype_t type;
+    va_list args;
+    va_start(args, n);
+
+    for (unsigned int i = 0; i < n; i++) {
+        type = va_arg(args, enum tokentype_t);
+        if (check(type)) {
+            tokenlist->pos++;
+            return true;
+        }
+    }
+
+    va_end(args);
+    return false;
 }
 
 static void consume(enum tokentype_t type, char *err_msg)
@@ -63,28 +94,18 @@ static void consume(enum tokentype_t type, char *err_msg)
     if (!check(type))
         valery_exit_parse_error(err_msg);
 
-    tl_pos++;
-}
-
-static bool match(enum tokentype_t *types, unsigned int n)
-{
-    enum tokentype_t type;
-    for (unsigned int i = 0; i < n; i++) {
-        type = types[i];
-        if (check(type)) {
-            tl_pos++;
-            return true;
-        }
-    }
-
-    return false;
+    tokenlist->pos++;
 }
 
 static struct token_t *previous()
 {
-    return tl_cpy->tokens[tl_pos - 1];
+    return tokenlist->tokens[tokenlist->pos - 1];
 }
 
+/*
+ * allocates space for the given expression type.
+ * sets the newly allocated expression's type to the given type.
+ */
 static void *expr_malloc(enum ast_type_t type)
 {
     Expr *expr;
@@ -116,7 +137,11 @@ static void *expr_malloc(enum ast_type_t type)
     return expr;
 }
 
-static void *ast_program()
+/*
+ *
+program         ->      line EOF ;
+ */
+static void *ast_program(void)
 {
     //void *line = ast_line();
     void *line = ast_pipe();
@@ -124,20 +149,18 @@ static void *ast_program()
     return line;
 }
 
-static void *ast_line()
+static void *ast_line(void)
 {
     return ast_unary();
 }
 
-static void *ast_unary()
+/*
+ * unary           ->      "!" unary
+ *                 |        primary ;
+ */
+static void *ast_unary(void)
 {
-    /*
-     * unary           ->      "!" unary
-     *                  |       primary ;
-     */
-
-    enum tokentype_t m[] = { T_BANG };
-    if (match(m, 1)) {
+    if (match(1, T_BANG)) {
         struct token_t *op = previous();
         Expr *right = ast_unary();
 
@@ -150,13 +173,15 @@ static void *ast_unary()
     return ast_assignment();
 }
 
-static void *ast_assignment()
+/*
+ * assignment      ->      IDENTIFIER "=" assignment
+ *                 |       primary ;
+ */
+static void *ast_assignment(void)
 {
-    enum tokentype_t m[] = { T_IDENTIFIER };
-    if (match(m, 1)) {
+    if (match(1, T_IDENTIFIER)) {
         struct token_t *identifier = previous();
-        m[0] = T_EQUAL;
-        if (match(m, 1)) {
+        if (match(1, T_EQUAL)) {
             Expr *value = ast_assignment();
             struct ast_assignment_t *expr = expr_malloc(ASSIGNMENT);
             expr->name = identifier;
@@ -164,17 +189,20 @@ static void *ast_assignment()
             return expr;
         } else {
             // broken
-            tl_pos--;
+            tokenlist->pos--;
         }
     }
 
     return ast_primary();
 }
 
-static void *ast_primary()
+/*
+ * primary         ->      NUMBER | STRING
+ *                 |       IDENTIFIER ;
+ */
+static void *ast_primary(void)
 {
-    enum tokentype_t m[] = { T_STRING, T_NUMBER };
-    if (match(m, 2)) {
+    if (match(2, T_STRING, T_NUMBER)) {
         struct token_t *prev = previous();
         struct ast_literal_t *expr = expr_malloc(LITERAL);
         expr->type = prev->type;
@@ -185,11 +213,14 @@ static void *ast_primary()
     return NULL;
 }
 
-static void *ast_pipe()
+/*
+ * pipe            -> programSequence "|" programSequence
+ *                 |  programSequence ;
+ */
+static void *ast_pipe(void)
 {
     Expr *left = ast_program_sequence();
-    enum tokentype_t m[] = { T_PIPE };
-    if (match(m, 1)) {
+    if (match(1, T_PIPE)) {
         struct token_t *op = previous();
         Expr *right = ast_program_sequence();
         struct ast_binary_t *expr = expr_malloc(BINARY);
@@ -202,21 +233,23 @@ static void *ast_pipe()
     return left;
 }
 
-static void *ast_program_sequence()
+/*
+ * programSequence -> IDENTIFIER ( PRIMARY )* ;
+ */
+static void *ast_program_sequence(void)
 {
-    enum tokentype_t m[3] = { T_IDENTIFIER, T_NUMBER, T_STRING };
-    if (match(m, 1)) {
+    if (match(1, T_IDENTIFIER)) {
         struct token_t *program_name = previous();
         unsigned int argc = 0;
+
+        //TODO: allocate dynamically
         Expr **argv = malloc(sizeof(Expr *) * 32);
         Expr *arg;
-        while (match(m, 3)) {
-            tl_pos--;
+        while (check_either(3, T_IDENTIFIER, T_NUMBER, T_STRING)) {
             arg = ast_primary();
             argv[argc++] = arg;
-            if (argc == 32) {
+            if (argc == 32)
                 valery_exit_parse_error("too many args");
-            }
         }
 
         struct ast_program_sequence_t *expr = expr_malloc(PROGRAM_SEQUENCE);
@@ -229,11 +262,16 @@ static void *ast_program_sequence()
     return NULL;
 }
 
-void *parse(struct tokenlist_t *tl)
+Expr *parse(struct tokenlist_t *tl)
 {
-    tl_cpy = tl;
+    tokenlist = tl;
 
     /* start recursive descent */
     void *res = ast_program();
     return res;
+}
+
+void ast_free(Expr *starting_node)
+{
+    // every expression type will ned their own free function
 }

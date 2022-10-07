@@ -22,7 +22,6 @@
 #include <string.h>
 #include "sys/wait.h"
 
-#include "valery/lexer.h"
 #include "valery/exec.h"
 #include "builtins/builtins.h"
 
@@ -126,37 +125,37 @@ bool valery_eval_token(char *program_name, char *argv[], int argc, struct env_t 
     return true;
 }
 
-int valery_parse_tokens(struct source_t *ts, struct env_t *env, struct hist_t *hist)
-{
-    token_t *t;
-    operands_t next_type;
-    int argv_cap = 8;
-    int argc;
-    char **argv = (char **) malloc(8 * sizeof(char *));
-    /* initialize exec_ctx to have vacant streams */
-    exec_ctx e_ctx = { .flags = SF_ADAM_VACANT | SF_SETH_VACANT, .read_stream = ST_NONE, .write_stream = ST_NONE };
-
-    for (size_t i = 0; i < ts->size; i++) {
-        t = ts->tokens[i];
-
-        /* only look ahead in if it is not the last token */
-        if (i != ts->size - 1)
-            next_type = ts->tokens[i + 1]->type;
-        else
-            next_type = O_NONE;
-
-        update_exec_flags(&e_ctx, t->type, next_type);
-
-        if (t->type == O_NONE) {
-            argc = str_to_argv(t->str_start, argv, &argv_cap);
-            if (!valery_eval_token(t->str_start, argv, argc, env, hist))
-                valery_exec_program(t->str_start, argv, argc, env, &e_ctx);
-        }
-    }
-
-    free(argv);
-    return 0;
-}
+//int valery_parse_tokens(struct source_t *ts, struct env_t *env, struct hist_t *hist)
+//{
+//    token_t *t;
+//    operands_t next_type;
+//    int argv_cap = 8;
+//    int argc;
+//    char **argv = (char **) malloc(8 * sizeof(char *));
+//    /* initialize exec_ctx to have vacant streams */
+//    exec_ctx e_ctx = { .flags = SF_ADAM_VACANT | SF_SETH_VACANT, .read_stream = ST_NONE, .write_stream = ST_NONE };
+//
+//    for (size_t i = 0; i < ts->size; i++) {
+//        t = ts->tokens[i];
+//
+//        /* only look ahead in if it is not the last token */
+//        if (i != ts->size - 1)
+//            next_type = ts->tokens[i + 1]->type;
+//        else
+//            next_type = O_NONE;
+//
+//        update_exec_flags(&e_ctx, t->type, next_type);
+//
+//        if (t->type == O_NONE) {
+//            argc = str_to_argv(t->str_start, argv, &argv_cap);
+//            if (!valery_eval_token(t->str_start, argv, argc, env, hist))
+//                valery_exec_program(t->str_start, argv, argc, env, &e_ctx);
+//        }
+//    }
+//
+//    free(argv);
+//    return 0;
+//}
 
 void new_pipe(struct exec_ctx *e_ctx)
 {
@@ -202,23 +201,23 @@ void terminate_pipe(struct exec_ctx *e_ctx)
     }
 }
 
-void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_type)
-{
-    if (type == O_PIPE) {
-        /* write stream was set in previous call */
-        e_ctx->read_stream = e_ctx->write_stream;
-        e_ctx->write_stream = ST_NONE;
-
-        if (e_ctx->read_stream == ST_ADAM)
-            e_ctx->flags |= SF_ADAM_CLOSE;
-        else
-            e_ctx->flags |= SF_SETH_CLOSE;
-    }
-
-    /* check if next token wants to redirect output */
-    // TODO: currently only look ahead for pipe. add: O_OUTP '>',O_OUPP '>>', O_INP '<' and O_INPP '<<'
-    if (next_type == O_PIPE) {
-        new_pipe(e_ctx);
-    }
-}
+//void update_exec_flags(struct exec_ctx *e_ctx, operands_t type, operands_t next_type)
+//{
+//    if (type == O_PIPE) {
+//        /* write stream was set in previous call */
+//        e_ctx->read_stream = e_ctx->write_stream;
+//        e_ctx->write_stream = ST_NONE;
+//
+//        if (e_ctx->read_stream == ST_ADAM)
+//            e_ctx->flags |= SF_ADAM_CLOSE;
+//        else
+//            e_ctx->flags |= SF_SETH_CLOSE;
+//    }
+//
+//    /* check if next token wants to redirect output */
+//    // TODO: currently only look ahead for pipe. add: O_OUTP '>',O_OUPP '>>', O_INP '<' and O_INPP '<<'
+//    if (next_type == O_PIPE) {
+//        new_pipe(e_ctx);
+//    }
+//}
 

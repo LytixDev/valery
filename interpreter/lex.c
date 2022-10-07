@@ -13,14 +13,14 @@
  *
  *  You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <stdlib.h>     // malloc, free
-#include <string.h>     // strlen, strncpy, memcpy
-#include <stdio.h>      // debug: printf
-#include <stdbool.h>    // bool type
+#include <stdlib.h>             // malloc, free
+#include <string.h>             // strlen, strncpy, memcpy
+#include <stdio.h>              // debug: printf
+#include <stdbool.h>            // bool type
 
 #include "lex.h"
 #define NICC_HT_IMPLEMENTATION
-#include "../nicc/nicc.h"  // hashtable implementation
+#include "../nicc/nicc.h"       // hashtable implementation
 #include "../valery.h"
 
 
@@ -92,9 +92,6 @@ const char *tokentype_str[T_ENUM_COUNT] = {
 };
 
 
-/* types */
-
-
 /* globals */
 static struct ht_t *identifiers = NULL;
 char *source_cpy;
@@ -102,7 +99,9 @@ struct tokenlist_t *tl;
 
 /* functions */
 
-/* fills the global hashtable 'identifiers' with the supported identifiers */
+/*
+ * fills the global hashtable 'identifiers' with the supported identifiers
+ */
 static void init_identifiers()
 {
     if (identifiers != NULL)
@@ -157,22 +156,23 @@ static void init_identifiers()
     }
 }
 
-static void destroy_identifiers(void)
+static inline void destroy_identifiers(void)
 {
     ht_free(identifiers);
 }
 
 //TODO use global properly
-static struct tokenlist_t *token_list_malloc(void)
+static struct tokenlist_t *tokenlist_malloc(void)
 {
     struct tokenlist_t *tl = malloc(sizeof(struct tokenlist_t));
+    tl->pos = 0;
     tl->size = 0;
     tl->capacity = 32;
     tl->tokens = malloc(32 * sizeof(enum tokentype_t *));
     return tl;
 }
 
-static void token_list_increase(void)
+static void tokenlist_increase(void)
 {
     size_t new_capacity = tl->capacity * 2;
     tl->tokens = realloc(tl->tokens, new_capacity * sizeof(struct token_t *));
@@ -204,7 +204,7 @@ static void add_token(enum tokentype_t type, char *lexeme, size_t lexeme_size, v
 {
     struct token_t *token = token_malloc(type, lexeme, lexeme_size, literal, literal_size);
     if (tl->size >= tl->capacity)
-        token_list_increase();
+        tokenlist_increase();
 
     tl->tokens[tl->size++] = token_malloc(type, lexeme, lexeme_size, literal, literal_size);
 }
@@ -412,14 +412,14 @@ static void scan_token()
 
 struct tokenlist_t *tokenize(char *source)
 {
-    tl = token_list_malloc();          // define global struct tokenlist_t type
-    source_cpy = source;        // global pointer into the source code for simplicity 
+    tl = tokenlist_malloc();           // define global struct tokenlist_t type
+    source_cpy = source;                // global pointer into the source code for simplicity 
     init_identifiers();
 
     /* main lexical analysis loop */
     char c;
     while ((c = *source_cpy) != 0)
-        scan_token();           // this function increments the source_cpy as needed
+        scan_token();                   // this function increments the source_cpy as needed
 
     /* add sentinel token */
     add_token(T_EOF, NULL, 0, NULL, 0);
@@ -427,14 +427,22 @@ struct tokenlist_t *tokenize(char *source)
     return tl;
 }
 
-void token_list_dump(struct tokenlist_t *tl)
+void tokenlist_free(struct tokenlist_t *tl) {
+    for (size_t i = 0; i < tl->size; i++)
+        free(tl->tokens[i]);
+
+    free(tl->tokens);
+    free(tl);
+}
+
+
+void tokenlist_dump(struct tokenlist_t *tl)
 {
     printf("--- lex dump ---\n");
     struct token_t *token;
     for (size_t i = 0; i < tl->size; i++) {
         token = tl->tokens[i];
         printf("type: %-16s|", tokentype_str[token->type]);
-        //printf("%s", token->lexeme == NULL ? "(null)" : token->lexeme);
 
         if (token->literal != NULL) {
             if (token->type == T_NUMBER)

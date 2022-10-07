@@ -427,14 +427,14 @@ struct tokenlist_t *tokenize(char *source)
     return tl;
 }
 
-void tokenlist_free(struct tokenlist_t *tl) {
+void tokenlist_free(struct tokenlist_t *tl)
+{
     for (size_t i = 0; i < tl->size; i++)
         free(tl->tokens[i]);
 
     free(tl->tokens);
     free(tl);
 }
-
 
 void tokenlist_dump(struct tokenlist_t *tl)
 {

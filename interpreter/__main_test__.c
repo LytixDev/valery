@@ -1,5 +1,6 @@
 #include "lex.h"
 #include "parser.h"
+#include "interpreter.h"
 
 
 int main()
@@ -8,7 +9,11 @@ int main()
     struct tokenlist_t *tl = tokenize(source);
     tokenlist_dump(tl);
 
-    Expr *expr = parse(tl);
+    ASTNodeHead *expr = parse(tl);
     ast_print(expr);
+
+    int rc = interpret(expr);
+
     tokenlist_free(tl);
+    ast_free(expr);
 }

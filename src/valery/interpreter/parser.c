@@ -65,7 +65,7 @@ static bool check_either(unsigned int n, ...)
 
     va_end(args);
     return false;
-};
+}
 
 /*
  * consumes the next token if its type is one of the given arguments.

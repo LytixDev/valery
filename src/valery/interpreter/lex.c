@@ -163,12 +163,12 @@ static inline void destroy_identifiers(void)
 //TODO use global properly
 static struct tokenlist_t *tokenlist_malloc(void)
 {
-    struct tokenlist_t *tl = malloc(sizeof(struct tokenlist_t));
-    tl->pos = 0;
-    tl->size = 0;
-    tl->capacity = 32;
-    tl->tokens = malloc(32 * sizeof(enum tokentype_t *));
-    return tl;
+    struct tokenlist_t *tokenlist = malloc(sizeof(struct tokenlist_t));
+    tokenlist->pos = 0;
+    tokenlist->size = 0;
+    tokenlist->capacity = 32;
+    tokenlist->tokens = malloc(32 * sizeof(enum tokentype_t *));
+    return tokenlist;
 }
 
 static void tokenlist_increase(void)
@@ -201,7 +201,6 @@ static struct token_t *token_malloc(enum tokentype_t type, char *lexeme, size_t 
 static void add_token(enum tokentype_t type, char *lexeme, size_t lexeme_size, void *literal,
                       size_t literal_size)
 {
-    struct token_t *token = token_malloc(type, lexeme, lexeme_size, literal, literal_size);
     if (tl->size >= tl->capacity)
         tokenlist_increase();
 
@@ -426,21 +425,21 @@ struct tokenlist_t *tokenize(char *source)
     return tl;
 }
 
-void tokenlist_free(struct tokenlist_t *tl)
+void tokenlist_free(struct tokenlist_t *tokenlist)
 {
-    for (size_t i = 0; i < tl->size; i++)
-        free(tl->tokens[i]);
+    for (size_t i = 0; i < tokenlist->size; i++)
+        free(tokenlist->tokens[i]);
 
-    free(tl->tokens);
-    free(tl);
+    free(tokenlist->tokens);
+    free(tokenlist);
 }
 
-void tokenlist_dump(struct tokenlist_t *tl)
+void tokenlist_dump(struct tokenlist_t *tokenlist)
 {
     printf("--- lex dump ---\n");
     struct token_t *token;
-    for (size_t i = 0; i < tl->size; i++) {
-        token = tl->tokens[i];
+    for (size_t i = 0; i < tokenlist->size; i++) {
+        token = tokenlist->tokens[i];
         printf("type: %-16s|", tokentype_str[token->type]);
 
         if (token->literal != NULL) {

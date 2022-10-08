@@ -23,16 +23,36 @@
 #include <unistd.h>
 #include <termios.h>
 
+#include "valery.h"
 #include "valery/prompt.h"
 #include "valery/histfile.h"
-#include "valery.h"
 #include "lib/vstring.h"
 
 
 extern struct termios originalt, newt;
 
 
-void prompt_term_init(void)
+/* macros for moving the cursor horizontally */
+#define cursor_right(n) printf("\033[%dC", (n));
+#define cursor_left(n) printf("\033[%dD", (n));
+#define cursor_goto(x) printf("\033[%d", (x));
+#define flush_line() printf("\33[2K\r");
+
+
+/* types */
+enum keycode_t {
+    ARROW_KEY = 27,
+    ARROW_KEY_2 = 91,
+    ARROW_UP = 65,
+    ARROW_DOWN = 66,
+    ARROW_RIGHT = 67,
+    ARROW_LEFT = 68,
+
+    BACKSPACE = 127
+};
+
+
+static void prompt_term_init(void)
 {
     tcgetattr(STDIN_FILENO, &originalt);
     newt = originalt;
@@ -45,12 +65,13 @@ void prompt_term_init(void)
     tcsetattr(STDIN_FILENO, TCSANOW, &newt);
 }
 
-void prompt_term_end(void)
+static inline void prompt_term_end(void)
 {
     tcsetattr(STDIN_FILENO, TCSANOW, &originalt);
 }
 
-int get_arrow_type(void)
+/* returns the type of arrow consumed from the terminal input buffer */
+static int get_arrow_type(void)
 {
     /*
        Arrow keys takes up three chars in the buffer.
@@ -65,7 +86,7 @@ int get_arrow_type(void)
     return -1;
 }
 
-int move_cursor_horizontally(keycode_t arrow_type, int cur_pos, int buf_len)
+static int move_cursor_horizontally(enum keycode_t arrow_type, int cur_pos, int buf_len)
 {
     if (arrow_type == ARROW_LEFT) {
         if (cur_pos < 1) return cur_pos;
@@ -82,12 +103,16 @@ int move_cursor_horizontally(keycode_t arrow_type, int cur_pos, int buf_len)
     return cur_pos;
 }
 
-void print_prompt(char *ps1, char *buf)
+static inline void print_prompt(char *ps1, char *buf)
 {
     printf("%s %s", ps1, buf);
 }
 
-void update_prompt(char *ps1, char *buf, int cursor_pos)
+/*
+ * flushes the screen, prints the ps1 and buffer and moves the
+ * cursor to the end of the buffer.
+ */
+static void update_prompt(char *ps1, char *buf, int cursor_pos)
 {
     flush_line();
     print_prompt(ps1, buf);
@@ -97,11 +122,10 @@ void update_prompt(char *ps1, char *buf, int cursor_pos)
         cursor_right(1);
 }
 
-int prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN])
+void prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN])
 {
     int ch;
     int arrow_type;
-    int ret = 0;
     size_t max_len = COMMAND_LEN;
     readfrom_t rc;
     histaction_t action;
@@ -118,7 +142,6 @@ int prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN])
         /* return if buffer cannot store more chars */
         if (buf_len == max_len) {
             buf[--buf_len] = 0;
-            ret = 1;
             goto ret;
         }
 
@@ -175,5 +198,4 @@ int prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN])
 ret:
     putchar('\n');
     prompt_term_end();
-    return ret;
 }

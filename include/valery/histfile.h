@@ -50,7 +50,7 @@ typedef enum {
  *
  * use init_history() and hist_t_free() to create and free hist_t types.
  */
-typedef struct hist_t {
+struct hist_t {
     FILE *fp;
     char **stored_commands; /* newest last */
     size_t s_len;           /* total stored commands in memory */
@@ -58,7 +58,7 @@ typedef struct hist_t {
     size_t f_pos;           /* position of file pointer in history queue */
     size_t f_len;           /* amount of lines in hist file */
     long f_chars;           /* amount of chars in hist file */
-} hist_t;
+};
 
 
 /* functions */
@@ -81,12 +81,6 @@ void hist_t_save(struct hist_t *hist, char buf[COMMAND_LEN]);
  */
 void hist_t_write(struct hist_t *hist);
 
-/* 
- * stores the amount of lines in the file and in the process moves
- * the file pointer to the end of the file.
- */
-void hist_t_count(struct hist_t *hist);
-
 /*
  * traverses the hist one line in the given direction.
  * NB: function does not make sure direction does not cause
@@ -94,29 +88,13 @@ void hist_t_count(struct hist_t *hist);
  */
 long hist_t_traverse(struct hist_t *hist, histaction_t direction);
 
-/* returns 1 if the given action will put the file pointer out of
- * bounds, else 0.
- */
-int out_of_bounds(struct hist_t *hist, histaction_t action);
-
-/*
- * opens a read and write connection to the hist file.
- * creates a new hist file if input path does not exist.
- * returns 1 if no connection could be made, else 0.
- */
-int hist_t_open(struct hist_t *hist, char *path);
-
-/*
- * reads one line of the hist file and moves the file pointer back to the given offset.
- * if offset is -1, it uses ftell(hist->fp) to get the offset
- */
-void hist_t_read_line_f(struct hist_t *hist, char buf[COMMAND_LEN], long offset);
-
 /*
  * puts the current hist line into the buf argument.
  * returns where it got the hist line from (see definitions on the 
  * top of the file).
  */
 readfrom_t hist_t_get_line(struct hist_t *hist, char buf[COMMAND_LEN], histaction_t action);
+
+struct hist_t *init_hist(char *home_folder);
 
 #endif

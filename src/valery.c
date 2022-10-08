@@ -23,47 +23,45 @@
 #include <termios.h>
 
 #include "valery.h"
-#include "valery/load_config.h"
+#include "valery/env.h"
 #include "valery/prompt.h"
-#include "valery/exec.h"
-#include "builtins/builtins.h"
 #include "valery/interpreter/lex.h"
 #include "valery/interpreter/parser.h"
+#include "valery/interpreter/interpreter.h"
 
 
 static volatile int received_sigint = 0;
 struct termios originalt, newt;
-static bool INTERACTIVE;
 
 
-static void catch_exit_signal(int signal)
+static void catch_sigint(int signal)
 {
     if (signal == SIGINT)
         received_sigint = 1;
 }
 
-int valery(char *arg)
+static int valery_interpret(char *input)
 {
-    struct hist_t *hist = NULL;
-    struct env_t *env = env_t_malloc();
     int rc;
+    struct tokenlist_t *tl = tokenize(input);
+    ASTNodeHead *expr = parse(tl);
+    rc = interpret(expr);
+    //tokenlist_dump(tl);
+    //ast_print(expr);
 
-    rc = parse_config(env->env_vars, env->paths);
-    if (rc == 1) {
-        fprintf(stderr, "error parsing .valeryrc");
-        env_t_free(env);
-        return 1;
-    }
+    tokenlist_free(tl);
+    ast_free(expr);
+    return rc;
+}
 
-    if (INTERACTIVE) {
+static int valery(char *source)
+{
+    struct env_t *env = init_env();
+
+    if (source == NULL) {
+        struct hist_t *hist = init_hist(env_get(env->env_vars, "HOME"));
         char input_buffer[COMMAND_LEN] = {0};
-        char hist_file_path[MAX_ENV_LEN] = {0};
-
-        snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env_get(env->env_vars, "HOME"), HISTFILE_NAME);
-        /* establish a connection to the hist file */
-        hist = hist_t_malloc(hist_file_path);
-
-        signal(SIGINT, catch_exit_signal);
+        signal(SIGINT, catch_sigint);
 
         /* main loop */
         while (1) {
@@ -73,7 +71,7 @@ int valery(char *arg)
             /* skip exec if ctrl+c is caught */
             if (received_sigint) {
                 received_sigint = 0;
-                signal(SIGINT, catch_exit_signal);
+                signal(SIGINT, catch_sigint);
                 goto end_loop;
             }
 
@@ -85,14 +83,11 @@ int valery(char *arg)
                 break;
 
             /* loop enters here means "ordinary" commands were typed in */
-            struct tokenlist_t *tl = tokenize(input_buffer);
-            tokenlist_dump(tl);
-            ASTNodeHead *expr = parse(tl);
-            ast_print(expr);
+            valery_interpret(input_buffer);
 
         /* clears all buffers */
         end_loop:
-            //TODO free it all!
+            //TODO: should we not zero out bytes on demand?
             memset(input_buffer, 0, COMMAND_LEN);
         }
 
@@ -100,18 +95,16 @@ int valery(char *arg)
         hist_t_write(hist);
         hist_t_free(hist);
     } else {
-        struct tokenlist_t *tl = tokenize(arg);
-        tokenlist_dump(tl);
-        ASTNodeHead *expr = parse(tl);
-        ast_print(expr);
+        valery_interpret(source);
     }
 
-    env_t_free(env);
-    return rc;
+    env_free(env);
+    return 0;
 }
 
 int main(int argc, char *argv[])
 {
+    /*
     if (argc > 1) {
         if (strcmp(argv[1], "--help") == 0) {
             help();
@@ -132,7 +125,7 @@ int main(int argc, char *argv[])
             return valery(argv[2]);
         }
     }
+    */
 
-    INTERACTIVE = true;
     return valery(NULL);
 }

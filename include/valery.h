@@ -21,7 +21,8 @@
 
 /* variables */
 #define COMMAND_LEN 1024
-
+#define CONFIG_NAME ".valeryrc"
+#define HISTFILE_NAME ".valery_hist"
 
 /* macros */
 

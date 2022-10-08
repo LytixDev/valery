@@ -41,7 +41,6 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     rc = which_single(program_name, env->paths->paths, env->paths->size, &found_path);
     if (!(rc == COMMAND_IN_PATH || rc == COMMAND_IS_PATH)) {
         fprintf(stderr, "valery: command not found '%s'\n", program_name);
-        env->exit_code = 1;
         return 1;
     }
 
@@ -95,7 +94,6 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
         }
 
         return_code = execve(command_with_path, full, environ);
-        env->exit_code = return_code;
     }
 
     terminate_pipe(e_ctx);
@@ -121,7 +119,6 @@ bool valery_eval_token(char *program_name, char *argv[], int argc, struct env_t 
     else
         return false;
 
-    env->exit_code = rc;
     return true;
 }
 

@@ -22,49 +22,9 @@
 
 #include "valery/histfile.h"
 #include "valery/env.h"
-#include "valery.h"
 
-
-
-/* macros for moving the cursor horizontally */
-#define cursor_right(n) printf("\033[%dC", (n));
-#define cursor_left(n) printf("\033[%dD", (n));
-#define cursor_goto(x) printf("\033[%d", (x));
-#define flush_line() printf("\33[2K\r");
-
-/* types */
-typedef enum {
-    ARROW_KEY = 27,
-    ARROW_KEY_2 = 91,
-    ARROW_UP = 65,
-    ARROW_DOWN = 66,
-    ARROW_RIGHT = 67,
-    ARROW_LEFT = 68,
-
-    BACKSPACE = 127
-} keycode_t;
-
-/* functions */
-
-void prompt_term_init(void);
-
-void prompt_term_end(void);
-
-/* returns the type of arrow consumed from the terminal input buffer */
-int get_arrow_type(void);
-
-int move_cursor_horizontally(keycode_t arrow_type, int cur_pos, int buf_len);
-
-/* prints the ps1 and the buffer */
-void print_prompt(char *ps1, char *buf);
-
-/*
- * flushes the screen, prints the ps1 and buffer and moves the
- * cursor to the end of the buffer.
- */
-void update_prompt(char *ps1, char *buf, int cursor_pos);
 
 /* handles all the logic when receiving input from the user */
-int prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN]);
+void prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN]);
 
 #endif

@@ -21,9 +21,11 @@
 #include <pwd.h>
 #include <string.h>
 
+#include "valery.h"
 #include "valery/env.h"
 #include "builtins/builtins.h"
 #include "lib/vstring.h"
+#include "valery/load_config.h"
 #define NICC_HT_IMPLEMENTATION
 #define HT_KEY_LIST
 #include "lib/nicc/nicc.h"
@@ -74,33 +76,6 @@ static void paths_free(struct paths_t *p)
 
     free(p->paths);
     free(p);
-}
-
-struct env_t *env_t_malloc(void)
-{
-    struct env_t *env = (env_t *) malloc(sizeof(env_t));
-    env->env_vars = env_vars_malloc();
-    env->paths = paths_malloc();
-    env->aliases = ht_malloc(ALIASES_HT_SIZE);
-    /* TODO: remove this, just for testing */
-    ht_set(env->aliases, "ls", 3, "ls --color=auto", 16, NULL);
-
-    env->exit_code = 0;
-    set_home_dir(env->env_vars);
-    set_uid(env);
-
-    return env;
-}
-
-void env_t_free(struct env_t *env)
-{
-    if (env == NULL)
-        return;
-
-    env_vars_free(env->env_vars);
-    paths_free(env->paths);
-    ht_free(env->aliases);
-    free(env);
 }
 
 char *alias_get(struct env_t *env, char *key)
@@ -173,13 +148,7 @@ void path_increase(struct paths_t *p, int new_len) {
     p->capacity = new_len;
 }
 
-void env_update(struct env_t *env)
-{
-    env_update_pwd(env->env_vars);
-    env_update_ps1(env);
-}
-
-void env_update_ps1(struct env_t *env)
+static void env_update_ps1(struct env_t *env)
 {
     char default_ps1[] = ">";
     char *ps1 = env_get(env->env_vars, "PS1");
@@ -253,7 +222,12 @@ void env_update_ps1(struct env_t *env)
     strncpy(env->ps1, ps1_tmp, 1024);
 }
 
-void env_update_pwd(struct env_vars_t *env_vars)
+/*
+ * updates environment variables PWD and OLDPWD.
+ * sets OLDPWD to PWD, and then updates PWD to the current working directory.
+ * OLDPWD is set to the current working directory if PWD was NULL.
+ */
+static void env_update_pwd(struct env_vars_t *env_vars)
 {
     char *old = env_get(env_vars, "PWD");
     char result[4096];
@@ -272,7 +246,7 @@ void env_update_pwd(struct env_vars_t *env_vars)
     //env->env_vars->update = true;
 }
 
-int set_home_dir(struct env_vars_t *env_vars)
+static int set_home_dir(struct env_vars_t *env_vars)
 {
     struct passwd *pw = getpwuid(getuid());
     char *homedir = pw->pw_dir;
@@ -284,10 +258,52 @@ int set_home_dir(struct env_vars_t *env_vars)
     return 0;
 }
 
-void set_uid(struct env_t *env)
+static void set_uid(struct env_t *env)
 {
     env->uid = getuid();
     char uid_tmp[32];
     snprintf(uid_tmp, 32, "%d", (unsigned int) env->uid);
     env_set(env->env_vars, "UID", uid_tmp);
+}
+
+struct env_t *env_malloc(void)
+{
+    struct env_t *env = (struct env_t *) malloc(sizeof(struct env_t));
+    env->env_vars = env_vars_malloc();
+    env->paths = paths_malloc();
+    env->aliases = ht_malloc(ALIASES_HT_SIZE);
+    /* TODO: remove this, just for testing */
+    ht_set(env->aliases, "ls", 3, "ls --color=auto", 16, NULL);
+
+    set_home_dir(env->env_vars);
+    set_uid(env);
+
+    return env;
+}
+
+void env_free(struct env_t *env)
+{
+    if (env == NULL)
+        return;
+
+    env_vars_free(env->env_vars);
+    paths_free(env->paths);
+    ht_free(env->aliases);
+    free(env);
+}
+
+struct env_t *init_env(void)
+{
+    struct env_t *env = env_malloc();
+    int rc = parse_config(env->env_vars, env->paths);
+    if (rc == 1)
+        internal_error_exit("config could not be parsed");
+
+    return env;
+}
+
+void env_update(struct env_t *env)
+{
+    env_update_pwd(env->env_vars);
+    env_update_ps1(env);
 }

@@ -32,7 +32,6 @@
 
 
 static volatile int received_sigint = 0;
-struct termios originalt, newt;
 
 
 static inline void catch_sigint(int signal)
@@ -68,40 +67,37 @@ static int valery(char *source)
     } else {
         /* interactive mode */
         struct hist_t *hist = hist_init(env_get(env->env_vars, "HOME"));
-        char input_buffer[COMMAND_LEN] = {0};
+        struct prompt_t *p = prompt_malloc();
         signal(SIGINT, catch_sigint);
 
         /* main loop */
         while (1) {
             env_update(env);
-            prompt(hist, env->ps1, input_buffer);
-
+            prompt(p, hist, env->ps1);
             /* skip exec if ctrl+c is caught */
             if (received_sigint) {
                 received_sigint = 0;
                 signal(SIGINT, catch_sigint);
                 goto end_loop;
             }
-
-            hist_save(hist, input_buffer);
-
-            if (strcmp(input_buffer, "") == 0)
+            hist_save(hist, p->buf);
+            if (strcmp(p->buf, "") == 0)
                 goto end_loop;
-            else if (strcmp(input_buffer, "exit") == 0)
+            else if (strcmp(p->buf, "exit") == 0)
                 break;
 
             /* loop enters here means "ordinary" commands were typed in */
-            valery_interpret(input_buffer);
+            valery_interpret(p->buf);
 
-        /* clears all buffers */
         end_loop:
             //TODO: should we not zero out bytes on demand?
-            memset(input_buffer, 0, COMMAND_LEN);
+            memset(p->buf, 0, p->buf_capacity);
         }
 
         /* free and write to file before exiting */
         hist_write(hist);
         hist_free(hist);
+        prompt_free(p);
     }
 
     env_free(env);
@@ -116,12 +112,10 @@ int main(int argc, char *argv[])
             help();
             return 0;
         }
-
         if (strcmp(argv[1], "--license") == 0) {
             license();
             return 0;
         }
-
         if (strcmp(argv[1], "-c") == 0) {
             if (argc == 2) {
                 printf("valery: '-c' option requires an argument\n");

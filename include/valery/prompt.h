@@ -20,11 +20,29 @@
 #ifndef PROMPT
 #define PROMPT
 
+#include <termios.h>
 #include "valery/histfile.h"
 #include "valery/env.h"
 
+/* types */
+struct termconf_t {
+    struct termios original;
+    struct termios new;
+};
+
+struct prompt_t {
+    char *buf;
+    unsigned int buf_size;
+    unsigned int buf_capacity;
+    unsigned int cursor_position;
+    struct termconf_t *termconf;
+};
 
 /* handles all the logic when receiving input from the user */
-void prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN]);
+void prompt(struct prompt_t *prompt, struct hist_t *hist, char *ps1);
+
+struct prompt_t *prompt_malloc(void);
+
+void prompt_free(struct prompt_t *prompt);
 
 #endif

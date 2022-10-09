@@ -18,7 +18,6 @@
 #define VALERY
 
 
-
 /* variables */
 #define COMMAND_LEN 1024
 #define CONFIG_NAME ".valeryrc"
@@ -27,6 +26,7 @@
 #ifdef DEBUG_VERBOSE
 #       define DEBUG_ENV
 #       define DEBUG_INTERPRETER
+#       define DEBUG_PROMPT
 #endif
 
 /* macros */
@@ -38,9 +38,7 @@
 #       define print_debug(...) ((void) 0)
 #endif
 
-
 /* functions */
-
 void valery_exit(int exit_code);
 
 void valery_exit_parse_error(const char *msg);
@@ -53,7 +51,6 @@ void _valery_runtime_error(const char *msg, const char *file, const char *func, 
 
 void _valery_error(const char *msg, const char *file, const char *func, const int line);
 #define valery_error(m) _valery_error(m, __FILE__, __func__, __LINE__)
-
 
 #ifdef VMALLOC_IMPLEMENTATION
 #       include <stdlib.h>

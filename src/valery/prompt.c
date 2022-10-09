@@ -29,9 +29,6 @@
 #include "lib/vstring.h"
 
 
-extern struct termios originalt, newt;
-
-
 /* macros for moving the cursor horizontally */
 #define cursor_right(n) printf("\033[%dC", (n))
 #define cursor_left(n) printf("\033[%dD", (n))
@@ -52,22 +49,29 @@ enum keycode_t {
 };
 
 
-static void prompt_term_init(void)
+static void prompt_debug(struct prompt_t *prompt)
 {
-    tcgetattr(STDIN_FILENO, &originalt);
-    newt = originalt;
-    /* change so buffer don't require new line or similar to return */
-    newt.c_lflag &= ~ICANON;
-    newt.c_cc[VTIME] = 0;
-    newt.c_cc[VMIN] = 1;
-    /* turn of echo */
-    newt.c_lflag &= ~ECHO;
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+    printf("\n--- prompt ---\n");
+    printf("buf: '%s'\n", prompt->buf);
+    printf("size: '%d' cursor_position: '%d'\n", prompt->buf_size, prompt->cursor_position);
 }
 
-static inline void prompt_term_end(void)
+static void prompt_term_init(struct termconf_t *termconf)
 {
-    tcsetattr(STDIN_FILENO, TCSANOW, &originalt);
+    tcgetattr(STDIN_FILENO, &termconf->original);
+    termconf->new = termconf->original;
+    /* change so buffer don't require new line or similar to return */
+    termconf->new.c_lflag &= ~ICANON;
+    termconf->new.c_cc[VTIME] = 0;
+    termconf->new.c_cc[VMIN] = 1;
+    /* turn of echo */
+    termconf->new.c_lflag &= ~ECHO;
+    tcsetattr(STDIN_FILENO, TCSANOW, &termconf->new);
+}
+
+static inline void prompt_term_end(struct termconf_t *termconf)
+{
+    tcsetattr(STDIN_FILENO, TCSANOW, &termconf->original);
 }
 
 /* returns the type of arrow consumed from the terminal input buffer */
@@ -86,115 +90,135 @@ static int get_arrow_type(void)
     return -1;
 }
 
-static int move_cursor_horizontally(enum keycode_t arrow_type, int cur_pos, int buf_len)
+static int move_cursor_horizontally(struct prompt_t *prompt, enum keycode_t arrow_type)
 {
     if (arrow_type == ARROW_LEFT) {
-        if (cur_pos < 1)
-            return cur_pos;
+        /* do not move left if cursor already at left boundary */
+        if (prompt->cursor_position < 1)
+            return prompt->cursor_position;
         cursor_left(1);
-        return --cur_pos;
+        return --prompt->cursor_position;
     }
 
-    /* ARROW_RIGHT */
-    if (cur_pos >= buf_len)
-        return cur_pos;
+    /* do not move right if cursor already at right boundary */
+    if (prompt->cursor_position >= prompt->buf_size)
+        return prompt->cursor_position;
     cursor_right(1);
-    return ++cur_pos;
+    return prompt->cursor_position;
 }
 
-static inline void print_prompt(char *ps1, char *buf)
+static inline void print_prompt(struct prompt_t *prompt, char *ps1)
 {
-    printf("%s %s", ps1, buf);
+    printf("%s %s", ps1, prompt->buf);
 }
 
 /*
  * flushes the screen, prints the ps1 and buffer and moves the
  * cursor to the end of the buffer.
  */
-static void update_prompt(char *ps1, char *buf, int cursor_pos)
+static void update_prompt(struct prompt_t *prompt, char *ps1)
 {
     flush_line();
-    print_prompt(ps1, buf);
-    cursor_left(cursor_pos);
+    print_prompt(prompt, ps1);
+    cursor_left(prompt->buf_size - prompt->cursor_position);
     /* if cursor at the end of buffer, move cursor one to the right */
-    if (cursor_pos == 0)
+    if (prompt->cursor_position == 0)
         cursor_right(1);
 }
 
-void prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN])
+void prompt(struct prompt_t *prompt, struct hist_t *hist, char *ps1)
 {
     int ch;
     int arrow_type;
-    size_t max_len = COMMAND_LEN;
-    enum readfrom_t rc;
+    enum readfrom_t read_from;
     enum histaction_t action;
-    size_t cur_pos = 0;
-    /* the size of the buffer being used, not the size allocated */
-    size_t buf_len = 0;
 
-    prompt_term_init();
-    print_prompt(ps1, buf);
     /* reset position in history to bottom of queue */
     hist_reset_pos(hist);
 
+    prompt_term_init(prompt->termconf);
+    print_prompt(prompt, ps1);
     while (EOF != (ch = getchar()) && ch != '\n') {
+#ifdef DEBUG_PROMPT
+        prompt_debug(prompt);
+#endif
         /* return if buffer cannot store more chars */
-        if (buf_len == max_len) {
-            buf[--buf_len] = 0;
-            goto ret;
+        if (prompt->buf_size == prompt->buf_capacity) {
+            prompt->buf[prompt->buf_capacity - 1] = 0;
+            goto prompt_end;
         }
 
         switch (ch) {
             case BACKSPACE:
-                if (cur_pos > 0) {
-                    vstr_remove_idx(buf, COMMAND_LEN, cur_pos);
-                    cur_pos--;
-                    buf_len--;
+                if (prompt->cursor_position > 0) {
+                    vstr_remove_idx(prompt->buf, prompt->buf_capacity, prompt->cursor_position);
+                    prompt->cursor_position--;
+                    prompt->buf_size--;
                 }
                 break;
 
             case ARROW_KEY:
                 arrow_type = get_arrow_type();
                 if (arrow_type == ARROW_LEFT || arrow_type == ARROW_RIGHT) {
-                    cur_pos = move_cursor_horizontally(arrow_type, cur_pos, buf_len);
+                    prompt->cursor_position = move_cursor_horizontally(prompt, arrow_type);
                     break;
                 }
 
-                /* execution enters here means either arrow up or down was pressed */
-                /* store hist line inside buf */
+                /* 
+                 * execution enters here means either arrow up or down was pressed, so we want
+                 * to store the corresponding hist line inside buf
+                 */
                 action = (arrow_type == ARROW_UP) ? HIST_UP : HIST_DOWN;
-                rc = hist_get_line(hist, buf, action);
+                read_from = hist_get_line(hist, prompt->buf, action);
 
-                if (rc == DID_NOT_READ && action == HIST_DOWN) {
-                    /* clear buffer when no hist line was read */
-                    memset(buf, 0, COMMAND_LEN);
-                    buf_len = cur_pos = 0;
-                } else if (rc == READ_FROM_HIST) {
+                if (read_from == DID_NOT_READ) {
+                    break;
+                } else if (read_from == READ_FROM_HIST) {
+                    prompt->buf_size = strlen(prompt->buf);
                     /* chop off newline character */
-                    buf_len = strlen(buf);
-                    buf[--buf_len] = 0;
-                    cur_pos = buf_len;
-                } else if (rc == READ_FROM_MEMORY) {
-                    buf_len = strlen(buf);
-                    cur_pos = buf_len;
+                    prompt->buf[--prompt->buf_size] = 0;
+                    prompt->cursor_position = prompt->buf_size;
+                } else if (read_from == READ_FROM_MEMORY) {
+                    prompt->buf_size = strlen(prompt->buf);
+                    prompt->cursor_position = prompt->buf_size;
                 }
                 break;
 
             default:
-                if (cur_pos != buf_len) {
+                if (prompt->cursor_position != prompt->buf_size) {
                     /* insert char at any position of the buffer */
-                    vstr_insert_c(buf, COMMAND_LEN, ch, cur_pos++);
-                    buf_len++;
+                    vstr_insert_c(prompt->buf, COMMAND_LEN, ch, prompt->cursor_position++);
+                    prompt->buf_size++;
                 } else {
                     /* no special keys have been pressed this session, so append char to input buffer */
-                    buf[cur_pos++] = ch;
-                    buf_len++;
+                    prompt->buf[prompt->buf_size++] = ch;
+                    prompt->cursor_position++;
                 }
         }
-        update_prompt(ps1, buf, buf_len - cur_pos);
+        update_prompt(prompt, ps1);
     }
 
-ret:
+prompt_end:
     putchar('\n');
-    prompt_term_end();
+    prompt_term_end(prompt->termconf);
 }
+
+struct prompt_t *prompt_malloc(void)
+{
+    struct prompt_t *prompt = malloc(sizeof(struct prompt_t));
+    prompt->termconf = malloc(sizeof(struct termconf_t));
+    prompt->buf = malloc(sizeof(char) * COMMAND_LEN);
+    prompt->buf_capacity = COMMAND_LEN;
+    prompt->buf_size = 0;
+    prompt->cursor_position = 0;
+
+    return prompt;
+}
+
+void prompt_free(struct prompt_t *prompt)
+{
+    free(prompt->buf);
+    free(prompt->termconf);
+    free(prompt);
+}
+

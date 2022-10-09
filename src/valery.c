@@ -28,13 +28,14 @@
 #include "valery/interpreter/lex.h"
 #include "valery/interpreter/parser.h"
 #include "valery/interpreter/interpreter.h"
+#include "builtins/builtins.h"
 
 
 static volatile int received_sigint = 0;
 struct termios originalt, newt;
 
 
-static void catch_sigint(int signal)
+static inline void catch_sigint(int signal)
 {
     if (signal == SIGINT)
         received_sigint = 1;
@@ -44,10 +45,14 @@ static int valery_interpret(char *input)
 {
     int rc;
     struct tokenlist_t *tl = tokenize(input);
-    ASTNodeHead *expr = parse(tl);
+#ifdef DEBUG_INTERPRETER
+    tokenlist_dump(tl);
+#endif
+    struct ast_node_t *expr = parse(tl);
+#ifdef DEBUG_INTERPRETER
+    ast_print(expr);
+#endif
     rc = interpret(expr);
-    //tokenlist_dump(tl);
-    //ast_print(expr);
 
     tokenlist_free(tl);
     ast_free(expr);
@@ -56,10 +61,13 @@ static int valery_interpret(char *input)
 
 static int valery(char *source)
 {
-    struct env_t *env = init_env();
+    struct env_t *env = env_init();
 
-    if (source == NULL) {
-        struct hist_t *hist = init_hist(env_get(env->env_vars, "HOME"));
+    if (source != NULL) {
+        valery_interpret(source);
+    } else {
+        /* interactive mode */
+        struct hist_t *hist = hist_init(env_get(env->env_vars, "HOME"));
         char input_buffer[COMMAND_LEN] = {0};
         signal(SIGINT, catch_sigint);
 
@@ -75,7 +83,7 @@ static int valery(char *source)
                 goto end_loop;
             }
 
-            hist_t_save(hist, input_buffer);
+            hist_save(hist, input_buffer);
 
             if (strcmp(input_buffer, "") == 0)
                 goto end_loop;
@@ -92,10 +100,8 @@ static int valery(char *source)
         }
 
         /* free and write to file before exiting */
-        hist_t_write(hist);
-        hist_t_free(hist);
-    } else {
-        valery_interpret(source);
+        hist_write(hist);
+        hist_free(hist);
     }
 
     env_free(env);
@@ -104,7 +110,7 @@ static int valery(char *source)
 
 int main(int argc, char *argv[])
 {
-    /*
+    //TODO: proper arg parsing
     if (argc > 1) {
         if (strcmp(argv[1], "--help") == 0) {
             help();
@@ -121,11 +127,9 @@ int main(int argc, char *argv[])
                 printf("valery: '-c' option requires an argument\n");
                 return 1;
             }
-            INTERACTIVE = false;
             return valery(argv[2]);
         }
     }
-    */
 
     return valery(NULL);
 }

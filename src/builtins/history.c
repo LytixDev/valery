@@ -39,7 +39,7 @@ int history(struct hist_t *hist, bool print_all)
     if (histlines == 0)
         return 1;
 
-    hist_t_reset_pos(hist);
+    hist_reset_pos(hist);
 
     if (print_all)
         len = histlines;
@@ -48,10 +48,10 @@ int history(struct hist_t *hist, bool print_all)
         len = histlines >= LINES ? LINES : histlines;
 
     for (i = len; i > 0; i--)
-        hist_t_traverse(hist, HIST_UP); 
+        hist_traverse(hist, HIST_UP); 
 
     for (i = len; i > 1; i--) {
-        rc = hist_t_get_line(hist, buf, HIST_DOWN);
+        rc = hist_get_line(hist, buf, HIST_DOWN);
         /* chop off new line character */
         if (rc == READ_FROM_HIST)
             buf[strlen(buf) - 1] = 0;

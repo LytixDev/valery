@@ -68,6 +68,8 @@ void env_free(struct env_t *env);
 
 void env_update(struct env_t *env);
 
+void path_increase(struct paths_t *p, int new_len);
+
 /* returns a pointer to allocated memory for the corresponding value to the given key */
 char *env_get(struct env_vars_t *env_vars, char *key);
 
@@ -91,6 +93,6 @@ void env_set(struct env_vars_t *env_vars, char *key, char *value);
  */
 void env_gen(struct env_vars_t *env_vars, char *env_str[env_vars->capacity]);
 
-struct env_t *init_env(void);
+struct env_t *env_init(void);
 
 #endif

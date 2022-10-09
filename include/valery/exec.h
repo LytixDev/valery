@@ -43,35 +43,31 @@
  * 8. seth is closed.
  * 9. program D reads from adam and writes to stdout.
  */
-typedef enum stream_t {
+enum stream_t {
     ST_NONE = -1,
     ST_ADAM = 0,
     ST_SETH = 1
-} stream_t;
+};
 
 
-typedef enum stream_flags {
+enum stream_flags {
     SF_ADAM_VACANT         = 1 << 0,
     SF_ADAM_CLOSE          = 1 << 1,
     SF_SETH_VACANT         = 1 << 2,
     SF_SETH_CLOSE          = 1 << 3
-    //NEXT_IS_PIPE        = 1 << 4,
-    //CAME_FROM_PIPE      = 1 << 5,
-    //NEXT_IS_REDIRECT    = 1 << 6,
-    //CAME_FROM_REDIRECT  = 1 << 7
-} stream_flags;
+};
 
 
 /*
  * keeps track of streams and that determine where program reads and writes input and output.
  * keeps track of flags that determine what streams are active and will be active, and will close.
  */
-typedef struct exec_ctx {
+struct exec_ctx {
     int streams[2][2];
     int flags;
-    stream_t read_stream;
-    stream_t write_stream;
-} exec_ctx;
+    enum stream_t read_stream;
+    enum stream_t write_stream;
+};
 
 
 /* functions */

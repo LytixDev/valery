@@ -28,6 +28,9 @@ $(TARGET): $(OBJS)
 debug: CFLAGS += -g -DDEBUG
 debug: $(TARGET)
 
+debug-verbose: CFLAGS += -DDEBUG_VERBOSE
+debug-verbose: debug
+
 clean:
 	@rm -rf $(OBJDIR) $(TARGET) ~/$(RC)
 

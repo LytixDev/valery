@@ -24,8 +24,12 @@
 #define CONFIG_NAME ".valeryrc"
 #define HISTFILE_NAME ".valery_hist"
 
-/* macros */
+#ifdef DEBUG_VERBOSE
+#       define DEBUG_ENV
+#       define DEBUG_INTERPRETER
+#endif
 
+/* macros */
 #ifdef DEBUG
 #       define print_debug(...) \
                 do { fprintf(stderr, "\033[0;31mDEBUG:\n"); fprintf(stderr, __VA_ARGS__); \
@@ -41,14 +45,14 @@ void valery_exit(int exit_code);
 
 void valery_exit_parse_error(const char *msg);
 
-void valery_exit_internal_error(char *msg, const char *file, const char *func, const int line);
-#define internal_error_exit(m) valery_exit_internal_error(m, __FILE__, __func__, __LINE__)
+void _valery_exit_internal_error(char *msg, const char *file, const char *func, const int line);
+#define valery_exit_internal_error(m) _valery_exit_internal_error(m, __FILE__, __func__, __LINE__)
 
-void valery_runtime_error(const char *msg, const char *file, const char *func, const int line);
-#define runtime_error(m) valery_runtime_error(m, __FILE__, __func__, __LINE__)
+void _valery_runtime_error(const char *msg, const char *file, const char *func, const int line);
+#define valery_runtime_error(m) _valery_runtime_error(m, __FILE__, __func__, __LINE__)
 
-void valery_error(const char *msg, const char *file, const char *func, const int line);
-#define verror(m) valery_error(m, __FILE__, __func__, __LINE__)
+void _valery_error(const char *msg, const char *file, const char *func, const int line);
+#define valery_error(m) _valery_error(m, __FILE__, __func__, __LINE__)
 
 
 #ifdef VMALLOC_IMPLEMENTATION

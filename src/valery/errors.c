@@ -31,14 +31,14 @@ void valery_exit_parse_error(const char *msg)
     exit(1);
 }
 
-void valery_exit_internal_error(char *msg, const char *file, const char *func, const int line)
+void _valery_exit_internal_error(char *msg, const char *file, const char *func, const int line)
 {
     fprintf(stderr, "valery: internal error %s caused by line '%d' in function '%s' in file '%s'.\n",
             msg, line, func, file);
     exit(1);
 }
 
-void valery_runtime_error(const char *msg, const char *file, const char *func, const int line)
+void _valery_runtime_error(const char *msg, const char *file, const char *func, const int line)
 {
     fprintf(stderr, "valery: runtime error: %s.", msg);
 #ifdef DEBUG
@@ -47,7 +47,7 @@ void valery_runtime_error(const char *msg, const char *file, const char *func, c
     putchar('\n');
 }
 
-void valery_error(const char *msg, const char *file, const char *func, const int line)
+void _valery_error(const char *msg, const char *file, const char *func, const int line)
 {
     fprintf(stderr, "valery: error: %s.", msg);
 #ifdef DEBUG

@@ -26,16 +26,16 @@
 
 
 /* types */
-typedef enum {
+enum histaction_t {
     HIST_UP,
     HIST_DOWN
-} histaction_t;
+};
 
-typedef enum {
+enum readfrom_t {
     READ_FROM_MEMORY = -1,
     READ_FROM_HIST = -2, 
     DID_NOT_READ = -3 
-} readfrom_t;
+};
 
 /*
  * Holds recently typed in commands in and a connection to the hist file for previously
@@ -64,37 +64,37 @@ struct hist_t {
 /* functions */
 
 /* returns a pointer of type hist_t with malloced data */
-struct hist_t *hist_t_malloc(char *full_pat_to_hist_file);
+struct hist_t *hist_malloc(char *full_pat_to_hist_file);
 
 /* frees the data associated with the hist_t pointer passed in */
-void hist_t_free(struct hist_t *hist);
+void hist_free(struct hist_t *hist);
 
 /* moves file pointer to the end and resets position counters */
-void hist_t_reset_pos(struct hist_t *hist);
+void hist_reset_pos(struct hist_t *hist);
 
 /* stores the input buffer into memory */
-void hist_t_save(struct hist_t *hist, char buf[COMMAND_LEN]);
+void hist_save(struct hist_t *hist, char buf[COMMAND_LEN]);
 
 /* 
  * writes the stored commands to the hist file connection and clears
  * data from memory.
  */
-void hist_t_write(struct hist_t *hist);
+void hist_write(struct hist_t *hist);
 
 /*
  * traverses the hist one line in the given direction.
  * NB: function does not make sure direction does not cause
  * hist to go out of bounds.
  */
-long hist_t_traverse(struct hist_t *hist, histaction_t direction);
+long hist_traverse(struct hist_t *hist, enum histaction_t direction);
 
 /*
  * puts the current hist line into the buf argument.
  * returns where it got the hist line from (see definitions on the 
  * top of the file).
  */
-readfrom_t hist_t_get_line(struct hist_t *hist, char buf[COMMAND_LEN], histaction_t action);
+enum readfrom_t hist_get_line(struct hist_t *hist, char buf[COMMAND_LEN], enum histaction_t action);
 
-struct hist_t *init_hist(char *home_folder);
+struct hist_t *hist_init(char *home_folder);
 
 #endif

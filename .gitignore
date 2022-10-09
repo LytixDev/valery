@@ -13,4 +13,4 @@ valery-interpreter
 !src/valery
 !include/valery
 
-idea
+.idea/*

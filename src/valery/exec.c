@@ -157,7 +157,7 @@ bool valery_eval_token(char *program_name, char *argv[], int argc, struct env_t 
 void new_pipe(struct exec_ctx *e_ctx)
 {
     int rc;
-    stream_t st;
+    enum stream_t st;
     /* pipe first non-vacant stream */
     if (e_ctx->flags & SF_ADAM_VACANT) {
         st = ST_ADAM;
@@ -182,7 +182,7 @@ void new_pipe(struct exec_ctx *e_ctx)
 
 void terminate_pipe(struct exec_ctx *e_ctx)
 {
-    stream_t st = ST_NONE;
+    enum stream_t st = ST_NONE;
     if (e_ctx->flags & SF_ADAM_CLOSE) {
         e_ctx->flags ^= SF_ADAM_CLOSE;
         st = ST_ADAM;

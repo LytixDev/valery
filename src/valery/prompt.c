@@ -33,10 +33,10 @@ extern struct termios originalt, newt;
 
 
 /* macros for moving the cursor horizontally */
-#define cursor_right(n) printf("\033[%dC", (n));
-#define cursor_left(n) printf("\033[%dD", (n));
-#define cursor_goto(x) printf("\033[%d", (x));
-#define flush_line() printf("\33[2K\r");
+#define cursor_right(n) printf("\033[%dC", (n))
+#define cursor_left(n) printf("\033[%dD", (n))
+#define cursor_goto(x) printf("\033[%d", (x))
+#define flush_line() printf("\33[2K\r")
 
 
 /* types */
@@ -89,18 +89,17 @@ static int get_arrow_type(void)
 static int move_cursor_horizontally(enum keycode_t arrow_type, int cur_pos, int buf_len)
 {
     if (arrow_type == ARROW_LEFT) {
-        if (cur_pos < 1) return cur_pos;
+        if (cur_pos < 1)
+            return cur_pos;
         cursor_left(1);
         return --cur_pos;
     }
 
-    if (arrow_type == ARROW_RIGHT) {
-        if (cur_pos >= buf_len) return cur_pos;
-        cursor_right(1);
-        return ++cur_pos;
-    }
-
-    return cur_pos;
+    /* ARROW_RIGHT */
+    if (cur_pos >= buf_len)
+        return cur_pos;
+    cursor_right(1);
+    return ++cur_pos;
 }
 
 static inline void print_prompt(char *ps1, char *buf)
@@ -127,8 +126,8 @@ void prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN])
     int ch;
     int arrow_type;
     size_t max_len = COMMAND_LEN;
-    readfrom_t rc;
-    histaction_t action;
+    enum readfrom_t rc;
+    enum histaction_t action;
     size_t cur_pos = 0;
     /* the size of the buffer being used, not the size allocated */
     size_t buf_len = 0;
@@ -136,7 +135,7 @@ void prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN])
     prompt_term_init();
     print_prompt(ps1, buf);
     /* reset position in history to bottom of queue */
-    hist_t_reset_pos(hist);
+    hist_reset_pos(hist);
 
     while (EOF != (ch = getchar()) && ch != '\n') {
         /* return if buffer cannot store more chars */
@@ -164,7 +163,7 @@ void prompt(struct hist_t *hist, char *ps1, char buf[COMMAND_LEN])
                 /* execution enters here means either arrow up or down was pressed */
                 /* store hist line inside buf */
                 action = (arrow_type == ARROW_UP) ? HIST_UP : HIST_DOWN;
-                rc = hist_t_get_line(hist, buf, action);
+                rc = hist_get_line(hist, buf, action);
 
                 if (rc == DID_NOT_READ && action == HIST_DOWN) {
                     /* clear buffer when no hist line was read */

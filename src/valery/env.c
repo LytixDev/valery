@@ -95,7 +95,9 @@ struct ht_item_t *env_geth(struct env_vars_t *env_vars, unsigned int hash)
 
 void env_set(struct env_vars_t *env_vars, char *key, char *value)
 {
+#ifdef DEBUG_ENV
     print_debug("set env var '%s'='%s'", key, value);
+#endif
     ht_set(env_vars->ht, key, (strlen(key) + 1) * sizeof(char), value,
            (strlen(value) + 1) * sizeof(char), NULL);
     env_vars->update = true;
@@ -292,12 +294,12 @@ void env_free(struct env_t *env)
     free(env);
 }
 
-struct env_t *init_env(void)
+struct env_t *env_init(void)
 {
     struct env_t *env = env_malloc();
     int rc = parse_config(env->env_vars, env->paths);
     if (rc == 1)
-        internal_error_exit("config could not be parsed");
+        valery_exit_internal_error("config could not be parsed");
 
     return env;
 }

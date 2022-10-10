@@ -127,10 +127,9 @@ static void update_prompt(struct prompt_t *prompt, char *ps1)
 {
     flush_line();
     print_prompt(prompt, ps1);
-    cursor_left(prompt->buf_size - prompt->cursor_position);
-    /* if cursor at the end of buffer, move cursor one to the right */
-    if (prompt->cursor_position == 0)
-        cursor_right(1);
+    /* move the terminal cursor to its corresponding position */
+    if (prompt->cursor_position != prompt->buf_size)
+        cursor_left(prompt->buf_size - prompt->cursor_position);
 }
 
 void prompt(struct prompt_t *prompt, struct hist_t *hist, char *ps1)

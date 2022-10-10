@@ -33,7 +33,7 @@
 /* macros */
 #ifdef DEBUG
 #       define print_debug(...) \
-                do { fprintf(stderr, "\033[0;31mDEBUG:\n"); fprintf(stderr, __VA_ARGS__); \
+                do { fprintf(stderr, "\033[0;31m"); fprintf(stderr, __VA_ARGS__); \
                      fprintf(stderr, "\033[0m\n"); } while (0);
 #else
 #       define print_debug(...) ((void) 0)

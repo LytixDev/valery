@@ -114,9 +114,9 @@ struct tokenlist_t {
 /* functions */
 struct tokenlist_t *tokenize(char *source);
 
-void tokenlist_dump(struct tokenlist_t *tl);
+void tokenlist_dump(struct tokenlist_t *tokenlist);
 
-void tokenlist_free(struct tokenlist_t *tl);
+void tokenlist_free(struct tokenlist_t *tokenlist);
 
 
 #endif /* !VALERY_INTERPRETER_LEX_H */

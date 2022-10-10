@@ -13,13 +13,12 @@
  *
  *  You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <stdlib.h>
 #include <stdbool.h>                    // bool type
 #include <stdarg.h>                     // va_start, va_arg, va_end 
 
 #include "valery/interpreter/parser.h"
 #include "valery/interpreter/lex.h"     // struct tokenlist_t type
-#include "valery.h"                     // errors
+#include "valery/valery.h"                     // errors
 
 
 /* globals */
@@ -65,7 +64,7 @@ static bool check_either(unsigned int n, ...)
 
     va_end(args);
     return false;
-};
+}
 
 /*
  * consumes the next token if its type is one of the given arguments.
@@ -108,26 +107,26 @@ static struct token_t *previous()
  */
 static void *expr_malloc(enum ast_type_t type)
 {
-    Expr *expr;
+    struct ast_node_t *expr;
     switch (type) {
         case ASSIGNMENT:
-            expr = malloc(sizeof(struct ast_assignment_t));
+            expr = vmalloc(sizeof(struct ast_assignment_t));
             break;
 
         case UNARY:
-            expr = malloc(sizeof(struct ast_unary_t));
+            expr = vmalloc(sizeof(struct ast_unary_t));
             break;
 
         case BINARY:
-            expr = malloc(sizeof(struct ast_binary_t));
+            expr = vmalloc(sizeof(struct ast_binary_t));
             break;
 
         case LITERAL:
-            expr = malloc(sizeof(struct ast_literal_t));
+            expr = vmalloc(sizeof(struct ast_literal_t));
             break;
 
         case PROGRAM_SEQUENCE:
-            expr = malloc(sizeof(struct ast_program_sequence_t));
+            expr = vmalloc(sizeof(struct ast_program_sequence_t));
 
         case ENUM_COUNT:
             break;
@@ -162,7 +161,7 @@ static void *ast_unary(void)
 {
     if (match(1, T_BANG)) {
         struct token_t *op = previous();
-        Expr *right = ast_unary();
+        struct ast_node_t *right = ast_unary();
 
         struct ast_unary_t *expr = expr_malloc(UNARY);
         expr->op = op;
@@ -182,7 +181,7 @@ static void *ast_assignment(void)
     if (match(1, T_IDENTIFIER)) {
         struct token_t *identifier = previous();
         if (match(1, T_EQUAL)) {
-            Expr *value = ast_assignment();
+            struct ast_node_t *value = ast_assignment();
             struct ast_assignment_t *expr = expr_malloc(ASSIGNMENT);
             expr->name = identifier;
             expr->value = value;
@@ -219,10 +218,10 @@ static void *ast_primary(void)
  */
 static void *ast_pipe(void)
 {
-    Expr *left = ast_program_sequence();
+    struct ast_node_t *left = ast_program_sequence();
     if (match(1, T_PIPE)) {
         struct token_t *op = previous();
-        Expr *right = ast_program_sequence();
+        struct ast_node_t *right = ast_program_sequence();
         struct ast_binary_t *expr = expr_malloc(BINARY);
         expr->left = left;
         expr->op = op;
@@ -243,8 +242,8 @@ static void *ast_program_sequence(void)
         unsigned int argc = 0;
 
         //TODO: allocate dynamically
-        Expr **argv = malloc(sizeof(Expr *) * 32);
-        Expr *arg;
+        struct ast_node_t **argv = vmalloc(sizeof(struct ast_node_t *) * 32);
+        struct ast_node_t *arg;
         while (check_either(3, T_IDENTIFIER, T_NUMBER, T_STRING)) {
             arg = ast_primary();
             argv[argc++] = arg;
@@ -262,7 +261,7 @@ static void *ast_program_sequence(void)
     return NULL;
 }
 
-Expr *parse(struct tokenlist_t *tl)
+struct ast_node_t *parse(struct tokenlist_t *tl)
 {
     tokenlist = tl;
 
@@ -271,7 +270,7 @@ Expr *parse(struct tokenlist_t *tl)
     return res;
 }
 
-void ast_free(Expr *starting_node)
+void ast_free(struct ast_node_t *starting_node)
 {
     // every expression type will ned their own free function
 }

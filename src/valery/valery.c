@@ -22,117 +22,104 @@
 #include <signal.h>
 #include <termios.h>
 
-#include "valery.h"
-#include "valery/load_config.h"
+#include "valery/valery.h"
+#include "valery/env.h"
 #include "valery/prompt.h"
-#include "valery/exec.h"
-#include "builtins/builtins.h"
 #include "valery/interpreter/lex.h"
 #include "valery/interpreter/parser.h"
+#include "valery/interpreter/interpreter.h"
+#include "builtins/builtins.h"
 
 
 static volatile int received_sigint = 0;
-struct termios originalt, newt;
-static bool INTERACTIVE;
 
 
-static void catch_exit_signal(int signal)
+static inline void catch_sigint(int signal)
 {
     if (signal == SIGINT)
         received_sigint = 1;
 }
 
-int valery(char *arg)
+static int valery_interpret(char *input)
 {
-    struct hist_t *hist = NULL;
-    struct env_t *env = env_t_malloc();
     int rc;
+    struct tokenlist_t *tl = tokenize(input);
+#ifdef DEBUG_INTERPRETER
+    tokenlist_dump(tl);
+#endif
+    struct ast_node_t *expr = parse(tl);
+#ifdef DEBUG_INTERPRETER
+    ast_print(expr);
+#endif
+    rc = interpret(expr);
 
-    rc = parse_config(env->env_vars, env->paths);
-    if (rc == 1) {
-        fprintf(stderr, "error parsing .valeryrc");
-        env_t_free(env);
-        return 1;
-    }
+    tokenlist_free(tl);
+    ast_free(expr);
+    return rc;
+}
 
-    if (INTERACTIVE) {
-        char input_buffer[COMMAND_LEN] = {0};
-        char hist_file_path[MAX_ENV_LEN] = {0};
+static int valery(char *source)
+{
+    struct env_t *env = env_init();
 
-        snprintf(hist_file_path, MAX_ENV_LEN, "%s/%s", env_get(env->env_vars, "HOME"), HISTFILE_NAME);
-        /* establish a connection to the hist file */
-        hist = hist_t_malloc(hist_file_path);
-
-        signal(SIGINT, catch_exit_signal);
+    if (source != NULL) {
+        valery_interpret(source);
+    } else {
+        /* interactive mode */
+        struct hist_t *hist = hist_init(env_get(env->env_vars, "HOME"));
+        struct prompt_t *p = prompt_malloc();
+        signal(SIGINT, catch_sigint);
 
         /* main loop */
         while (1) {
             env_update(env);
-            prompt(hist, env->ps1, input_buffer);
-
+            prompt(p, hist, env->ps1);
             /* skip exec if ctrl+c is caught */
             if (received_sigint) {
                 received_sigint = 0;
-                signal(SIGINT, catch_exit_signal);
-                goto end_loop;
+                signal(SIGINT, catch_sigint);
+                continue;
             }
-
-            hist_t_save(hist, input_buffer);
-
-            if (strcmp(input_buffer, "") == 0)
-                goto end_loop;
-            else if (strcmp(input_buffer, "exit") == 0)
+            hist_save(hist, p->buf);
+            if (strcmp(p->buf, "") == 0)
+                continue;
+            else if (strcmp(p->buf, "exit") == 0)
                 break;
 
             /* loop enters here means "ordinary" commands were typed in */
-            struct tokenlist_t *tl = tokenize(input_buffer);
-            tokenlist_dump(tl);
-            ASTNodeHead *expr = parse(tl);
-            ast_print(expr);
-
-        /* clears all buffers */
-        end_loop:
-            //TODO free it all!
-            memset(input_buffer, 0, COMMAND_LEN);
+            valery_interpret(p->buf);
         }
 
         /* free and write to file before exiting */
-        hist_t_write(hist);
-        hist_t_free(hist);
-    } else {
-        struct tokenlist_t *tl = tokenize(arg);
-        tokenlist_dump(tl);
-        ASTNodeHead *expr = parse(tl);
-        ast_print(expr);
+        hist_write(hist);
+        hist_free(hist);
+        prompt_free(p);
     }
 
-    env_t_free(env);
-    return rc;
+    env_free(env);
+    return 0;
 }
 
 int main(int argc, char *argv[])
 {
+    //TODO: proper arg parsing
     if (argc > 1) {
         if (strcmp(argv[1], "--help") == 0) {
             help();
             return 0;
         }
-
         if (strcmp(argv[1], "--license") == 0) {
             license();
             return 0;
         }
-
         if (strcmp(argv[1], "-c") == 0) {
             if (argc == 2) {
                 printf("valery: '-c' option requires an argument\n");
                 return 1;
             }
-            INTERACTIVE = false;
             return valery(argv[2]);
         }
     }
 
-    INTERACTIVE = true;
     return valery(NULL);
 }

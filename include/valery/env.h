@@ -29,58 +29,46 @@
 #define SYM_ROOT '#'
 #define SYM_USR '$'
 #define MAX_ENV_LEN 4096
-#define CONFIG_NAME ".valeryrc"
-#define HISTFILE_NAME ".valery_hist"
 #define STARTING_PATHS 5
 #define ENV_HT_SIZE 64
 #define ALIASES_HT_SIZE 32
 
 
 /* types */
-typedef struct env_vars_t {
+struct env_vars_t {
     struct ht_t *ht;    /* the hashtable that stores the environment variables */
     char **environ;     /* list of environment variables on the form: ["KEY=VALUE", ... ] */
     int size;
     int capacity;
     bool update;        /* set to true if an environment variable has changed, and environ is not outdated */
-} env_vars_t;
+};
 
 
-typedef struct paths_t {
+struct paths_t {
     char **paths;
     int size;
     int capacity;
-} paths_t;
+};
 
 
-typedef struct env_t {
+struct env_t {
     struct env_vars_t *env_vars;
     struct paths_t *paths;  /* unwrapped PATH environment variable */
     struct ht_t *aliases;
 
     char ps1[MAX_ENV_LEN];
-    int exit_code;
     uid_t uid;
-} env_t;
+};
 
 
 /* functions */
-struct env_t *env_t_malloc(void);
+struct env_t *env_malloc(void);
 
-void env_t_free(struct env_t *env);
-
-void set_uid(struct env_t *env);
+void env_free(struct env_t *env);
 
 void env_update(struct env_t *env);
 
-void env_update_ps1(struct env_t *env);
-
-/*
- * updates environment variables PWD and OLDPWD.
- * sets OLDPWD to PWD, and then updates PWD to the current working directory.
- * OLDPWD is set to the current working directory if PWD was NULL.
- */
-void env_update_pwd(struct env_vars_t *env_vars);
+void path_increase(struct paths_t *p, int new_len);
 
 /* returns a pointer to allocated memory for the corresponding value to the given key */
 char *env_get(struct env_vars_t *env_vars, char *key);
@@ -105,10 +93,6 @@ void env_set(struct env_vars_t *env_vars, char *key, char *value);
  */
 void env_gen(struct env_vars_t *env_vars, char *env_str[env_vars->capacity]);
 
-int set_home_dir(struct env_vars_t *env_vars);
-
-void path_increase(struct paths_t *p, int new_len);
-
-char *alias_get(struct env_t *env, char *key);
+struct env_t *env_init(void);
 
 #endif

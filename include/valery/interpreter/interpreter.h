@@ -16,7 +16,7 @@
 #ifndef VALERY_INTERPRETER_INTERPRETER_H
 #define VALERY_INTERPRETER_INTERPRETER_H
 
-#include "parser.h"     // Expr type
+#include "parser.h"     // struct ast_node_t type
 
 int interpret(ASTNodeHead *expr);
 

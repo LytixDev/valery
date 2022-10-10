@@ -41,7 +41,6 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
     rc = which_single(program_name, env->paths->paths, env->paths->size, &found_path);
     if (!(rc == COMMAND_IN_PATH || rc == COMMAND_IS_PATH)) {
         fprintf(stderr, "valery: command not found '%s'\n", program_name);
-        env->exit_code = 1;
         return 1;
     }
 
@@ -95,7 +94,6 @@ int valery_exec_program(char *program_name, char *argv[], int argc, struct env_t
         }
 
         return_code = execve(command_with_path, full, environ);
-        env->exit_code = return_code;
     }
 
     terminate_pipe(e_ctx);
@@ -121,7 +119,6 @@ bool valery_eval_token(char *program_name, char *argv[], int argc, struct env_t 
     else
         return false;
 
-    env->exit_code = rc;
     return true;
 }
 
@@ -131,7 +128,7 @@ bool valery_eval_token(char *program_name, char *argv[], int argc, struct env_t 
 //    operands_t next_type;
 //    int argv_cap = 8;
 //    int argc;
-//    char **argv = (char **) malloc(8 * sizeof(char *));
+//    char **argv = (char **) vmalloc(8 * sizeof(char *));
 //    /* initialize exec_ctx to have vacant streams */
 //    exec_ctx e_ctx = { .flags = SF_ADAM_VACANT | SF_SETH_VACANT, .read_stream = ST_NONE, .write_stream = ST_NONE };
 //
@@ -160,7 +157,7 @@ bool valery_eval_token(char *program_name, char *argv[], int argc, struct env_t 
 void new_pipe(struct exec_ctx *e_ctx)
 {
     int rc;
-    stream_t st;
+    enum stream_t st;
     /* pipe first non-vacant stream */
     if (e_ctx->flags & SF_ADAM_VACANT) {
         st = ST_ADAM;
@@ -185,7 +182,7 @@ void new_pipe(struct exec_ctx *e_ctx)
 
 void terminate_pipe(struct exec_ctx *e_ctx)
 {
-    stream_t st = ST_NONE;
+    enum stream_t st = ST_NONE;
     if (e_ctx->flags & SF_ADAM_CLOSE) {
         e_ctx->flags ^= SF_ADAM_CLOSE;
         st = ST_ADAM;

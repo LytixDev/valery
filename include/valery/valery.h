@@ -14,53 +14,49 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef VALERY
-#define VALERY
+#ifndef VALERY_H
+#define VALERY_H
 
-
+#include <stdlib.h>
 
 /* variables */
 #define COMMAND_LEN 1024
+#define CONFIG_NAME ".valeryrc"
+#define HISTFILE_NAME ".valery_hist"
 
+#ifdef DEBUG_VERBOSE
+#       define DEBUG_ENV
+#       define DEBUG_INTERPRETER
+#       define DEBUG_PROMPT
+#endif
 
 /* macros */
-
 #ifdef DEBUG
 #       define print_debug(...) \
-                do { fprintf(stderr, "\033[0;31mDEBUG:\n"); fprintf(stderr, __VA_ARGS__); \
+                do { fprintf(stderr, "\033[0;31m"); fprintf(stderr, __VA_ARGS__); \
                      fprintf(stderr, "\033[0m\n"); } while (0);
 #else
 #       define print_debug(...) ((void) 0)
 #endif
 
-
 /* functions */
-
 void valery_exit(int exit_code);
 
 void valery_exit_parse_error(const char *msg);
 
-void valery_exit_internal_error(char *msg, const char *file, const char *func, const int line);
-#define internal_error_exit(m) valery_exit_internal_error(m, __FILE__, __func__, __LINE__)
+void _valery_exit_internal_error(char *msg, const char *file, const char *func, const int line);
+#define valery_exit_internal_error(m) _valery_exit_internal_error(m, __FILE__, __func__, __LINE__)
 
-void valery_runtime_error(const char *msg, const char *file, const char *func, const int line);
-#define runtime_error(m) valery_runtime_error(m, __FILE__, __func__, __LINE__)
+void _valery_runtime_error(const char *msg, const char *file, const char *func, const int line);
+#define valery_runtime_error(m) _valery_runtime_error(m, __FILE__, __func__, __LINE__)
 
-void valery_error(const char *msg, const char *file, const char *func, const int line);
-#define verror(m) valery_error(m, __FILE__, __func__, __LINE__)
+void _valery_error(const char *msg, const char *file, const char *func, const int line);
+#define valery_error(m) _valery_error(m, __FILE__, __func__, __LINE__)
 
-
-#ifdef VMALLOC_IMPLEMENTATION
-#       include <stdlib.h>
-void *vmalloc(size_t size)
-{
-    void *tmp = malloc(size);
-    if (tmp == NULL) {
-        internal_error_exit("memory allocation error");
-    }
-    return tmp;
-}
-#endif /* VMALLOC_IMPLEMENTATION*/
+#ifndef VALLOC_IMPLEMENTATION
+#       define VALLOC_IMPLEMENTATION
+#endif
+void *vmalloc(size_t size);
 
 
 #endif /* VALERY_H */

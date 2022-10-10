@@ -174,7 +174,7 @@ static struct tokenlist_t *tokenlist_malloc(void)
 static void tokenlist_increase(void)
 {
     size_t new_capacity = tl->capacity * 2;
-    tl->tokens = realloc(tl->tokens, new_capacity * sizeof(struct token_t *));
+    tl->tokens = vrealloc(tl->tokens, new_capacity * sizeof(struct token_t *));
     tl->capacity = new_capacity;
 }
 

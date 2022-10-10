@@ -53,8 +53,8 @@ void _valery_runtime_error(const char *msg, const char *file, const char *func, 
 void _valery_error(const char *msg, const char *file, const char *func, const int line);
 #define valery_error(m) _valery_error(m, __FILE__, __func__, __LINE__)
 
-#ifndef VMALLOC_IMPLEMENTATION
-#       define VMALLOC_IMPLEMENTATION
+#ifndef VALLOC_IMPLEMENTATION
+#       define VALLOC_IMPLEMENTATION
 #endif
 void *vmalloc(size_t size);
 

@@ -58,11 +58,33 @@ void _valery_error(const char *msg, const char *file, const char *func, const in
 
 void *vmalloc(size_t size)
 {
-#ifdef VMALLOC_IMPLEMENTATION
+#ifdef VALLOC_IMPLEMENTATION
     void *tmp = malloc(size);
     if (tmp == NULL)
         valery_exit_internal_error("memory allocation error");
     return tmp;
-#endif /* VMALLOC_IMPLEMENTATION*/
+#endif /* VALLOC_IMPLEMENTATION*/
     return malloc(size);
+}
+
+void *vcalloc(size_t nitems, size_t size)
+{
+#ifdef VALLOC_IMPLEMENTATION
+    void *tmp = calloc(nitems, size);
+    if (tmp == NULL)
+        valery_exit_internal_error("memory allocation error");
+    return tmp;
+#endif /* VALLOC_IMPLEMENTATION*/
+    return calloc(nitems, size);
+}
+
+void *vrealloc(void *ptr, size_t size)
+{
+#ifdef VALLOC_IMPLEMENTATION
+    void *tmp = realloc(ptr, size);
+    if (tmp == NULL)
+        valery_exit_internal_error("memory allocation error");
+    return tmp;
+#endif /* VALLOC_IMPLEMENTATION*/
+    return realloc(ptr, size);
 }

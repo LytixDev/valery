@@ -143,7 +143,7 @@ void env_gen(struct env_vars_t *env_vars, char *env_str[env_vars->capacity])
 }
 
 void path_increase(struct paths_t *p, int new_len) {
-    p->paths = (char **) realloc(p->paths, new_len * sizeof(char *));
+    p->paths = (char **) vrealloc(p->paths, new_len * sizeof(char *));
     for (int i = p->capacity; i < new_len; i++)
         p->paths[i] = (char *) vmalloc(MAX_ENV_LEN * sizeof(char));
 

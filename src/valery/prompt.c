@@ -138,7 +138,7 @@ static void prompt_update(struct prompt_t *prompt, char *ps1)
 static void increase_buf_capacity(struct prompt_t *prompt)
 {
     prompt->buf_capacity = prompt->buf_capacity * 2;
-    prompt->buf = realloc(prompt->buf, prompt->buf_capacity * sizeof(char));
+    prompt->buf = vrealloc(prompt->buf, prompt->buf_capacity * sizeof(char));
 }
 
 void prompt(struct prompt_t *prompt, struct hist_t *hist, char *ps1)

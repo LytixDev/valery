@@ -19,6 +19,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <termios.h>
@@ -52,8 +53,9 @@ enum keycode_t {
 static void prompt_debug(struct prompt_t *prompt)
 {
     printf("\n--- prompt ---\n");
-    printf("buf: '%s'\n", prompt->buf);
-    printf("size: '%d' cursor_position: '%d'\n", prompt->buf_size, prompt->cursor_position);
+    printf("buf: '%.*s'\n", prompt->buf_size, prompt->buf);
+    printf("capacity: '%d', size: '%d' cursor_position: '%d'\n", prompt->buf_capacity,
+           prompt->buf_size, prompt->cursor_position);
 }
 
 static void prompt_term_init(struct termconf_t *termconf)
@@ -133,6 +135,12 @@ static void prompt_update(struct prompt_t *prompt, char *ps1)
         cursor_left(prompt->buf_size - prompt->cursor_position);
 }
 
+static void increase_buf_capacity(struct prompt_t *prompt)
+{
+    prompt->buf_capacity = prompt->buf_capacity * 2;
+    prompt->buf = realloc(prompt->buf, prompt->buf_capacity * sizeof(char));
+}
+
 void prompt(struct prompt_t *prompt, struct hist_t *hist, char *ps1)
 {
     int ch;
@@ -149,10 +157,9 @@ void prompt(struct prompt_t *prompt, struct hist_t *hist, char *ps1)
 #ifdef DEBUG_PROMPT
         prompt_debug(prompt);
 #endif
-        /* return if buffer cannot store more chars */
         if (prompt->buf_size == prompt->buf_capacity) {
-            prompt->buf[prompt->buf_capacity - 1] = 0;
-            goto prompt_end;
+            increase_buf_capacity(prompt);
+            continue;
         }
 
         switch (ch) {
@@ -194,7 +201,7 @@ void prompt(struct prompt_t *prompt, struct hist_t *hist, char *ps1)
             default:
                 if (prompt->cursor_position != prompt->buf_size) {
                     /* insert char at any position of the buffer */
-                    vstr_insert_c(prompt->buf, COMMAND_LEN, ch, prompt->cursor_position++);
+                    vstr_insert_c(prompt->buf, prompt->buf_capacity, ch, prompt->cursor_position++);
                     prompt->buf_size++;
                 } else {
                     /* no special keys have been pressed this session, so append char to input buffer */
@@ -205,7 +212,6 @@ void prompt(struct prompt_t *prompt, struct hist_t *hist, char *ps1)
         prompt_update(prompt, ps1);
     }
 
-prompt_end:
     /* add sentinel byte on demand */
     prompt->buf[prompt->buf_size] = 0;
     putchar('\n');

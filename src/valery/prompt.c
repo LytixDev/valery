@@ -69,16 +69,16 @@ static void prompt_term_init(struct termconf_t *termconf)
     tcsetattr(STDIN_FILENO, TCSANOW, &termconf->new);
 }
 
-static void prompt_init(struct prompt_t *prompt)
+static inline void prompt_term_end(struct termconf_t *termconf)
+{
+    tcsetattr(STDIN_FILENO, TCSANOW, &termconf->original);
+}
+
+static void prompt_start(struct prompt_t *prompt)
 {
     prompt_term_init(prompt->termconf);
     prompt->buf_size = 0;
     prompt->cursor_position = 0;
-}
-
-static inline void prompt_term_end(struct termconf_t *termconf)
-{
-    tcsetattr(STDIN_FILENO, TCSANOW, &termconf->original);
 }
 
 /* returns the type of arrow consumed from the terminal input buffer */
@@ -97,36 +97,37 @@ static int get_arrow_type(void)
     return -1;
 }
 
-static int move_cursor_horizontally(struct prompt_t *prompt, enum keycode_t arrow_type)
+static void move_cursor_horizontally(struct prompt_t *prompt, enum keycode_t arrow_type)
 {
     if (arrow_type == ARROW_LEFT) {
         /* do not move left if cursor already at left boundary */
         if (prompt->cursor_position < 1)
-            return prompt->cursor_position;
+            return;
         cursor_left(1);
-        return --prompt->cursor_position;
+        prompt->cursor_position--;
+        return;
     }
 
     /* do not move right if cursor already at right boundary */
-    if (prompt->cursor_position >= prompt->buf_size)
-        return prompt->cursor_position;
+    if (prompt->cursor_position == prompt->buf_size)
+        return;
     cursor_right(1);
-    return ++prompt->cursor_position;
+    prompt->cursor_position++;
 }
 
-static inline void print_prompt(struct prompt_t *prompt, char *ps1)
+static inline void prompt_print(struct prompt_t *prompt, char *ps1)
 {
-    printf("%s %s", ps1, prompt->buf);
+    printf("%s %.*s", ps1, prompt->buf_size, prompt->buf);
 }
 
 /*
- * flushes the screen, prints the ps1 and buffer and moves the
- * cursor to the end of the buffer.
+ * flushes the screen, prints the ps1 and buffer and moves the cursor in the terminal to its 
+ * corresponding position.
  */
-static void update_prompt(struct prompt_t *prompt, char *ps1)
+static void prompt_update(struct prompt_t *prompt, char *ps1)
 {
     flush_line();
-    print_prompt(prompt, ps1);
+    prompt_print(prompt, ps1);
     /* move the terminal cursor to its corresponding position */
     if (prompt->cursor_position != prompt->buf_size)
         cursor_left(prompt->buf_size - prompt->cursor_position);
@@ -141,9 +142,9 @@ void prompt(struct prompt_t *prompt, struct hist_t *hist, char *ps1)
 
     /* reset position in history to bottom of queue */
     hist_reset_pos(hist);
+    prompt_start(prompt);
+    prompt_print(prompt, ps1);
 
-    prompt_init(prompt);
-    print_prompt(prompt, ps1);
     while (EOF != (ch = getchar()) && ch != '\n') {
 #ifdef DEBUG_PROMPT
         prompt_debug(prompt);
@@ -166,7 +167,7 @@ void prompt(struct prompt_t *prompt, struct hist_t *hist, char *ps1)
             case ARROW_KEY:
                 arrow_type = get_arrow_type();
                 if (arrow_type == ARROW_LEFT || arrow_type == ARROW_RIGHT) {
-                    prompt->cursor_position = move_cursor_horizontally(prompt, arrow_type);
+                    move_cursor_horizontally(prompt, arrow_type);
                     break;
                 }
 
@@ -201,10 +202,12 @@ void prompt(struct prompt_t *prompt, struct hist_t *hist, char *ps1)
                     prompt->cursor_position++;
                 }
         }
-        update_prompt(prompt, ps1);
+        prompt_update(prompt, ps1);
     }
 
 prompt_end:
+    /* add sentinel byte on demand */
+    prompt->buf[prompt->buf_size] = 0;
     putchar('\n');
     prompt_term_end(prompt->termconf);
 }

@@ -78,20 +78,16 @@ static int valery(char *source)
             if (received_sigint) {
                 received_sigint = 0;
                 signal(SIGINT, catch_sigint);
-                goto end_loop;
+                continue;
             }
             hist_save(hist, p->buf);
             if (strcmp(p->buf, "") == 0)
-                goto end_loop;
+                continue;
             else if (strcmp(p->buf, "exit") == 0)
                 break;
 
             /* loop enters here means "ordinary" commands were typed in */
             valery_interpret(p->buf);
-
-        end_loop:
-            //TODO: should we not zero out bytes on demand?
-            memset(p->buf, 0, p->buf_capacity);
         }
 
         /* free and write to file before exiting */

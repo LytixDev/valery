@@ -20,7 +20,7 @@
 
 #include "valery/interpreter/lex.h"
 #include "lib/nicc/nicc.h"      // hashtable implementation
-#include "valery.h"
+#include "valery/valery.h"
 
 
 /* types */

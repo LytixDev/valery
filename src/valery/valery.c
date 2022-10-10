@@ -22,7 +22,7 @@
 #include <signal.h>
 #include <termios.h>
 
-#include "valery.h"
+#include "valery/valery.h"
 #include "valery/env.h"
 #include "valery/prompt.h"
 #include "valery/interpreter/lex.h"

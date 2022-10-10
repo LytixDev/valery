@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "valery.h"
+#include "valery/valery.h"
 
 
 void valery_exit(int exit_code)
@@ -64,5 +64,5 @@ void *vmalloc(size_t size)
         valery_exit_internal_error("memory allocation error");
     return tmp;
 #endif /* VMALLOC_IMPLEMENTATION*/
-    return vmalloc(size);
+    return malloc(size);
 }

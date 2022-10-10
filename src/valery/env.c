@@ -21,7 +21,7 @@
 #include <pwd.h>
 #include <string.h>
 
-#include "valery.h"
+#include "valery/valery.h"
 #include "valery/env.h"
 #include "builtins/builtins.h"
 #include "lib/vstring.h"

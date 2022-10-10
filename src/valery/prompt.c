@@ -23,7 +23,7 @@
 #include <unistd.h>
 #include <termios.h>
 
-#include "valery.h"
+#include "valery/valery.h"
 #include "valery/prompt.h"
 #include "valery/histfile.h"
 #include "lib/vstring.h"

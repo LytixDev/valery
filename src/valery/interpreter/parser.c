@@ -18,7 +18,7 @@
 
 #include "valery/interpreter/parser.h"
 #include "valery/interpreter/lex.h"     // struct tokenlist_t type
-#include "valery.h"                     // errors
+#include "valery/valery.h"                     // errors
 
 
 /* globals */

@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "valery.h"
+#include "valery/valery.h"
 #include "valery/env.h"
 #include "valery/load_config.h"
 #include "lib/vstring.h"

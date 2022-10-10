@@ -22,7 +22,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "valery.h"
+#include "valery/valery.h"
 #include "valery/histfile.h"
 
 

@@ -33,7 +33,7 @@
 
 static struct env_vars_t *env_vars_malloc(void)
 {
-    struct env_vars_t *env_vars = (struct env_vars_t *) malloc(sizeof(struct env_vars_t));
+    struct env_vars_t *env_vars = (struct env_vars_t *) vmalloc(sizeof(struct env_vars_t));
     env_vars->ht = ht_malloc(ENV_HT_SIZE);
     env_vars->update = false;
     env_vars->capacity = ENV_HT_SIZE;
@@ -59,10 +59,10 @@ static void env_vars_free(struct env_vars_t *env_vars)
 
 static struct paths_t *paths_malloc(void)
 {
-    struct paths_t *p = (struct paths_t *) malloc(sizeof(struct paths_t));
-    p->paths = (char **) malloc(STARTING_PATHS * sizeof(char *));
+    struct paths_t *p = (struct paths_t *) vmalloc(sizeof(struct paths_t));
+    p->paths = (char **) vmalloc(STARTING_PATHS * sizeof(char *));
     for (int i = 0; i < STARTING_PATHS; i++)
-        p->paths[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
+        p->paths[i] = (char *) vmalloc(MAX_ENV_LEN * sizeof(char));
 
     p->capacity = STARTING_PATHS;
     p->size = 0;
@@ -145,7 +145,7 @@ void env_gen(struct env_vars_t *env_vars, char *env_str[env_vars->capacity])
 void path_increase(struct paths_t *p, int new_len) {
     p->paths = (char **) realloc(p->paths, new_len * sizeof(char *));
     for (int i = p->capacity; i < new_len; i++)
-        p->paths[i] = (char *) malloc(MAX_ENV_LEN * sizeof(char));
+        p->paths[i] = (char *) vmalloc(MAX_ENV_LEN * sizeof(char));
 
     p->capacity = new_len;
 }
@@ -270,7 +270,7 @@ static void set_uid(struct env_t *env)
 
 struct env_t *env_malloc(void)
 {
-    struct env_t *env = (struct env_t *) malloc(sizeof(struct env_t));
+    struct env_t *env = (struct env_t *) vmalloc(sizeof(struct env_t));
     env->env_vars = env_vars_malloc();
     env->paths = paths_malloc();
     env->aliases = ht_malloc(ALIASES_HT_SIZE);

@@ -177,13 +177,13 @@ void hist_save(struct hist_t *hist, char buf[COMMAND_LEN])
 
 struct hist_t *hist_malloc(char *full_path_to_hist_file)
 {
-    struct hist_t *hist = (struct hist_t *) malloc(sizeof(struct hist_t));
+    struct hist_t *hist = (struct hist_t *) vmalloc(sizeof(struct hist_t));
     hist->s_len = 0;
-    hist->stored_commands = malloc(MAX_COMMANDS_BEFORE_WRITE * sizeof(char *));
+    hist->stored_commands = vmalloc(MAX_COMMANDS_BEFORE_WRITE * sizeof(char *));
 
     /* allocate space for all strings */
     for (int i = 0; i < MAX_COMMANDS_BEFORE_WRITE; i++)
-        hist->stored_commands[i] = malloc(COMMAND_LEN * sizeof(char));
+        hist->stored_commands[i] = vmalloc(COMMAND_LEN * sizeof(char));
 
     int rc = hist_open(hist, full_path_to_hist_file);
     /* if no connection could be made to the hist file, set the pointer to null */

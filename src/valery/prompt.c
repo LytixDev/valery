@@ -69,6 +69,13 @@ static void prompt_term_init(struct termconf_t *termconf)
     tcsetattr(STDIN_FILENO, TCSANOW, &termconf->new);
 }
 
+static void prompt_init(struct prompt_t *prompt)
+{
+    prompt_term_init(prompt->termconf);
+    prompt->buf_size = 0;
+    prompt->cursor_position = 0;
+}
+
 static inline void prompt_term_end(struct termconf_t *termconf)
 {
     tcsetattr(STDIN_FILENO, TCSANOW, &termconf->original);
@@ -104,7 +111,7 @@ static int move_cursor_horizontally(struct prompt_t *prompt, enum keycode_t arro
     if (prompt->cursor_position >= prompt->buf_size)
         return prompt->cursor_position;
     cursor_right(1);
-    return prompt->cursor_position;
+    return ++prompt->cursor_position;
 }
 
 static inline void print_prompt(struct prompt_t *prompt, char *ps1)
@@ -136,7 +143,7 @@ void prompt(struct prompt_t *prompt, struct hist_t *hist, char *ps1)
     /* reset position in history to bottom of queue */
     hist_reset_pos(hist);
 
-    prompt_term_init(prompt->termconf);
+    prompt_init(prompt);
     print_prompt(prompt, ps1);
     while (EOF != (ch = getchar()) && ch != '\n') {
 #ifdef DEBUG_PROMPT
@@ -205,9 +212,9 @@ prompt_end:
 
 struct prompt_t *prompt_malloc(void)
 {
-    struct prompt_t *prompt = malloc(sizeof(struct prompt_t));
-    prompt->termconf = malloc(sizeof(struct termconf_t));
-    prompt->buf = malloc(sizeof(char) * COMMAND_LEN);
+    struct prompt_t *prompt = vmalloc(sizeof(struct prompt_t));
+    prompt->termconf = vmalloc(sizeof(struct termconf_t));
+    prompt->buf = vmalloc(sizeof(char) * COMMAND_LEN);
     prompt->buf_capacity = COMMAND_LEN;
     prompt->buf_size = 0;
     prompt->cursor_position = 0;

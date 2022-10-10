@@ -14,9 +14,10 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef VALERY
-#define VALERY
+#ifndef VALERY_H
+#define VALERY_H
 
+#include <stdlib.h>
 
 /* variables */
 #define COMMAND_LEN 1024
@@ -52,17 +53,10 @@ void _valery_runtime_error(const char *msg, const char *file, const char *func, 
 void _valery_error(const char *msg, const char *file, const char *func, const int line);
 #define valery_error(m) _valery_error(m, __FILE__, __func__, __LINE__)
 
-#ifdef VMALLOC_IMPLEMENTATION
-#       include <stdlib.h>
-void *vmalloc(size_t size)
-{
-    void *tmp = malloc(size);
-    if (tmp == NULL) {
-        internal_error_exit("memory allocation error");
-    }
-    return tmp;
-}
-#endif /* VMALLOC_IMPLEMENTATION*/
+#ifndef VMALLOC_IMPLEMENTATION
+#       define VMALLOC_IMPLEMENTATION
+#endif
+void *vmalloc(size_t size);
 
 
 #endif /* VALERY_H */

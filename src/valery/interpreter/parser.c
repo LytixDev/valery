@@ -13,7 +13,6 @@
  *
  *  You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <stdlib.h>
 #include <stdbool.h>                    // bool type
 #include <stdarg.h>                     // va_start, va_arg, va_end 
 
@@ -111,23 +110,23 @@ static void *expr_malloc(enum ast_type_t type)
     struct ast_node_t *expr;
     switch (type) {
         case ASSIGNMENT:
-            expr = malloc(sizeof(struct ast_assignment_t));
+            expr = vmalloc(sizeof(struct ast_assignment_t));
             break;
 
         case UNARY:
-            expr = malloc(sizeof(struct ast_unary_t));
+            expr = vmalloc(sizeof(struct ast_unary_t));
             break;
 
         case BINARY:
-            expr = malloc(sizeof(struct ast_binary_t));
+            expr = vmalloc(sizeof(struct ast_binary_t));
             break;
 
         case LITERAL:
-            expr = malloc(sizeof(struct ast_literal_t));
+            expr = vmalloc(sizeof(struct ast_literal_t));
             break;
 
         case PROGRAM_SEQUENCE:
-            expr = malloc(sizeof(struct ast_program_sequence_t));
+            expr = vmalloc(sizeof(struct ast_program_sequence_t));
 
         case ENUM_COUNT:
             break;
@@ -243,7 +242,7 @@ static void *ast_program_sequence(void)
         unsigned int argc = 0;
 
         //TODO: allocate dynamically
-        struct ast_node_t **argv = malloc(sizeof(struct ast_node_t *) * 32);
+        struct ast_node_t **argv = vmalloc(sizeof(struct ast_node_t *) * 32);
         struct ast_node_t *arg;
         while (check_either(3, T_IDENTIFIER, T_NUMBER, T_STRING)) {
             arg = ast_primary();

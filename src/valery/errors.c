@@ -55,3 +55,14 @@ void _valery_error(const char *msg, const char *file, const char *func, const in
 #endif /* DEBUG */
     putchar('\n');
 }
+
+void *vmalloc(size_t size)
+{
+#ifdef VMALLOC_IMPLEMENTATION
+    void *tmp = malloc(size);
+    if (tmp == NULL)
+        valery_exit_internal_error("memory allocation error");
+    return tmp;
+#endif /* VMALLOC_IMPLEMENTATION*/
+    return vmalloc(size);
+}

@@ -13,7 +13,7 @@
  *
  *  You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <stdlib.h>             // malloc, free
+#include <stdlib.h>             // free
 #include <string.h>             // strlen, strncpy, memcpy
 #include <stdio.h>              // debug: printf
 #include <stdbool.h>            // bool type
@@ -163,11 +163,11 @@ static inline void destroy_identifiers(void)
 //TODO use global properly
 static struct tokenlist_t *tokenlist_malloc(void)
 {
-    struct tokenlist_t *tokenlist = malloc(sizeof(struct tokenlist_t));
+    struct tokenlist_t *tokenlist = vmalloc(sizeof(struct tokenlist_t));
     tokenlist->pos = 0;
     tokenlist->size = 0;
     tokenlist->capacity = 32;
-    tokenlist->tokens = malloc(32 * sizeof(enum tokentype_t *));
+    tokenlist->tokens = vmalloc(32 * sizeof(enum tokentype_t *));
     return tokenlist;
 }
 
@@ -181,17 +181,17 @@ static void tokenlist_increase(void)
 static struct token_t *token_malloc(enum tokentype_t type, char *lexeme, size_t lexeme_size,
                                     void *literal, size_t literal_size)
 {
-    struct token_t *token = malloc(sizeof(struct token_t));
+    struct token_t *token = vmalloc(sizeof(struct token_t));
     token->type = type;
 
     if (lexeme != NULL) {
-        token->lexeme = malloc(lexeme_size + 1);
+        token->lexeme = vmalloc(lexeme_size + 1);
         strncpy(token->lexeme, lexeme, lexeme_size);
         token->lexeme[lexeme_size] = 0;
     }
 
     if (literal != NULL) {
-        token->literal = malloc(literal_size);
+        token->literal = vmalloc(literal_size);
         memcpy(token->literal, literal, literal_size);
     }
 

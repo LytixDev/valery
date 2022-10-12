@@ -17,7 +17,7 @@
 #include <stdarg.h>                     // va_start, va_arg, va_end 
 
 #include "valery/interpreter/parser.h"
-#include "valery/interpreter/lex.h"     // struct tokenlist_t type
+#include "valery/interpreter/lexer.h"     // struct tokenlist_t type
 #include "valery/valery.h"                     // errors
 
 

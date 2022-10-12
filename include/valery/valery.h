@@ -57,6 +57,8 @@ void _valery_error(const char *msg, const char *file, const char *func, const in
 #       define VALLOC_IMPLEMENTATION
 #endif
 void *vmalloc(size_t size);
+void *vcalloc(size_t nitems, size_t size);
+void *vrealloc(void *ptr, size_t size);
 
 
 #endif /* VALERY_H */

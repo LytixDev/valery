@@ -13,17 +13,19 @@
  *
  *  You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+//https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_10
 #include <stdlib.h>             // free
 #include <string.h>             // strlen, strncpy, memcpy
 #include <stdio.h>              // debug: printf
 #include <stdbool.h>            // bool type
 
-#include "valery/interpreter/lex.h"
+#include "valery/interpreter/lexer.h"
 #include "lib/nicc/nicc.h"      // hashtable implementation
 #include "valery/valery.h"
 
 
 /* types */
+#ifdef DEBUG_INTERPRETER
 const char *tokentype_str[T_ENUM_COUNT] = {
     /* keywords */
     "T_DO",
@@ -89,6 +91,7 @@ const char *tokentype_str[T_ENUM_COUNT] = {
     "T_UNKNOWN",
     "T_EOF",
 };
+#endif /* DEBUG_INTERPRETER */
 
 
 /* globals */
@@ -225,6 +228,29 @@ static inline bool is_alpha(char c)
             c == '_';
 }
 
+/* returns true on terminal chars for identifiers, else false */
+static bool is_terminal(char c)
+{
+    switch (c) {
+        case '|':
+        case ')':
+        case ']':
+        case '}':
+        case '(':
+        case '[':
+        case '{':
+        case ';':
+        case 0:
+            return true;
+
+        case ' ':
+            return is_terminal(*(source_cpy + 1));
+
+        default:
+            return false;
+    }
+}
+
 static bool is_alpha_numeric(char c)
 {
     return is_alpha(c) || is_digit(c);
@@ -279,7 +305,7 @@ static void string_literal()
 static void identifier()
 {
     char *identifier_start = source_cpy - 1;    // -1 because scan_token() incremented source_cpy
-    while (is_alpha_numeric(*source_cpy))
+    while (!is_terminal(*source_cpy))
         source_cpy++;
 
     size_t len = source_cpy - identifier_start;
@@ -436,6 +462,7 @@ void tokenlist_free(struct tokenlist_t *tokenlist)
 
 void tokenlist_dump(struct tokenlist_t *tokenlist)
 {
+#ifdef DEBUG_INTERPRETER
     printf("--- lex dump ---\n");
     struct token_t *token;
     for (size_t i = 0; i < tokenlist->size; i++) {
@@ -454,4 +481,6 @@ void tokenlist_dump(struct tokenlist_t *tokenlist)
 
         putchar('\n');
     }
+#endif /* DEBUG_INTERPRETER */
+    (void)0;
 }

@@ -17,7 +17,7 @@
 #ifndef VALERY_INTERPRETER_PARSER_H
 #define VALERY_INTERPRETER_PARSER_H
 
-#include "lex.h"        // struct tokenlist_t type
+#include "lexer.h"        // struct tokenlist_t type
 
 /* types */
 

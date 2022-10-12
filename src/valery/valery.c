@@ -20,12 +20,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
-#include <termios.h>
 
-#include "valery/valery.h"
 #include "valery/env.h"
 #include "valery/prompt.h"
-#include "valery/interpreter/lex.h"
+#include "valery/interpreter/lexer.h"
 #include "valery/interpreter/parser.h"
 #include "valery/interpreter/interpreter.h"
 #include "builtins/builtins.h"
@@ -51,7 +49,8 @@ static int valery_interpret(char *input)
 #ifdef DEBUG_INTERPRETER
     ast_print(expr);
 #endif
-    rc = interpret(expr);
+    rc = 0;
+    //rc = interpret(expr);
 
     tokenlist_free(tl);
     ast_free(expr);
@@ -123,3 +122,4 @@ int main(int argc, char *argv[])
 
     return valery(NULL);
 }
+

@@ -15,7 +15,7 @@
  */
 #include <stdio.h>
 
-#include "valery/interpreter/lex.h"
+#include "valery/interpreter/lexer.h"
 #include "valery/interpreter/parser.h"
 #include "valery/exec.h"
 

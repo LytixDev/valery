@@ -21,45 +21,36 @@
 
 /* types */
 
-#define KEYWORDS_LEN 17
+#define KEYWORDS_LEN 14
 enum tokentype_t {
     /* keywords */
+    T_IF,
+    T_THEN,
+    T_ELSE,
+    T_ELIF,
+    T_FI,
     T_DO,
     T_DONE,
     T_CASE,
     T_ESAC,
-    T_FUNCTION,
-    T_SELECT,
-    T_UNTIL,
-    T_IF,
-    T_ELIF,
-    T_FI,
-    T_THEN,
     T_WHILE,
-    T_ELSE,
+    T_UNTIL,
     T_FOR,
-    T_IN,
-    T_TIME,
     T_RETURN,
+    T_IN,
 
     /* single-character tokens */
     T_LPAREN,
     T_RPAREN,
     T_LBRACE,
     T_RBRACE,
-    T_COMMA,
-    T_MINUS,
-    T_PLUS,
-    T_COLON,
     T_SEMICOLON,
-    T_SLASH,
     T_STAR,
+    T_DOLLAR,
 
     /* one or two character tokens */
-    T_DOLLAR,
-    T_DOLLAR_LPAREN,
     T_ANP,
-    T_ANP_ANP,
+    T_AND_IF,
     T_BANG,
     T_BANG_BANG,
     T_BANG_EQUAL,
@@ -78,12 +69,16 @@ enum tokentype_t {
     T_PIPE,
     T_PIPE_PIPE,
 
-    /* literals */
+    /* symbols/identifiers */
     T_IDENTIFIER,
+    T_WORD,
+    T_ASSIGNMENT_WORD,
+    T_NAME,
+    T_NEWLINE,
+    IO_NUMBER,
     T_STRING,
     T_NUMBER,
 
-    T_NEWLINE,
     T_UNKNOWN,
     T_EOF,
     T_ENUM_COUNT        /* not an actual type */
@@ -114,9 +109,9 @@ struct tokenlist_t {
 /* functions */
 struct tokenlist_t *tokenize(char *source);
 
-void tokenlist_dump(struct tokenlist_t *tl);
+void tokenlist_dump(struct tokenlist_t *tokenlist);
 
-void tokenlist_free(struct tokenlist_t *tl);
+void tokenlist_free(struct tokenlist_t *tokenlist);
 
 
 #endif /* !VALERY_INTERPRETER_LEX_H */

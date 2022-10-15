@@ -17,7 +17,7 @@
 #ifndef VALERY_INTERPRETER_PARSER_H
 #define VALERY_INTERPRETER_PARSER_H
 
-#include "lex.h"        // struct tokenlist_t type
+#include "lexer.h"        // struct tokenlist_t type
 
 /* types */
 
@@ -30,7 +30,7 @@ enum ast_type_t {
     ENUM_COUNT
 };
 
-typedef struct ast_node_head_t {
+typedef struct ast_node_t {
     enum ast_type_t type;
 } ASTNodeHead;
 
@@ -40,25 +40,23 @@ typedef struct ast_node_head_t {
 /*
  * every expression starts with an ASTNodeHead describing its type.
  */
-typedef ASTNodeHead Expr;
-
 struct ast_assignment_t {
     ASTNodeHead head;
     struct token_t *name;
-    Expr *value;
+    struct ast_node_t *value;
 };
 
 struct ast_unary_t {
     ASTNodeHead head;
     struct token_t *op;  // operator
-    Expr *right;
+    struct ast_node_t *right;
 };
 
 struct ast_binary_t {
     ASTNodeHead head;
-    Expr *left;
+    struct ast_node_t *left;
     struct token_t *op;
-    Expr *right;
+    struct ast_node_t *right;
 };
 
 struct ast_literal_t {
@@ -71,15 +69,15 @@ struct ast_literal_t {
 struct ast_program_sequence_t {
     ASTNodeHead head;
     struct token_t *program_name;
-    Expr **argv;
+    struct ast_node_t **argv;
     unsigned int argc;
 };
 
 
 /* functions */
-Expr *parse(struct tokenlist_t *tl);
+struct ast_node_t *parse(struct tokenlist_t *tl);
 
-void ast_free(Expr *starting_node);
+void ast_free(struct ast_node_t *starting_node);
 
 void ast_print(ASTNodeHead *first);
 

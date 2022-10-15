@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "valery.h"
+#include "valery/valery.h"
 
 
 void valery_exit(int exit_code)
@@ -31,14 +31,14 @@ void valery_exit_parse_error(const char *msg)
     exit(1);
 }
 
-void valery_exit_internal_error(char *msg, const char *file, const char *func, const int line)
+void _valery_exit_internal_error(char *msg, const char *file, const char *func, const int line)
 {
     fprintf(stderr, "valery: internal error %s caused by line '%d' in function '%s' in file '%s'.\n",
             msg, line, func, file);
     exit(1);
 }
 
-void valery_runtime_error(const char *msg, const char *file, const char *func, const int line)
+void _valery_runtime_error(const char *msg, const char *file, const char *func, const int line)
 {
     fprintf(stderr, "valery: runtime error: %s.", msg);
 #ifdef DEBUG
@@ -47,11 +47,44 @@ void valery_runtime_error(const char *msg, const char *file, const char *func, c
     putchar('\n');
 }
 
-void valery_error(const char *msg, const char *file, const char *func, const int line)
+void _valery_error(const char *msg, const char *file, const char *func, const int line)
 {
     fprintf(stderr, "valery: error: %s.", msg);
 #ifdef DEBUG
     fprintf(stderr, " Caused by line '%d' in function '%s' in file '%s'.", line, func, file);
 #endif /* DEBUG */
     putchar('\n');
+}
+
+void *vmalloc(size_t size)
+{
+#ifdef VALLOC_IMPLEMENTATION
+    void *tmp = malloc(size);
+    if (tmp == NULL)
+        valery_exit_internal_error("memory allocation error");
+    return tmp;
+#endif /* VALLOC_IMPLEMENTATION*/
+    return malloc(size);
+}
+
+void *vcalloc(size_t nitems, size_t size)
+{
+#ifdef VALLOC_IMPLEMENTATION
+    void *tmp = calloc(nitems, size);
+    if (tmp == NULL)
+        valery_exit_internal_error("memory allocation error");
+    return tmp;
+#endif /* VALLOC_IMPLEMENTATION*/
+    return calloc(nitems, size);
+}
+
+void *vrealloc(void *ptr, size_t size)
+{
+#ifdef VALLOC_IMPLEMENTATION
+    void *tmp = realloc(ptr, size);
+    if (tmp == NULL)
+        valery_exit_internal_error("memory allocation error");
+    return tmp;
+#endif /* VALLOC_IMPLEMENTATION*/
+    return realloc(ptr, size);
 }

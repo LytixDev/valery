@@ -218,7 +218,7 @@ static inline bool is_alpha(char c)
 }
 
 /* returns true on terminal chars for identifiers, else false */
-static bool is_terminal(char c)
+static bool is_terminal(char c, int step)
 {
     switch (c) {
         case '|':
@@ -229,20 +229,39 @@ static bool is_terminal(char c)
         case '[':
         case '{':
         case ';':
+        case '&':
+        case '<':
+        case '>':
+        case '\n':
         case 0:
             return true;
 
         case ' ':
-            return is_terminal(*(source_cpy + 1));
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+            return is_terminal(*(source_cpy + step + 1), step + 1);
 
         default:
             return false;
     }
 }
 
-static bool is_alpha_numeric(char c)
+/*
+ * 3.235
+ * In the shell command language, a word consisting solely of underscores, digits, and alphabetics
+ * from the portable character set. The first character of a name is not a digit. 
+ */
+static bool is_name(char c)
 {
-    return is_alpha(c) || is_digit(c);
+    return is_alpha(c) || is_digit(c) || c == '_';
 }
 
 /* returns true if current char of source_cpy == expected */
@@ -294,7 +313,7 @@ static void string_literal()
 static void identifier()
 {
     char *identifier_start = source_cpy - 1;    // -1 because scan_token() incremented source_cpy
-    while (!is_terminal(*source_cpy))
+    while (!is_terminal(*source_cpy, 0))
         source_cpy++;
 
     size_t len = source_cpy - identifier_start;
@@ -302,9 +321,14 @@ static void identifier()
     strncpy(identifier, identifier_start, len);
     identifier[len] = 0;
 
-    /* if not a reserved keyword, it is a user-defined identifier */
-    enum tokentype_t *type = ht_get(identifiers, identifier, len + 1);
-    add_token(type == NULL ? T_IDENTIFIER : *type, identifier, len + 1, NULL, 0);
+    /*
+     * 2.10.2
+     * When the TOKEN is exactly a reserved word, the token identifier for that reserved word shall
+     * result. Otherwise, the token WORD shall be returned. Also, if the parser is in any state
+     * where only a reserved word could be the next correct token, proceed as above. 
+     */
+    enum tokentype_t *is_reserved = ht_get(identifiers, identifier, len + 1);
+    add_token(is_reserved == NULL ? T_WORD : *is_reserved, identifier, len + 1, NULL, 0);
 }
 
 
@@ -348,6 +372,12 @@ static void scan_token()
             break;
         case '|':
             add_token_simple(match('|') ? T_PIPE_PIPE : T_PIPE);
+            break;
+        case '>':
+            add_token_simple(match('=') ? T_GREATER_EQUAL : T_GREATER);
+            break;
+        case '<':
+            add_token_simple(match('=') ? T_LESS_EQUAL : T_LESS);
             break;
         case '!':
             if (*source_cpy == 0) {

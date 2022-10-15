@@ -45,15 +45,15 @@ static int valery_interpret(char *input)
 #ifdef DEBUG_INTERPRETER
     tokenlist_dump(tl);
 #endif
-    struct ast_node_t *expr = parse(tl);
+    //struct ast_node_t *expr = parse(tl);
 #ifdef DEBUG_INTERPRETER
-    ast_print(expr);
+    //ast_print(expr);
 #endif
     rc = 0;
     //rc = interpret(expr);
 
     tokenlist_free(tl);
-    ast_free(expr);
+    //ast_free(expr);
     return rc;
 }
 

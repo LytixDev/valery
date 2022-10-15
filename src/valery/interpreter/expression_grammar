@@ -25,7 +25,7 @@ pipeline         : pipe_sequence
                  | Bang pipe_sequence
                  ;
 
-pipe_sequence    :                             command
+pipe_sequence    : command
                  | pipe_sequence '|' linebreak command
                  ;
 
@@ -189,7 +189,7 @@ newline_list     : NEWLINE
                  ;
 
 linebreak        : newline_list
-                 | /* empty */
+                 | /* empty, EOF? */
                  ;
 
 separator_op     : '&'

@@ -18,8 +18,6 @@
 #include "valery/interpreter/lexer.h"
 #include "valery/interpreter/parser.h"
 
-#ifdef DEBUG_INTERPRETER
-
 extern const char *tokentype_str[T_ENUM_COUNT];
 static void ast_print_node(ASTNodeHead *expr);
 
@@ -117,5 +115,3 @@ void ast_print(ASTNodeHead *expr)
     ast_print_node(expr);
     putchar('\n');
 }
-
-#endif /* DEBUG_INTERPRETER */

@@ -25,9 +25,9 @@
 #define HISTFILE_NAME ".valery_hist"
 
 #ifdef DEBUG_VERBOSE
-#       define DEBUG_ENV
+//#       define DEBUG_ENV
 #       define DEBUG_INTERPRETER
-#       define DEBUG_PROMPT
+//#       define DEBUG_PROMPT
 #endif
 
 /* macros */

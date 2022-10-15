@@ -26,7 +26,7 @@ $(TARGET): $(OBJS)
 	@$(CC) -o $@ $^
 
 # debug specific part of program by passing it as an argument
-debug: CFLAGS += -g -DDEBUG -D$(ARG)
+debug: CFLAGS += -g -DDEBUG
 debug: $(TARGET)
 
 debug-verbose: CFLAGS += -DDEBUG_VERBOSE

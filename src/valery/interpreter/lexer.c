@@ -13,7 +13,7 @@
  *
  *  You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-//https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_10
+//SPEC: https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_10
 #include <stdlib.h>             // free
 #include <string.h>             // strlen, strncpy, memcpy
 #include <stdio.h>              // debug: printf
@@ -28,42 +28,33 @@
 #ifdef DEBUG_INTERPRETER
 const char *tokentype_str[T_ENUM_COUNT] = {
     /* keywords */
+    "T_IF",
+    "T_THEN",
+    "T_ELSE",
+    "T_ELIF",
+    "T_FI",
     "T_DO",
     "T_DONE",
     "T_CASE",
     "T_ESAC",
-    "T_FUNCTION",
-    "T_SELECT",
-    "T_UNTIL",
-    "T_IF",
-    "T_ELIF",
-    "T_FI",
-    "T_THEN",
     "T_WHILE",
-    "T_ELSE",
+    "T_UNTIL",
     "T_FOR",
-    "T_IN",
-    "T_TIME",
     "T_RETURN",
+    "T_IN",
 
     /* single-character tokens */
     "T_LPAREN",
     "T_RPAREN",
     "T_LBRACE",
     "T_RBRACE",
-    "T_COMMA",
-    "T_MINUS",
-    "T_PLUS",
-    "T_COLON",
     "T_SEMICOLON",
-    "T_SLASH",
     "T_STAR",
+    "T_DOLLAR",
 
     /* one or two character tokens */
-    "T_DOLLAR",
-    "T_DOLLAR_LPAREN",
     "T_ANP",
-    "T_ANP_ANP",
+    "T_AND_IF",
     "T_BANG",
     "T_BANG_BANG",
     "T_BANG_EQUAL",
@@ -82,12 +73,16 @@ const char *tokentype_str[T_ENUM_COUNT] = {
     "T_PIPE",
     "T_PIPE_PIPE",
 
-    /* literals */
+    /* symbols/identifiers */
     "T_IDENTIFIER",
+    "T_WORD",
+    "T_ASSIGNMENT_WORD",
+    "T_NAME",
+    "T_NEWLINE",
+    "IO_NUMBER",
     "T_STRING",
     "T_NUMBER",
 
-    "T_NEWLINE",
     "T_UNKNOWN",
     "T_EOF",
 };
@@ -112,43 +107,37 @@ static void init_identifiers()
     identifiers = ht_malloc(32);
 
     char *identifiers_str[] = {
+        "if",
+        "then",
+        "else",
+        "elif",
+        "fi",
         "do",
         "done",
         "case",
         "esac",
-        "function",
-        "select",
-        "until",
-        "if",
-        "elif",
-        "fi",
-        "then",
         "while",
-        "else",
+        "until",
         "for",
-        "in",
-        "time",
-        "return"
+        "return",
+        "in"
     };
 
     enum tokentype_t identifiers_name[] = {
+        T_IF,
+        T_THEN,
+        T_ELSE,
+        T_ELIF,
+        T_FI,
         T_DO,
         T_DONE,
         T_CASE,
         T_ESAC,
-        T_FUNCTION,
-        T_SELECT,
-        T_UNTIL,
-        T_IF,
-        T_ELIF,
-        T_FI,
-        T_THEN,
         T_WHILE,
-        T_ELSE,
+        T_UNTIL,
         T_FOR,
-        T_IN,
-        T_TIME,
         T_RETURN,
+        T_IN,
     };
 
     for (int i = 0; i < KEYWORDS_LEN; i++) {
@@ -340,26 +329,16 @@ static void scan_token()
         case ';':
             add_token_simple(T_SEMICOLON);
             break;
-        case ':':
-            add_token_simple(T_COLON);
-            break;
         case '*':
             add_token_simple(T_STAR);
             break;
-        case '+':
-            add_token_simple(T_PLUS);
+        case '$':
+            add_token_simple(T_DOLLAR);
             break;
-        case '-':
-            add_token_simple(T_MINUS);
-            break;
-
 
         /* two character lexems */
-        case '$':
-            add_token_simple(match('(') ? T_DOLLAR_LPAREN : T_DOLLAR);
-            break;
         case '&':
-            add_token_simple(match('&') ? T_ANP_ANP : T_ANP);
+            add_token_simple(match('&') ? T_AND_IF : T_ANP);
             break;
         case '=':
             add_token_simple(match('=') ? T_EQUAL_EQUAL : T_EQUAL);

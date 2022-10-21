@@ -25,7 +25,7 @@
 extern struct tokenlist_t *tokenlist;   // defined in parser.c
 
 
-bool check(enum tokentype_t type)
+bool check_single(enum tokentype_t type)
 {
     if (tokenlist->size >= tokenlist->capacity)
         return false;
@@ -38,7 +38,6 @@ struct token_t *previous()
     return tokenlist->tokens[tokenlist->pos - 1];
 }
 
-
 /*
  * @returns true if next token is any of the given arguments, else false.
  */
@@ -50,7 +49,7 @@ bool check_either(unsigned int n, ...)
 
     for (unsigned int i = 0; i < n; i++) {
         type = va_arg(args, enum tokentype_t);
-        if (check(type))
+        if (check_single(type))
             return true;
     }
 
@@ -70,7 +69,7 @@ bool match_either(unsigned int n, ...)
 
     for (unsigned int i = 0; i < n; i++) {
         type = va_arg(args, enum tokentype_t);
-        if (check(type)) {
+        if (check_single(type)) {
             tokenlist->pos++;
             return true;
         }
@@ -80,26 +79,22 @@ bool match_either(unsigned int n, ...)
     return false;
 }
 
-void consume(enum tokentype_t type, char *err_msg)
+void *consume(enum tokentype_t type, char *err_msg)
 {
-    if (!check(type))
+    if (!check_single(type))
         valery_exit_parse_error(err_msg);
 
-    tokenlist->pos++;
+    return tokenlist->tokens[tokenlist->pos++];
 }
 
 /*
  * allocates space for the given expression type.
  * sets the newly allocated expression's type to the given type.
  */
-void *expr_malloc(enum ast_type_t type)
+void *expr_malloc(enum ast_type_t type, struct token_t *token)
 {
     struct ast_node_t *expr;
     switch (type) {
-        case ASSIGNMENT:
-            expr = vmalloc(sizeof(struct ast_assignment_t));
-            break;
-
         case UNARY:
             expr = vmalloc(sizeof(struct ast_unary_t));
             break;
@@ -107,15 +102,9 @@ void *expr_malloc(enum ast_type_t type)
         case BINARY:
             expr = vmalloc(sizeof(struct ast_binary_t));
             break;
-
-        case LITERAL:
-            expr = vmalloc(sizeof(struct ast_literal_t));
-            break;
-
-        case PROGRAM_SEQUENCE:
-            expr = vmalloc(sizeof(struct ast_program_sequence_t));
     }
 
     expr->type = type;
+    expr->token = token;
     return expr;
 }

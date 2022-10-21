@@ -409,7 +409,7 @@ static void scan_token(void)
 
 
         case '\n':
-            add_token_simple(T_NEWLINE);
+            //add_token_simple(T_NEWLINE);
             break;
 
 

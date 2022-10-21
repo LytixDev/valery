@@ -39,6 +39,9 @@
 #       define print_debug(...) ((void) 0)
 #endif
 
+#define VA_NUMBER_OF_ARGS(...) (sizeof((int[]){__VA_ARGS__}) / sizeof(int))
+
+
 /* functions */
 void valery_exit(int exit_code);
 

@@ -1,3 +1,3 @@
 #!/bin/sh
 
-ls -la | wc -l
+ls not_a_file && echo true

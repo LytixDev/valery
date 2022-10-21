@@ -1,4 +1,29 @@
-/* https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_03 */
+simplified:
+---------------------------------------------------------------------------------------------------
+
+program                 : complete_command EOF ;
+
+complete_command        : list ;
+
+list                    : and_or ;
+
+and_or                  : pipe_sequence
+                        | pipe_sequence AND_IF pipe_sequence ;
+
+pipe_sequence           : command
+                        | pipe_sequence '|' command ;
+
+command                 : simple_command ;
+
+simple_command          : WORD 
+                        | WORD simple_command ;
+
+
+
+
+SPEC:
+https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_03
+---------------------------------------------------------------------------------------------------
 
 program          : linebreak complete_commands linebreak
                  | linebreak

@@ -11,69 +11,92 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  You should have received a copy of the GNU General Public License along with this program.
+ *  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <stdio.h>
 
+#include "valery/interpreter/ast.h"
 #include "valery/interpreter/lexer.h"
 #include "valery/interpreter/parser.h"
+#include "valery/interpreter/impl/exec.h"
 
+int glob_exit_code = 0;
 
-static void program_sequence(struct ast_program_sequence_t *expr);
+static int interpret_node(ASTNodeHead *expr);
 
+static void simple_command(struct ast_unary_t *expr)
+{
+    /* exec command WORD and recursively find arguments by looking right untl NULL */
+    int argc = 0;
+    char *argv[32];
 
-static void pipe(struct ast_binary_t *expr)
+    struct ast_unary_t *n = expr;
+    while (n != NULL) {
+        argv[argc++] = n->head.token->lexeme;
+        n = (struct ast_unary_t *)n->right;     //NOTE: wrong assumption here
+    }
+
+    argv[argc] = NULL;
+    glob_exit_code = valery_exec_program(argc, argv);
+}
+
+static void pipe_sequence(struct ast_binary_t *expr)
+{
+    /* 
+     * open pipe 
+     * exec left of pipe and redirect output to write end of pipe
+     * close write end of pipe
+     * exec right and redirect input to read end of pipe
+     * close read end of pipe
+     */
+}
+
+static void and_if(struct ast_binary_t *expr)
+{
+    interpret_node(expr->left);
+    if (glob_exit_code == 0)
+        interpret_node(expr->right);
+}
+
+static void and_or(struct ast_binary_t *expr)
 {
 }
 
-
-static void assignment(struct ast_assignment_t *expr)
+/* main interpreter functions */
+static void interpret_unary(struct ast_unary_t *expr)
 {
+    /* FOR NOW: assume all unaries are simple commands */
+    simple_command(expr);
 }
 
-static void unary(struct ast_unary_t *expr)
+static void interpret_binary(struct ast_binary_t *expr)
 {
-}
-
-static void binary(struct ast_binary_t *expr)
-{
-    switch (expr->op->type) {
+    switch (expr->head.token->type) {
         case T_PIPE:
-            pipe(expr);
+            pipe_sequence(expr);
+            break;
+        case T_AND_IF:
+            and_if(expr);
+            break;
+        case T_PIPE_PIPE:
+            and_or(expr);
             break;
 
         default:
-            fprintf(stderr, "binary type not supported");
+            fprintf(stderr, "binary interpret err");
             break;
     }
 }
 
-static void literal(struct ast_literal_t *expr)
-{
-}
-
-static void program_sequence(struct ast_program_sequence_t *expr)
-{
-}
-
-
 static int interpret_node(ASTNodeHead *expr)
 {
     switch (expr->type) {
-        case ASSIGNMENT:
-            assignment((struct ast_assignment_t *)expr);
-            break;
         case UNARY:
-            unary((struct ast_unary_t *)expr);
+            interpret_unary((struct ast_unary_t *)expr);
             break;
         case BINARY:
-            binary((struct ast_binary_t *)expr);
-            break;
-        case LITERAL:
-            literal((struct ast_literal_t *)expr);
-            break;
-        case PROGRAM_SEQUENCE:
-            program_sequence((struct ast_program_sequence_t *)expr);
+            interpret_binary((struct ast_binary_t *)expr);
             break;
 
         case ENUM_COUNT:
@@ -86,6 +109,9 @@ static int interpret_node(ASTNodeHead *expr)
 
 int interpret(ASTNodeHead *expr)
 {
+#ifdef DEBUG
+    printf("\n--- interpreter start ---\n");
+#endif
     interpret_node(expr);
     return 0;
 }

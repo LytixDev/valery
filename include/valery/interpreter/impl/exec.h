@@ -11,18 +11,14 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  You should have received a copy of the GNU General Public License along with this program.
+ *  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef VALERY_INTERPRETER_PARSER_H
-#define VALERY_INTERPRETER_PARSER_H
-
-#include "valery/interpreter/ast.h"     // enum ast_type_t, struct ast_node_t
-#include "valery/interpreter/lexer.h"   // struct tokenlist_t type
+#ifndef VALERY_INTERPRETER_IMPL_EXEC_H
+#define VALERY_INTERPRETER_IMPL_EXEC_H
 
 
-/* functions */
-struct ast_node_t *parse(struct tokenlist_t *tl);
+int valery_exec_program(int argc, char *argv[]);
 
-
-#endif /* !VALERY_INTERPRETER_PARSER_H */
+#endif /* !VALERY_INTERPRETER_IMPL_EXEC_H */

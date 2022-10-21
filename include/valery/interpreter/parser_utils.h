@@ -19,11 +19,12 @@
 
 #include <stdbool.h>
 
+#include "valery/valery.h"              // VA_NUMBER_OF_ARGS
 #include "valery/interpreter/parser.h"  // tokentype_t
 #include "valery/interpreter/parser.h"  // ast_type_t
 
 /* functions */
-bool check(enum tokentype_t type);
+bool check_single(enum tokentype_t type);
 
 struct token_t *previous();
 
@@ -31,19 +32,26 @@ struct token_t *previous();
  * @returns true if next token is any of the given arguments, else false.
  */
 bool check_either(unsigned int n, ...);
+#define check(...) check_either(VA_NUMBER_OF_ARGS(__VA_ARGS__), __VA_ARGS__)
 
 /*
  * consumes the next token if its type is one of the given arguments.
  * @returns true if successfully consumed a token, else false.
  */
 bool match_either(unsigned int n, ...);
+#define match(...) match_either(VA_NUMBER_OF_ARGS(__VA_ARGS__), __VA_ARGS__)
 
-void consume(enum tokentype_t type, char *err_msg);
+/*
+ * consumes the given token.
+ * gives error if next token does not have the passed in type .
+ * @returns the consumed token.
+ */
+void *consume(enum tokentype_t type, char *err_msg);
 
 /*
  * allocates space for the given expression type.
  * sets the newly allocated expression's type to the given type.
  */
-void *expr_malloc(enum ast_type_t type);
+void *expr_malloc(enum ast_type_t type, struct token_t *token);
 
 #endif /* VALERY_INTERPRETER_PARSER_UTILS_H */

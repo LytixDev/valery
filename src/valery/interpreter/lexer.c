@@ -20,6 +20,7 @@
 #include <stdbool.h>            // bool type
 
 #include "valery/interpreter/lexer.h"
+#define NICC_HT_IMPLEMENTATION
 #include "lib/nicc/nicc.h"      // hashtable implementation
 #include "valery/valery.h"
 
@@ -99,7 +100,7 @@ struct tokenlist_t *tl;
 /*
  * fills the global hashtable 'identifiers' with the supported identifiers
  */
-static void init_identifiers()
+static void init_identifiers(void)
 {
     if (identifiers != NULL)
         return;
@@ -218,7 +219,7 @@ static inline bool is_alpha(char c)
 }
 
 /* returns true on terminal chars for identifiers, else false */
-static bool is_terminal(char c, int step)
+static bool is_terminal(char c)
 {
     switch (c) {
         case '|':
@@ -233,21 +234,9 @@ static bool is_terminal(char c, int step)
         case '<':
         case '>':
         case '\n':
+        case ' ':
         case 0:
             return true;
-
-        case ' ':
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-            return is_terminal(*(source_cpy + step + 1), step + 1);
 
         default:
             return false;
@@ -276,7 +265,7 @@ static bool match(char expected)
     return false;
 }
 
-static void number_literal()
+static void number_literal(void)
 {
     char *literal_start = source_cpy - 1;       // -1 because scan_token() incremented source_cpy
     while (is_digit(*source_cpy))
@@ -290,7 +279,7 @@ static void number_literal()
     add_token(T_NUMBER, NULL, 0, &literal, sizeof(literal));
 }
 
-static void string_literal()
+static void string_literal(void)
 {
     //TODO: this is rather ugly
     char c;
@@ -310,10 +299,10 @@ static void string_literal()
     add_token(T_STRING, NULL, 0, literal_start, literal_size);
 }
 
-static void identifier()
+static void word(void)
 {
     char *identifier_start = source_cpy - 1;    // -1 because scan_token() incremented source_cpy
-    while (!is_terminal(*source_cpy, 0))
+    while (!is_terminal(*source_cpy))
         source_cpy++;
 
     size_t len = source_cpy - identifier_start;
@@ -331,9 +320,8 @@ static void identifier()
     add_token(is_reserved == NULL ? T_WORD : *is_reserved, identifier, len + 1, NULL, 0);
 }
 
-
 /* scans the source code until a non-ambigious token is determined */
-static void scan_token()
+static void scan_token(void)
 {
     char c = *source_cpy++;
     switch (c) {
@@ -422,7 +410,6 @@ static void scan_token()
 
         case '\n':
             add_token_simple(T_NEWLINE);
-            source_cpy++;
             break;
 
 
@@ -433,19 +420,13 @@ static void scan_token()
 
         
         default:
-            if (is_digit(c))
-                number_literal();
-            else if (is_alpha(c))
-                identifier();
-            else
-                valery_exit_parse_error("sucks man");
-            break;
+            word();
     }
 }
 
 struct tokenlist_t *tokenize(char *source)
 {
-    tl = tokenlist_malloc();           // define global struct tokenlist_t type
+    tl = tokenlist_malloc();            // define global struct tokenlist_t type
     source_cpy = source;                // global pointer into the source code for simplicity 
     init_identifiers();
 
@@ -456,7 +437,7 @@ struct tokenlist_t *tokenize(char *source)
 
     /* add sentinel token */
     add_token(T_EOF, NULL, 0, NULL, 0);
-    //destroy_identifiers();
+    destroy_identifiers();
     return tl;
 }
 
@@ -491,5 +472,4 @@ void tokenlist_dump(struct tokenlist_t *tokenlist)
         putchar('\n');
     }
 #endif /* DEBUG_INTERPRETER */
-    (void)0;
 }

@@ -17,7 +17,6 @@
 
 #include "valery/interpreter/lexer.h"
 #include "valery/interpreter/parser.h"
-#include "valery/exec.h"
 
 
 static void program_sequence(struct ast_program_sequence_t *expr);
@@ -25,36 +24,6 @@ static void program_sequence(struct ast_program_sequence_t *expr);
 
 static void pipe(struct ast_binary_t *expr)
 {
-    struct exec_ctx e_ctx = { .flags = SF_ADAM_VACANT | SF_SETH_VACANT, .read_stream = ST_NONE,
-        .write_stream = ST_NONE };
-
-    new_pipe(&e_ctx);
-
-    // update exec flags
-
-    //program_sequence((struct ast_program_sequence_t *)expr->left);
-    struct ast_program_sequence_t *left = expr->left;
-    struct ast_program_sequence_t *right = expr->right;
-    char *argv[left->argc];
-    #include "valery/env.h"
-    #include "valery/load_config.h"
-    struct env_t *env = env_malloc();
-    parse_config(env->env_vars, env->paths);
-    valery_exec_program(left->program_name->lexeme, argv, 0, env, &e_ctx);
-
-    // pipe close write end
-    e_ctx.read_stream = e_ctx.write_stream;
-    e_ctx.write_stream = ST_NONE;
-
-    if (e_ctx.read_stream == ST_ADAM)
-        e_ctx.flags |= SF_ADAM_CLOSE;
-    else
-        e_ctx.flags |= SF_SETH_CLOSE;
-
-    valery_exec_program(right->program_name->lexeme, argv, 0, env, &e_ctx);
-
-
-    terminate_pipe(&e_ctx);
 }
 
 

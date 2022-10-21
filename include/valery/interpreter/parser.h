@@ -40,12 +40,6 @@ typedef struct ast_node_t {
 /*
  * every expression starts with an ASTNodeHead describing its type.
  */
-struct ast_assignment_t {
-    ASTNodeHead head;
-    struct token_t *name;
-    struct ast_node_t *value;
-};
-
 struct ast_unary_t {
     ASTNodeHead head;
     struct token_t *op;  // operator
@@ -64,13 +58,6 @@ struct ast_literal_t {
     enum tokentype_t type;
     void *literal;
     size_t literal_size;
-};
-
-struct ast_program_sequence_t {
-    ASTNodeHead head;
-    struct token_t *program_name;
-    struct ast_node_t **argv;
-    unsigned int argc;
 };
 
 

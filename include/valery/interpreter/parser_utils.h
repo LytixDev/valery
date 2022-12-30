@@ -52,6 +52,11 @@ void *consume(enum tokentype_t type, char *err_msg);
  * allocates space for the given expression type.
  * sets the newly allocated expression's type to the given type.
  */
-void *expr_malloc(enum ast_type_t type, struct token_t *token);
+void *expr_alloc(enum ast_type_t type, struct token_t *token);
+
+
+void ast_arena_init();
+void ast_arena_clear();
+void ast_arena_release();
 
 #endif /* VALERY_INTERPRETER_PARSER_UTILS_H */

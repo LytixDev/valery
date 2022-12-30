@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include "valery/interpreter/parser_utils.h"
 #include "valery/valery.h"
 #include "valery/interpreter/ast.h"
 #include "valery/interpreter/lexer.h"
@@ -8,11 +9,13 @@
 
 int main()
 {
+    #define INTERACTIVE
+    char source[1024];
+#ifndef INTERACTIVE
     FILE *fp = fopen("src/test.sh", "r");
     if (fp == NULL)
         valery_exit_internal_error("could not open file test.sh :-(");
 
-    char source[1024];
     int c;
     int i = 0;
     do {
@@ -23,13 +26,22 @@ int main()
     } while (c != EOF);
 
     source[--i] = 0;
+#else
+    putchar('>');
+    scanf("%s", &source);
+#endif
 
-    struct tokenlist_t *tl = tokenize(source);
-    tokenlist_dump(tl);
+    ast_arena_init();
+    while (1) {
+        struct tokenlist_t *tl = tokenize(source);
+        tokenlist_dump(tl);
 
-    ASTNodeHead *expr = parse(tl);
-    ast_print(expr);
-    int rc = interpret(expr);
-    tokenlist_free(tl);
-    //ast_free(expr);
+        ASTNodeHead *expr = parse(tl);
+        ast_print(expr);
+        int rc = interpret(expr);
+        tokenlist_free(tl);
+        ast_arena_clear();
+    }
+
+    ast_arena_release();
 }

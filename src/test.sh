@@ -1,3 +1,3 @@
 #!/bin/sh
 
-ls not_a_file && echo true
+cat README.md && echo item crate

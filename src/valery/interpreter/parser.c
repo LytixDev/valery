@@ -22,6 +22,7 @@
 #include "valery/interpreter/parser_utils.h"
 #include "valery/valery.h"
 
+
 /* spec */
 static void *program(void);
 //static void *complete_commands(void);
@@ -120,7 +121,7 @@ static void *and_or(void)
     struct token_t *token = previous();
     struct ast_node_t *right = pipe_sequence();
 
-    struct ast_binary_t *expr = expr_malloc(BINARY, token);
+    struct ast_binary_t *expr = expr_alloc(BINARY, token);
     expr->left = left;
     expr->right = right;
     return expr;
@@ -140,7 +141,7 @@ static void *pipe_sequence(void)
     struct token_t *token = consume(T_PIPE, "pipe err");
     struct ast_node_t *right = command();
 
-    struct ast_binary_t *expr = expr_malloc(BINARY, token);
+    struct ast_binary_t *expr = expr_alloc(BINARY, token);
     expr->left = left;
     expr->right = right;
     return expr;
@@ -161,7 +162,7 @@ static void *command(void)
 static void *simple_command(void)
 {
     struct token_t *token = consume(T_WORD, "word err");
-    struct ast_unary_t *expr = expr_malloc(UNARY, token);
+    struct ast_unary_t *expr = expr_alloc(UNARY, token);
     expr->right = NULL;
     if (check(T_WORD))
         expr->right = simple_command();

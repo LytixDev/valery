@@ -20,7 +20,7 @@
 #include <stdlib.h>
 
 /* variables */
-#define COMMAND_LEN 1024
+#define MAX_COMMAND_LEN 1024
 #define CONFIG_NAME ".valeryrc"
 #define HISTFILE_NAME ".valery_hist"
 
@@ -40,6 +40,15 @@
 #endif
 
 #define VA_NUMBER_OF_ARGS(...) (sizeof((int[]){__VA_ARGS__}) / sizeof(int))
+
+#define KB(x) ((x) << 10)
+#define MB(x) ((x) << 20)
+#define GB(x) ((x) << 30)
+#define TB(x) ((x) << 40)
+
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
+#define CLAMP(a,x,b) (((x)<(a))?(a):((b)<(x))?(b):(x))
 
 
 /* functions */

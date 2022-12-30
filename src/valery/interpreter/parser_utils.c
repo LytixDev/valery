@@ -21,8 +21,12 @@
 #include "valery/interpreter/parser.h"  // ast_type_t
 #include "valery/interpreter/lexer.h"   // struct tokenlist_t type
 #include "valery/valery.h"              // errors
+#define SAC_IMPLEMENTATION
+#include "lib/sac/sac.h"
+
 
 extern struct tokenlist_t *tokenlist;   // defined in parser.c
+struct m_arena *ast_arena = NULL;
 
 
 bool check_single(enum tokentype_t type)
@@ -91,20 +95,37 @@ void *consume(enum tokentype_t type, char *err_msg)
  * allocates space for the given expression type.
  * sets the newly allocated expression's type to the given type.
  */
-void *expr_malloc(enum ast_type_t type, struct token_t *token)
+void *expr_alloc(enum ast_type_t type, struct token_t *token)
 {
     struct ast_node_t *expr;
     switch (type) {
         case UNARY:
-            expr = vmalloc(sizeof(struct ast_unary_t));
+            //expr = vmalloc(sizeof(struct ast_unary_t));
+            expr = m_arena_alloc(ast_arena, sizeof(struct ast_unary_t));
             break;
 
         case BINARY:
-            expr = vmalloc(sizeof(struct ast_binary_t));
+            //expr = vmalloc(sizeof(struct ast_binary_t));
+            expr = m_arena_alloc(ast_arena, sizeof(struct ast_binary_t));
             break;
     }
 
     expr->type = type;
     expr->token = token;
     return expr;
+}
+
+void ast_arena_init()
+{
+    ast_arena = m_arena_init(GB_SIZE_T(16), 4096);
+}
+
+void ast_arena_clear()
+{
+    m_arena_clear(ast_arena);
+}
+
+void ast_arena_release()
+{
+    m_arena_release(ast_arena);
 }

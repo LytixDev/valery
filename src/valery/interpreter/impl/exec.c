@@ -22,6 +22,8 @@
 #include <string.h>
 #include "sys/wait.h"
 
+#include "valery/valery.h"
+#include "valery/interpreter/impl/pipe.h"
 
 int valery_exec_program(int argc, char *argv[])
 {
@@ -29,8 +31,8 @@ int valery_exec_program(int argc, char *argv[])
     int rc;
     int return_code;
 
-    char first_arg[1024];
-    snprintf(first_arg, 1024, "/bin/%s", argv[0]);
+    char first_arg[MAX_COMMAND_LEN];
+    snprintf(first_arg, MAX_COMMAND_LEN, "/bin/%s", argv[0]);
 
     /*
      * full must contain program name and an argument.

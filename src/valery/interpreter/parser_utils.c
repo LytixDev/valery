@@ -17,13 +17,11 @@
 #include <stdbool.h>                    // bool type
 #include <stdarg.h>                     // va_start, va_arg, va_end 
 
+#include "valery/interpreter/ast.h"
 #include "valery/interpreter/parser_utils.h"
-#include "valery/interpreter/parser.h"  // ast_type_t
-#include "valery/interpreter/lexer.h"   // struct tokenlist_t type
-#include "valery/valery.h"              // errors
 #define SAC_IMPLEMENTATION
 #include "lib/sac/sac.h"
-
+#include "lib/nicc/nicc.h"
 
 extern struct tokenlist_t *tokenlist;   // defined in parser.c
 struct m_arena *ast_arena = NULL;
@@ -100,13 +98,16 @@ void *expr_alloc(enum ast_type_t type, struct token_t *token)
     struct ast_node_t *expr;
     switch (type) {
         case UNARY:
-            //expr = vmalloc(sizeof(struct ast_unary_t));
             expr = m_arena_alloc(ast_arena, sizeof(struct ast_unary_t));
             break;
 
         case BINARY:
-            //expr = vmalloc(sizeof(struct ast_binary_t));
             expr = m_arena_alloc(ast_arena, sizeof(struct ast_binary_t));
+            break;
+
+        case PROG:
+            expr = m_arena_alloc(ast_arena, sizeof(struct ast_prog_t));
+            ((struct ast_prog_t *)expr)->argv = darr_malloc();  // TODO: this should be allocated on the arena
             break;
     }
 

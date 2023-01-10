@@ -18,12 +18,17 @@
 #ifndef VALERY_INTERPRETER_AST_H
 #define VALERY_INTERPRETER_AST_H
 
-#include "lexer.h"        // struct tokenlist_t type
+#include "lexer.h"              // struct tokenlist_t type
+//#ifndef NICC_IMPLEMENTATION
+//#       define NICC_IMPLEMENTATION
+//#endif
+#include "lib/nicc/nicc.h"      // dynamic array (darr_t)
 
 /* types */
 enum ast_type_t {
     UNARY,
     BINARY,
+    PROG,
     ENUM_COUNT
 };
 
@@ -47,12 +52,9 @@ struct ast_binary_t {
     struct ast_node_t *right;
 };
 
-// stupid?
-struct ast_wordlist_t {
+struct ast_prog_t {
     ASTNodeHead head;
-    char **wordlist;
-    size_t size;
-    size_t capacity;
+    struct darr_t *argv;
 };
 
 

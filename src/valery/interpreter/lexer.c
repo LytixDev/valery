@@ -20,9 +20,11 @@
 #include <stdbool.h>            // bool type
 
 #include "valery/interpreter/lexer.h"
-#define NICC_HT_IMPLEMENTATION
-#include "lib/nicc/nicc.h"      // hashtable implementation
 #include "valery/valery.h"
+#ifndef NICC_IMPLEMENTATION
+#       define NICC_IMPLEMENTATION
+#endif
+#include "lib/nicc/nicc.h"      // hashtable implementation
 
 
 /* types */
@@ -409,7 +411,7 @@ static void scan_token(void)
 
 
         case '\n':
-            //add_token_simple(T_NEWLINE);
+            add_token_simple(T_NEWLINE);
             break;
 
 
@@ -437,7 +439,7 @@ struct tokenlist_t *tokenize(char *source)
 
     /* add sentinel token */
     add_token(T_EOF, NULL, 0, NULL, 0);
-    destroy_identifiers();
+    //destroy_identifiers();
     return tl;
 }
 

@@ -16,6 +16,7 @@
  */
 #include <stdio.h>
 
+#include "lib/nicc/nicc.h"
 #include "valery/interpreter/lexer.h"
 #include "valery/interpreter/ast.h"
 
@@ -34,8 +35,21 @@ static void binary_print(struct ast_binary_t *expr)
 {
     putchar('(');
     ast_print_node(expr->left);
-    printf("%s=%s", tokentype_str[expr->head.token->type], expr->head.token->lexeme);
+    //printf("%s=%s", tokentype_str[expr->head.token->type], expr->head.token->lexeme);
+    printf("%s", tokentype_str[expr->head.token->type]);
     ast_print_node(expr->right);
+    putchar(')');
+}
+
+static void list_print(struct ast_prog_t *expr)
+{
+    struct token_t *token;
+    putchar('(');
+    printf("LIST: %s:", expr->head.token->lexeme);
+    for (size_t i = 0; i < darr_get_size(expr->argv); i++) {
+        token = darr_get(expr->argv, i);
+        printf(" %s", token->lexeme);
+    }
     putchar(')');
 }
 
@@ -51,8 +65,12 @@ static void ast_print_node(ASTNodeHead *expr)
         case BINARY:
             binary_print((struct ast_binary_t *)expr);
             break;
+        case PROG:
+            list_print((struct ast_prog_t *)expr);
+            break;
+
         default:
-            printf("AST TYPE NOT HANLDED\n");
+            printf("AST TYPE NOT HANLDED, %d\n", expr->type);
     }
 }
 

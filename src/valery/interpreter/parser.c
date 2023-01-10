@@ -16,6 +16,7 @@
 
 #include <stdlib.h>
 
+#include "lib/nicc/nicc.h"
 #include "valery/interpreter/ast.h"
 #include "valery/interpreter/lexer.h"
 #include "valery/interpreter/parser.h"
@@ -67,7 +68,7 @@ static void *simple_command(void);
 //static void *io_here(void);
 //static void *here_end(void);
 //static void *newline_list(void);
-//static void *linebreak(void);
+static void *linebreak(void);
 //static void *separator_op(void);
 //static void *separator(void);
 //static void *sequential_sep(void);
@@ -97,11 +98,24 @@ static void *complete_command(void)
 }
 
 /*
- * : and_or ;
+ * : and_or 
+ * | linebreak
+ * | and_or and_or ;
  */
 static void *list(void)
 {
-    return and_or();
+    void *res = and_or();
+
+    if (check(T_NEWLINE))
+        linebreak();
+
+    if (!check(T_EOF)) {
+        and_or();
+        if (check(T_NEWLINE))
+            linebreak();
+    }
+
+    return res;
 }
 
 /*
@@ -161,12 +175,29 @@ static void *command(void)
  */
 static void *simple_command(void)
 {
+    //struct token_t *token = consume(T_WORD, "word err");
+    //struct ast_unary_t *expr = expr_alloc(UNARY, token);
+    //expr->right = NULL;
+    //if (check(T_WORD))
+    //    expr->right = simple_command();
+    //return expr;
     struct token_t *token = consume(T_WORD, "word err");
-    struct ast_unary_t *expr = expr_alloc(UNARY, token);
-    expr->right = NULL;
-    if (check(T_WORD))
-        expr->right = simple_command();
+    struct ast_prog_t *expr = expr_alloc(PROG, token);
+    darr_append(expr->argv, token);
+    
+    while (check(T_WORD)) {
+        token = consume(T_WORD, "word err");
+        darr_append(expr->argv, token);
+    }
+
     return expr;
+}
+
+static void *linebreak(void)
+{
+    while (check(T_NEWLINE))
+        consume(T_NEWLINE, "no newline :8");
+    return NULL;
 }
 
 struct ast_node_t *parse(struct tokenlist_t *tl)

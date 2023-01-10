@@ -1,11 +1,13 @@
 simplified:
 ---------------------------------------------------------------------------------------------------
 
-program                 : complete_command EOF ;
+program                 : complete_command* EOF ;
 
 complete_command        : list ;
 
-list                    : and_or ;
+list                    : and_or 
+                        | linebreak
+                        | and_or linebreak ;
 
 and_or                  : pipe_sequence
                         | pipe_sequence AND_IF pipe_sequence ;
@@ -18,6 +20,8 @@ command                 : simple_command ;
 simple_command          : WORD 
                         | WORD simple_command ;
 
+linebreak               : NEWLINE
+                        | NEWLINE newline ;
 
 
 

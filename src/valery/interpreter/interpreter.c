@@ -20,25 +20,32 @@
 #include "valery/interpreter/lexer.h"
 #include "valery/interpreter/parser.h"
 #include "valery/interpreter/impl/exec.h"
+#include "lib/nicc/nicc.h"
 
 int glob_exit_code = 0;
 
 static int interpret_node(ASTNodeHead *expr);
 
-static void simple_command(struct ast_unary_t *expr)
+static void simple_command(struct ast_prog_t *expr)
 {
     /* exec command WORD and recursively find arguments by looking right untl NULL */
-    int argc = 0;
-    char *argv[32];
+    //int argc = 0;
+    //char *argv[32];
 
-    struct ast_unary_t *n = expr;
-    while (n != NULL) {
-        argv[argc++] = n->head.token->lexeme;
-        n = (struct ast_unary_t *)n->right;     //NOTE: wrong assumption here
-    }
+    //struct ast_unary_t *n = expr;
+    //while (n != NULL) {
+    //    argv[argc++] = n->head.token->lexeme;
+    //    n = (struct ast_unary_t *)n->right;     //NOTE: wrong assumption here
+    //}
 
-    argv[argc] = NULL;
-    glob_exit_code = valery_exec_program(argc, argv);
+    //argv[argc] = NULL;
+
+    size_t argc = darr_get_size(expr->argv);
+    for (size_t i = 0; i < argc; i++)
+        printf("%s\n", darr_get(expr->argv, i));
+    //void *argv[argc + 1];
+    //darr_raw(expr->list, argv);
+    //glob_exit_code = valery_exec_program(argc, argv);
 }
 
 static void pipe_sequence(struct ast_binary_t *expr)
@@ -67,7 +74,7 @@ static void and_or(struct ast_binary_t *expr)
 static void interpret_unary(struct ast_unary_t *expr)
 {
     /* FOR NOW: assume all unaries are simple commands */
-    simple_command(expr);
+    //simple_command(expr);
 }
 
 static void interpret_binary(struct ast_binary_t *expr)
@@ -98,6 +105,9 @@ static int interpret_node(ASTNodeHead *expr)
         case BINARY:
             interpret_binary((struct ast_binary_t *)expr);
             break;
+
+        case PROG:
+            simple_command((struct ast_prog_t *)expr);
 
         case ENUM_COUNT:
             // ignore

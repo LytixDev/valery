@@ -1,3 +1,3 @@
 #!/bin/sh
-
-cat README.md && echo item crate
+cat README.md && echo wow this is many args
+ls

@@ -97,22 +97,26 @@ void *expr_alloc(enum ast_type_t type, struct token_t *token)
 {
     struct ast_node_t *expr;
     switch (type) {
-        case UNARY:
-            expr = m_arena_alloc(ast_arena, sizeof(struct ast_unary_t));
+        case AST_UNARY:
+            expr = m_arena_alloc(ast_arena, sizeof(struct UnaryExpr));
             break;
 
-        case BINARY:
-            expr = m_arena_alloc(ast_arena, sizeof(struct ast_binary_t));
+        case AST_BINARY:
+            expr = m_arena_alloc(ast_arena, sizeof(struct BinaryExpr));
             break;
 
-        case PROG:
-            expr = m_arena_alloc(ast_arena, sizeof(struct ast_prog_t));
-            ((struct ast_prog_t *)expr)->argv = darr_malloc();  // TODO: this should be allocated on the arena
+        case AST_LITERAL:
+            expr = m_arena_alloc(ast_arena, sizeof(struct LiteralExpr));
+            ((struct LiteralExpr *)expr)->this = token;
+            break;
+
+        case AST_LIST:
+            expr = m_arena_alloc(ast_arena, sizeof(struct ListExpr));
+            ((struct ListExpr *)expr)->exprs = darr_malloc();   /* TODO: put on arena */
             break;
     }
 
     expr->type = type;
-    expr->token = token;
     return expr;
 }
 

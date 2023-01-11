@@ -26,29 +26,12 @@ int glob_exit_code = 0;
 
 static int interpret_node(ASTNodeHead *expr);
 
-static void simple_command(struct ast_prog_t *expr)
+static void simple_command(struct ListExpr *expr)
 {
-    /* exec command WORD and recursively find arguments by looking right untl NULL */
-    //int argc = 0;
-    //char *argv[32];
-
-    //struct ast_unary_t *n = expr;
-    //while (n != NULL) {
-    //    argv[argc++] = n->head.token->lexeme;
-    //    n = (struct ast_unary_t *)n->right;     //NOTE: wrong assumption here
-    //}
-
-    //argv[argc] = NULL;
-
-    size_t argc = darr_get_size(expr->argv);
-    for (size_t i = 0; i < argc; i++)
-        printf("%s\n", darr_get(expr->argv, i));
-    //void *argv[argc + 1];
-    //darr_raw(expr->list, argv);
-    //glob_exit_code = valery_exec_program(argc, argv);
+    //valery_exec_program(darr_get_size(expr->exprs), NULL);
 }
 
-static void pipe_sequence(struct ast_binary_t *expr)
+static void pipe_sequence(struct BinaryExpr *expr)
 {
     /* 
      * open pipe 
@@ -59,55 +42,60 @@ static void pipe_sequence(struct ast_binary_t *expr)
      */
 }
 
-static void and_if(struct ast_binary_t *expr)
+static void and_if(struct BinaryExpr *expr)
 {
     interpret_node(expr->left);
     if (glob_exit_code == 0)
         interpret_node(expr->right);
 }
 
-static void and_or(struct ast_binary_t *expr)
+static void and_or(struct BinaryExpr *expr)
 {
 }
 
 /* main interpreter functions */
-static void interpret_unary(struct ast_unary_t *expr)
+static void interpret_unary(struct UnaryExpr *expr)
 {
     /* FOR NOW: assume all unaries are simple commands */
     //simple_command(expr);
 }
 
-static void interpret_binary(struct ast_binary_t *expr)
+static void interpret_binary(struct BinaryExpr *expr)
 {
-    switch (expr->head.token->type) {
-        case T_PIPE:
-            pipe_sequence(expr);
-            break;
-        case T_AND_IF:
-            and_if(expr);
-            break;
-        case T_PIPE_PIPE:
-            and_or(expr);
-            break;
+    //switch (expr->head.token->type) {
+    //    case T_PIPE:
+    //        pipe_sequence(expr);
+    //        break;
+    //    case T_AND_IF:
+    //        and_if(expr);
+    //        break;
+    //    case T_PIPE_PIPE:
+    //        and_or(expr);
+    //        break;
 
-        default:
-            fprintf(stderr, "binary interpret err");
-            break;
-    }
+    //    default:
+    //        fprintf(stderr, "binary interpret err");
+    //        break;
+    //}
 }
 
 static int interpret_node(ASTNodeHead *expr)
 {
     switch (expr->type) {
-        case UNARY:
-            interpret_unary((struct ast_unary_t *)expr);
+        case AST_UNARY:
+            interpret_unary((struct UnaryExpr *)expr);
             break;
-        case BINARY:
-            interpret_binary((struct ast_binary_t *)expr);
+        case AST_BINARY:
+            interpret_binary((struct BinaryExpr *)expr);
             break;
 
-        case PROG:
-            simple_command((struct ast_prog_t *)expr);
+        case AST_LITERAL:
+            //simple_command((struct LiteralExpr *)expr);
+            break;
+
+        case AST_LIST:
+            simple_command((struct ListExpr *)expr);
+            break;
 
         case ENUM_COUNT:
             // ignore

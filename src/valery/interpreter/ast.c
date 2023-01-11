@@ -23,33 +23,33 @@
 extern const char *tokentype_str[T_ENUM_COUNT];
 static void ast_print_node(ASTNodeHead *expr);
 
-static void unary_print(struct ast_unary_t *expr)
+static void unary_print(struct UnaryExpr *expr)
 {
     putchar('(');
-    printf("%s=%s", tokentype_str[expr->head.token->type], expr->head.token->lexeme);
+    //printf("%s=%s", tokentype_str[expr->head.token->type], expr->head.token->lexeme);
     ast_print_node(expr->right);
     putchar(')');
 }
 
-static void binary_print(struct ast_binary_t *expr)
+static void binary_print(struct BinaryExpr *expr)
 {
     putchar('(');
     ast_print_node(expr->left);
     //printf("%s=%s", tokentype_str[expr->head.token->type], expr->head.token->lexeme);
-    printf("%s", tokentype_str[expr->head.token->type]);
+    //printf("%s", tokentype_str[expr->head.token->type]);
     ast_print_node(expr->right);
     putchar(')');
 }
 
-static void list_print(struct ast_prog_t *expr)
+static void list_print(struct ListExpr *expr)
 {
     struct token_t *token;
     putchar('(');
-    printf("LIST: %s:", expr->head.token->lexeme);
-    for (size_t i = 0; i < darr_get_size(expr->argv); i++) {
-        token = darr_get(expr->argv, i);
-        printf(" %s", token->lexeme);
-    }
+    //printf("LIST: %s:", expr->head.token->lexeme);
+    //for (size_t i = 0; i < darr_get_size(expr->argv); i++) {
+    //    token = darr_get(expr->argv, i);
+    //    printf(" %s", token->lexeme);
+    //}
     putchar(')');
 }
 
@@ -59,14 +59,14 @@ static void ast_print_node(ASTNodeHead *expr)
         return;
 
     switch (expr->type) {
-        case UNARY:
-            unary_print((struct ast_unary_t *)expr);
+        case AST_UNARY:
+            unary_print((struct UnaryExpr *)expr);
             break;
-        case BINARY:
-            binary_print((struct ast_binary_t *)expr);
+        case AST_BINARY:
+            binary_print((struct BinaryExpr *)expr);
             break;
-        case PROG:
-            list_print((struct ast_prog_t *)expr);
+        case AST_LIST:
+            list_print((struct ListExpr *)expr);
             break;
 
         default:

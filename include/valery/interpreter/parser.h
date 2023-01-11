@@ -22,7 +22,8 @@
 
 
 /* functions */
-struct ast_node_t *parse(struct tokenlist_t *tl);
+//struct ast_node_t *parse(struct tokenlist_t *tl);
+struct darr_t *parse(struct tokenlist_t *tl);
 
 
 #endif /* !VALERY_INTERPRETER_PARSER_H */

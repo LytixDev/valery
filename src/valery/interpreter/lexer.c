@@ -180,9 +180,9 @@ static struct token_t *token_malloc(enum tokentype_t type, char *lexeme, size_t 
     token->type = type;
 
     if (lexeme != NULL) {
-        token->lexeme = vmalloc(lexeme_size + 1);
+        token->lexeme = vmalloc(lexeme_size);
         strncpy(token->lexeme, lexeme, lexeme_size);
-        token->lexeme[lexeme_size] = 0;
+        token->lexeme[lexeme_size - 1] = 0;
     }
 
     if (literal != NULL) {

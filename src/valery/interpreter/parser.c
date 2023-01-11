@@ -79,130 +79,160 @@ struct tokenlist_t *tokenlist;
 
 /* functions */
 
-/* 
- * : complete_command EOF ;
- */
+///* 
+// * : complete_command EOF ;
+// */
+//static void *program(void)
+//{
+//    struct ast_node_t *expr = complete_command();
+//    consume(T_EOF, "eof err");
+//    return expr;
+//}
+//
+///*
+// * : list ;
+// */
+//static void *complete_command(void)
+//{
+//    return list();
+//}
+//
+///*
+// * : and_or 
+// * | linebreak
+// * | and_or and_or ;
+// */
+//static void *list(void)
+//{
+//    void *res = and_or();
+//
+//    if (check(T_NEWLINE))
+//        linebreak();
+//
+//    if (!check(T_EOF)) {
+//        and_or();
+//        if (check(T_NEWLINE))
+//            linebreak();
+//    }
+//
+//    return res;
+//}
+//
+///*
+// * : pipe_sequence
+// * | pipe_sequence ('&&' | '||) pipe_sequence ;
+// */
+//static void *and_or(void)
+//{
+//    struct ast_node_t *left = pipe_sequence();
+//
+//    if (!check(T_AND_IF, T_PIPE_PIPE))
+//        return left;
+//
+//    if (!match(T_AND_IF, T_PIPE_PIPE))
+//        valery_exit_internal_error("dafuq");
+//
+//    struct token_t *token = previous();
+//    struct ast_node_t *right = pipe_sequence();
+//
+//    struct BinaryStmt *expr = expr_alloc(BINARY, token);
+//    expr->left = left;
+//    expr->right = right;
+//    return expr;
+//}
+//
+///*
+// * : command '|' command
+// * | command ;
+// */
+//static void *pipe_sequence(void)
+//{
+//    struct ast_node_t *left = command();
+//
+//    if (!check(T_PIPE))
+//        return left;
+//
+//    struct token_t *token = consume(T_PIPE, "pipe err");
+//    struct ast_node_t *right = command();
+//
+//    struct BinaryStmt *expr = expr_alloc(BINARY, token);
+//    expr->left = left;
+//    expr->right = right;
+//    return expr;
+//}
+//
+///*
+// * : simple_command ;
+// */
+//static void *command(void)
+//{
+//    return simple_command();
+//}
+//
+///*
+// * : WORD 
+// * | WORD simple_command ;
+// */
+//static void *simple_command(void)
+//{
+//    //struct token_t *token = consume(T_WORD, "word err");
+//    //struct ast_unary_t *expr = expr_alloc(UNARY, token);
+//    //expr->right = NULL;
+//    //if (check(T_WORD))
+//    //    expr->right = simple_command();
+//    //return expr;
+//    struct token_t *token = consume(T_WORD, "word err");
+//    struct ProgStmt *expr = expr_alloc(PROG, token);
+//    darr_append(expr->argv, token);
+//    
+//    while (check(T_WORD)) {
+//        token = consume(T_WORD, "word err");
+//        darr_append(expr->argv, token);
+//    }
+//
+//    return expr;
+//}
+//
+//static void *linebreak(void)
+//{
+//    while (check(T_NEWLINE))
+//        consume(T_NEWLINE, "no newline :8");
+//    return NULL;
+//}
+
+//struct ast_node_t *parse(struct tokenlist_t *tl)
+//{
+//    tokenlist = tl;
+//    struct ast_node_t *head = program();
+//    return head;
+//}
+
 static void *program(void)
 {
-    struct ast_node_t *expr = complete_command();
-    consume(T_EOF, "eof err");
+    void *expr = command();
+    consume(T_NEWLINE, "newline expected");
     return expr;
 }
 
-/*
- * : list ;
- */
-static void *complete_command(void)
-{
-    return list();
-}
-
-/*
- * : and_or 
- * | linebreak
- * | and_or and_or ;
- */
-static void *list(void)
-{
-    void *res = and_or();
-
-    if (check(T_NEWLINE))
-        linebreak();
-
-    if (!check(T_EOF)) {
-        and_or();
-        if (check(T_NEWLINE))
-            linebreak();
-    }
-
-    return res;
-}
-
-/*
- * : pipe_sequence
- * | pipe_sequence ('&&' | '||) pipe_sequence ;
- */
-static void *and_or(void)
-{
-    struct ast_node_t *left = pipe_sequence();
-
-    if (!check(T_AND_IF, T_PIPE_PIPE))
-        return left;
-
-    if (!match(T_AND_IF, T_PIPE_PIPE))
-        valery_exit_internal_error("dafuq");
-
-    struct token_t *token = previous();
-    struct ast_node_t *right = pipe_sequence();
-
-    struct ast_binary_t *expr = expr_alloc(BINARY, token);
-    expr->left = left;
-    expr->right = right;
-    return expr;
-}
-
-/*
- * : command '|' command
- * | command ;
- */
-static void *pipe_sequence(void)
-{
-    struct ast_node_t *left = command();
-
-    if (!check(T_PIPE))
-        return left;
-
-    struct token_t *token = consume(T_PIPE, "pipe err");
-    struct ast_node_t *right = command();
-
-    struct ast_binary_t *expr = expr_alloc(BINARY, token);
-    expr->left = left;
-    expr->right = right;
-    return expr;
-}
-
-/*
- * : simple_command ;
- */
 static void *command(void)
 {
-    return simple_command();
-}
-
-/*
- * : WORD 
- * | WORD simple_command ;
- */
-static void *simple_command(void)
-{
-    //struct token_t *token = consume(T_WORD, "word err");
-    //struct ast_unary_t *expr = expr_alloc(UNARY, token);
-    //expr->right = NULL;
-    //if (check(T_WORD))
-    //    expr->right = simple_command();
-    //return expr;
-    struct token_t *token = consume(T_WORD, "word err");
-    struct ast_prog_t *expr = expr_alloc(PROG, token);
-    darr_append(expr->argv, token);
-    
-    while (check(T_WORD)) {
-        token = consume(T_WORD, "word err");
-        darr_append(expr->argv, token);
+    //consume(T_WORD, "expected word");
+    struct ListExpr *stmt = expr_alloc(AST_LIST, NULL);
+    while (match(T_WORD)) {
+        struct token_t *prev = previous();
+        struct UnaryExpr *expr = expr_alloc(AST_LITERAL, prev);
+        darr_append(stmt->exprs, expr);
     }
-
-    return expr;
+    return stmt;
 }
 
-static void *linebreak(void)
-{
-    while (check(T_NEWLINE))
-        consume(T_NEWLINE, "no newline :8");
-    return NULL;
-}
 
-struct ast_node_t *parse(struct tokenlist_t *tl)
+struct darr_t *parse(struct tokenlist_t *tl)
 {
     tokenlist = tl;
-    struct ast_node_t *head = program();
-    return head;
+    struct darr_t *exprs = darr_malloc();
+    while (!check(T_EOF))
+        darr_append(exprs, program());
+    //return head;
+    return exprs;
 }

@@ -29,9 +29,11 @@ int main()
     struct tokenlist_t *tl = tokenize(source);
     tokenlist_dump(tl);
 
-    ASTNodeHead *expr = parse(tl);
-    ast_print(expr);
-    //int rc = interpret(expr);
+    struct darr_t *exprs = parse(tl);
+    //ast_print(expr);
+    for (int i = 0; i < darr_get_size(exprs); i++) {
+        int rc = interpret(darr_get(exprs, i));
+    }
     //tokenlist_free(tl);
     ast_arena_release();
 }

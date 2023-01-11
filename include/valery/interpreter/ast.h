@@ -26,35 +26,43 @@
 
 /* types */
 enum ast_type_t {
-    UNARY,
-    BINARY,
-    PROG,
+    AST_UNARY,
+    AST_BINARY,
+    AST_LITERAL,
+    AST_LIST,
     ENUM_COUNT
 };
 
 typedef struct ast_node_t {
     enum ast_type_t type;
-    struct token_t *token;
+    //struct token_t *token;
 } ASTNodeHead;
 
 /* 
  * expression types.
  * every expression starts with an ASTNodeHead describing its type.
  */
-struct ast_unary_t {
+struct UnaryExpr {
     ASTNodeHead head;
+    struct token_t *this;
     struct ast_node_t *right;
 };
 
-struct ast_binary_t {
+struct BinaryExpr {
     ASTNodeHead head;
+    struct token_t *this;
     struct ast_node_t *left;
     struct ast_node_t *right;
 };
 
-struct ast_prog_t {
+struct LiteralExpr {
     ASTNodeHead head;
-    struct darr_t *argv;
+    struct token_t *this;
+};
+
+struct ListExpr {
+    ASTNodeHead head;
+    struct darr_t *exprs;       /* dynamic array of ast nodes */
 };
 
 

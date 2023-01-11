@@ -1,4 +1,3 @@
 #!/bin/sh
-#ls
-#ping
+ls -la
 echo hello

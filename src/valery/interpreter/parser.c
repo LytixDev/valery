@@ -216,16 +216,14 @@ static void *program(void)
 
 static void *command(void)
 {
-    //consume(T_WORD, "expected word");
     struct ListExpr *stmt = expr_alloc(AST_LIST, NULL);
     while (match(T_WORD)) {
         struct token_t *prev = previous();
-        struct UnaryExpr *expr = expr_alloc(AST_LITERAL, prev);
+        struct LiteralExpr *expr = expr_alloc(AST_LITERAL, prev);
         darr_append(stmt->exprs, expr);
     }
     return stmt;
 }
-
 
 struct darr_t *parse(struct tokenlist_t *tl)
 {
@@ -233,6 +231,5 @@ struct darr_t *parse(struct tokenlist_t *tl)
     struct darr_t *exprs = darr_malloc();
     while (!check(T_EOF))
         darr_append(exprs, program());
-    //return head;
     return exprs;
 }

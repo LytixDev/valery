@@ -21,14 +21,30 @@
 #include "valery/interpreter/parser.h"
 #include "valery/interpreter/impl/exec.h"
 #include "lib/nicc/nicc.h"
+#include "valery/valery.h"
 
 int glob_exit_code = 0;
 
 static int interpret_node(ASTNodeHead *expr);
+static void *interpret_node_to_literal(ASTNodeHead *expr);
 
 static void simple_command(struct ListExpr *expr)
 {
-    //valery_exec_program(darr_get_size(expr->exprs), NULL);
+    int argc = (int)darr_get_size(expr->exprs);
+    struct darr_t *argv = darr_malloc();
+    /*
+     * NOTE:
+     * essentially we are resolving all the nodes in the list that will become argv
+     * right now later down the chain they are all assumed to be literals, but later on an argv can
+     * f.ex be a subshell or some other statement that needs to be resolved and return a literal
+     */
+    for (int i = 0; i < argc; i++) {
+        ASTNodeHead *expr_or_stmt = darr_get(expr->exprs, i);
+        void *res = interpret_node_to_literal(expr_or_stmt);
+        darr_append(argv, res);
+    }
+
+    valery_exec_program(argc, (char **)darr_raw_ret(argv));
 }
 
 static void pipe_sequence(struct BinaryExpr *expr)
@@ -77,6 +93,15 @@ static void interpret_binary(struct BinaryExpr *expr)
     //        fprintf(stderr, "binary interpret err");
     //        break;
     //}
+}
+
+static void *interpret_node_to_literal(ASTNodeHead *expr)
+{
+    /* NOTE: assuming all here are literals, BAD */
+    if (expr->type != AST_LITERAL)
+        valery_exit_internal_error("node should be lit!!!");
+
+    return ((struct LiteralExpr *)expr)->this->lexeme;
 }
 
 static int interpret_node(ASTNodeHead *expr)

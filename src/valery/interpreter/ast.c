@@ -21,7 +21,7 @@
 #include "valery/interpreter/ast.h"
 
 extern const char *tokentype_str[T_ENUM_COUNT];
-static void ast_print_node(ASTNodeHead *expr);
+static void ast_print_node(struct AstNodeHead *expr);
 
 static void unary_print(struct UnaryExpr *expr)
 {
@@ -41,7 +41,7 @@ static void binary_print(struct BinaryExpr *expr)
     putchar(')');
 }
 
-static void list_print(struct ListExpr *expr)
+static void list_print(struct CommandExpr *expr)
 {
     struct token_t *token;
     putchar('(');
@@ -53,28 +53,25 @@ static void list_print(struct ListExpr *expr)
     putchar(')');
 }
 
-static void ast_print_node(ASTNodeHead *expr)
+static void ast_print_node(struct AstNodeHead *expr)
 {
     if (expr == NULL)
         return;
 
-    switch (expr->type) {
-        case AST_UNARY:
+    switch (expr->expr_type) {
+        case EXPR_UNARY:
             unary_print((struct UnaryExpr *)expr);
             break;
-        case AST_BINARY:
+        case EXPR_BINARY:
             binary_print((struct BinaryExpr *)expr);
-            break;
-        case AST_LIST:
-            list_print((struct ListExpr *)expr);
             break;
 
         default:
-            printf("AST TYPE NOT HANLDED, %d\n", expr->type);
+            printf("AST TYPE NOT HANLDED, %d\n", expr->expr_type);
     }
 }
 
-void ast_print(ASTNodeHead *expr)
+void ast_print(struct AstNodeHead *expr)
 {
     printf("\n--- AST dump ---\n");
     ast_print_node(expr);

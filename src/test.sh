@@ -1,3 +1,2 @@
 #!/bin/sh
-ls -la
-echo hello
+ls -la --color=auto && echo "ls returned"

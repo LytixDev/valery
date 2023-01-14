@@ -237,6 +237,7 @@ static bool is_terminal(char c)
         case '>':
         case '\n':
         case ' ':
+        case '"':
         case 0:
             return true;
 
@@ -319,7 +320,8 @@ static void word(void)
      * where only a reserved word could be the next correct token, proceed as above. 
      */
     enum tokentype_t *is_reserved = ht_get(identifiers, identifier, len + 1);
-    add_token(is_reserved == NULL ? T_WORD : *is_reserved, identifier, len + 1, NULL, 0);
+    //add_token(is_reserved == NULL ? T_WORD : *is_reserved, identifier, len + 1, NULL, 0);
+    add_token(is_reserved == NULL ? T_WORD : *is_reserved, identifier, len + 1, identifier, len + 1);
 }
 
 /* scans the source code until a non-ambigious token is determined */

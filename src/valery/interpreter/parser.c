@@ -30,6 +30,7 @@ static void *program(void);
 static void *complete_command(void);
 static void *list(void);
 static void *and_or(void);
+static void *and_if(void);
 //static void *pipeline(void);
 static void *pipe_sequence(void);
 static void *command(void);
@@ -209,17 +210,32 @@ struct tokenlist_t *tokenlist;
 
 static void *program(void)
 {
-    void *expr = command();
+    void *expr = and_if();
     consume(T_NEWLINE, "newline expected");
+    return expr;
+}
+
+static void *and_if(void)
+{
+    struct BinaryExpr *expr = expr_alloc(EXPR_BINARY, NULL);
+    void *condition = command();
+    expr->left = condition;
+    if (match(T_AND_IF)) {
+        struct token_t *prev = previous();
+        expr->operator_ = prev;
+        void *then = command();
+        expr->right = then;
+    }
+
     return expr;
 }
 
 static void *command(void)
 {
-    struct ListExpr *stmt = expr_alloc(AST_LIST, NULL);
-    while (match(T_WORD)) {
+    struct CommandExpr *stmt = expr_alloc(EXPR_COMMAND, NULL);
+    while (match(T_WORD, T_STRING)) {
         struct token_t *prev = previous();
-        struct LiteralExpr *expr = expr_alloc(AST_LITERAL, prev);
+        struct LiteralExpr *expr = expr_alloc(EXPR_LITERAL, prev);
         darr_append(stmt->exprs, expr);
     }
     return stmt;

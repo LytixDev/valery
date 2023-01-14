@@ -21,7 +21,7 @@
 
 #include "valery/valery.h"              // VA_NUMBER_OF_ARGS
 #include "valery/interpreter/parser.h"  // tokentype_t
-#include "valery/interpreter/parser.h"  // ast_type_t
+#include "valery/interpreter/parser.h"  // expr_type_t
 
 /* functions */
 bool check_single(enum tokentype_t type);
@@ -52,7 +52,7 @@ void *consume(enum tokentype_t type, char *err_msg);
  * allocates space for the given expression type.
  * sets the newly allocated expression's type to the given type.
  */
-void *expr_alloc(enum ast_type_t type, struct token_t *token);
+void *expr_alloc(enum AstExprType type, struct token_t *token);
 
 
 void ast_arena_init();

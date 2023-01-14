@@ -1,8 +1,11 @@
 test:
 ---------------------------------------------------------------------------------------------------
-program                 : (command "\n")* ;
+program                 : (and_if "\n")* EOF ;
 
-command                 : WORD* ;
+and_if                  : command
+                        | command T_AND_IF command ;
+
+command                 : WORD*;
 
 
 

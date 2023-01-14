@@ -17,7 +17,7 @@
 #ifndef VALERY_INTERPRETER_PARSER_H
 #define VALERY_INTERPRETER_PARSER_H
 
-#include "valery/interpreter/ast.h"     // enum ast_type_t, struct ast_node_t
+#include "valery/interpreter/ast.h"     // enum expr_type_t, struct ast_node_t
 #include "valery/interpreter/lexer.h"   // struct tokenlist_t type
 
 

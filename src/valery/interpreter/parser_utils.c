@@ -93,30 +93,30 @@ void *consume(enum tokentype_t type, char *err_msg)
  * allocates space for the given expression type.
  * sets the newly allocated expression's type to the given type.
  */
-void *expr_alloc(enum ast_type_t type, struct token_t *token)
+void *expr_alloc(enum AstExprType type, struct token_t *token)
 {
-    struct ast_node_t *expr;
+    struct AstNodeHead *expr;
     switch (type) {
-        case AST_UNARY:
+        case EXPR_UNARY:
             expr = m_arena_alloc(ast_arena, sizeof(struct UnaryExpr));
             break;
 
-        case AST_BINARY:
+        case EXPR_BINARY:
             expr = m_arena_alloc(ast_arena, sizeof(struct BinaryExpr));
             break;
 
-        case AST_LITERAL:
+        case EXPR_LITERAL:
             expr = m_arena_alloc(ast_arena, sizeof(struct LiteralExpr));
-            ((struct LiteralExpr *)expr)->this = token;
+            ((struct LiteralExpr *)expr)->value = token->literal;
             break;
 
-        case AST_LIST:
-            expr = m_arena_alloc(ast_arena, sizeof(struct ListExpr));
-            ((struct ListExpr *)expr)->exprs = darr_malloc();   /* TODO: put on arena */
+        case EXPR_COMMAND:
+            expr = m_arena_alloc(ast_arena, sizeof(struct CommandExpr));
+            ((struct CommandExpr *)expr)->exprs = darr_malloc();   /* TODO: put on arena */
             break;
     }
 
-    expr->type = type;
+    expr->expr_type = type;
     return expr;
 }
 

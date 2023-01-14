@@ -25,50 +25,77 @@
 #include "lib/nicc/nicc.h"      // dynamic array (darr_t)
 
 /* types */
-enum ast_type_t {
-    AST_UNARY,
-    AST_BINARY,
-    AST_LITERAL,
-    AST_LIST,
-    ENUM_COUNT
+enum AstExprType {
+    EXPR_UNARY,
+    EXPR_BINARY,
+    EXPR_LITERAL,
+    EXPR_COMMAND,
+    EXPR_ENUM_COUNT
 };
 
-typedef struct ast_node_t {
-    enum ast_type_t type;
+enum AstStmtType {
+    STMT_IF,
+    STMT_EXPRESSION,
+    STMT_ENUM_COUNT
+};
+
+struct AstNodeHead {
+    union {
+        enum AstExprType expr_type;
+        enum AstStmtType stmt_type;
+    };
     //struct token_t *token;
-} ASTNodeHead;
+};
 
 /* 
  * expression types.
- * every expression starts with an ASTNodeHead describing its type.
+ * every expression starts with an struct AstNodeHead describing its type.
  */
 struct UnaryExpr {
-    ASTNodeHead head;
-    struct token_t *this;
-    struct ast_node_t *right;
+    struct AstNodeHead head;
+    struct token_t *operator_;
+    struct AstNodeHead *right;
 };
 
 struct BinaryExpr {
-    ASTNodeHead head;
-    struct token_t *this;
-    struct ast_node_t *left;
-    struct ast_node_t *right;
+    struct AstNodeHead head;
+    struct AstNodeHead *left;
+    struct token_t *operator_;
+    struct AstNodeHead *right;
 };
 
 struct LiteralExpr {
-    ASTNodeHead head;
-    struct token_t *this;
+    struct AstNodeHead head;
+    void *value;
 };
 
-struct ListExpr {
-    ASTNodeHead head;
+struct CommandExpr {
+    struct AstNodeHead head;
     struct darr_t *exprs;       /* dynamic array of ast nodes */
+};
+
+struct VariableExpr {
+    struct AstNodeHead head;
+    struct token_t *name;
+};
+
+struct ExpressionStmt {
+    struct AstNodeHead head;
+    struct AstNodeHead *expression;
+};
+
+struct IfStmt {
+    struct AstNodeHead head;
+    struct AstNodeHead *condition;
+    struct AstNodeHead *then_branch;
+    struct AstNodeHead *else_branch;
+
 };
 
 
 /* functions */
-void ast_free(struct ast_node_t *starting_node);
+void ast_free(struct AstNodeHead *starting_node);
 
-void ast_print(ASTNodeHead *first);
+void ast_print(struct AstNodeHead *first);
 
 #endif /* !VALERY_INTERPRETER_AST_H */

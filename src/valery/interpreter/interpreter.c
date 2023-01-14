@@ -25,10 +25,10 @@
 
 int glob_exit_code = 0;
 
-static int interpret_node(ASTNodeHead *expr);
-static void *interpret_node_to_literal(ASTNodeHead *expr);
+static int interpret_node(struct AstNodeHead *expr);
+static void *interpret_node_to_literal(struct AstNodeHead *expr);
 
-static void simple_command(struct ListExpr *expr)
+static void simple_command(struct CommandExpr *expr)
 {
     int argc = (int)darr_get_size(expr->exprs);
     struct darr_t *argv = darr_malloc();
@@ -39,12 +39,12 @@ static void simple_command(struct ListExpr *expr)
      * f.ex be a subshell or some other statement that needs to be resolved and return a literal
      */
     for (int i = 0; i < argc; i++) {
-        ASTNodeHead *expr_or_stmt = darr_get(expr->exprs, i);
-        void *res = interpret_node_to_literal(expr_or_stmt);
+        struct AstNodeHead *e = darr_get(expr->exprs, i);
+        void *res = interpret_node_to_literal(e);
         darr_append(argv, res);
     }
 
-    valery_exec_program(argc, (char **)darr_raw_ret(argv));
+    glob_exit_code = valery_exec_program(argc, (char **)darr_raw_ret(argv));
 }
 
 static void pipe_sequence(struct BinaryExpr *expr)
@@ -78,51 +78,60 @@ static void interpret_unary(struct UnaryExpr *expr)
 
 static void interpret_binary(struct BinaryExpr *expr)
 {
-    //switch (expr->head.token->type) {
-    //    case T_PIPE:
-    //        pipe_sequence(expr);
-    //        break;
-    //    case T_AND_IF:
-    //        and_if(expr);
-    //        break;
-    //    case T_PIPE_PIPE:
-    //        and_or(expr);
-    //        break;
+    switch (expr->operator_->type) {
+        case T_PIPE:
+            pipe_sequence(expr);
+            break;
+        case T_AND_IF:
+            and_if(expr);
+            break;
+        case T_PIPE_PIPE:
+            and_or(expr);
+            break;
 
-    //    default:
-    //        fprintf(stderr, "binary interpret err");
-    //        break;
-    //}
+        default:
+            valery_exit_internal_error("goooo");
+            break;
+    }
 }
 
-static void *interpret_node_to_literal(ASTNodeHead *expr)
+static void interpret_list(struct CommandExpr *expr)
+{
+    if (expr->head.expr_type == EXPR_COMMAND)
+        simple_command(expr);
+    else
+        valery_exit_internal_error("oop");
+
+}
+
+static void *interpret_node_to_literal(struct AstNodeHead *expr)
 {
     /* NOTE: assuming all here are literals, BAD */
-    if (expr->type != AST_LITERAL)
+    if (expr->expr_type != EXPR_LITERAL)
         valery_exit_internal_error("node should be lit!!!");
 
-    return ((struct LiteralExpr *)expr)->this->lexeme;
+    return ((struct LiteralExpr *)expr)->value;
 }
 
-static int interpret_node(ASTNodeHead *expr)
+static int interpret_node(struct AstNodeHead *expr)
 {
-    switch (expr->type) {
-        case AST_UNARY:
+    switch (expr->expr_type) {
+        case EXPR_UNARY:
             interpret_unary((struct UnaryExpr *)expr);
             break;
-        case AST_BINARY:
+        case EXPR_BINARY:
             interpret_binary((struct BinaryExpr *)expr);
             break;
 
-        case AST_LITERAL:
+        case EXPR_LITERAL:
             //simple_command((struct LiteralExpr *)expr);
             break;
 
-        case AST_LIST:
-            simple_command((struct ListExpr *)expr);
+        case EXPR_COMMAND:
+            interpret_list((struct CommandExpr *)expr);
             break;
 
-        case ENUM_COUNT:
+        case EXPR_ENUM_COUNT:
             // ignore
             break;
     }
@@ -130,7 +139,7 @@ static int interpret_node(ASTNodeHead *expr)
     return 0;
 }
 
-int interpret(ASTNodeHead *expr)
+int interpret(struct AstNodeHead *expr)
 {
 #ifdef DEBUG
     printf("\n--- interpreter start ---\n");

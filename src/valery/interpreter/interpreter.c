@@ -25,8 +25,8 @@
 
 int glob_exit_code = 0;
 
-static int interpret_node(struct AstNodeHead *expr);
-static void *interpret_node_to_literal(struct AstNodeHead *expr);
+static int interpret_node(struct Expr *expr);
+static void *interpret_node_to_literal(struct Expr *expr);
 
 static void simple_command(struct CommandExpr *expr)
 {
@@ -39,7 +39,7 @@ static void simple_command(struct CommandExpr *expr)
      * f.ex be a subshell or some other statement that needs to be resolved and return a literal
      */
     for (int i = 0; i < argc; i++) {
-        struct AstNodeHead *e = darr_get(expr->exprs, i);
+        struct Expr *e = darr_get(expr->exprs, i);
         void *res = interpret_node_to_literal(e);
         darr_append(argv, res);
     }
@@ -97,25 +97,25 @@ static void interpret_binary(struct BinaryExpr *expr)
 
 static void interpret_list(struct CommandExpr *expr)
 {
-    if (expr->head.expr_type == EXPR_COMMAND)
+    if (expr->head.type == EXPR_COMMAND)
         simple_command(expr);
     else
         valery_exit_internal_error("oop");
 
 }
 
-static void *interpret_node_to_literal(struct AstNodeHead *expr)
+static void *interpret_node_to_literal(struct Expr *expr_head)
 {
     /* NOTE: assuming all here are literals, BAD */
-    if (expr->expr_type != EXPR_LITERAL)
+    if (expr_head->type != EXPR_LITERAL)
         valery_exit_internal_error("node should be lit!!!");
 
-    return ((struct LiteralExpr *)expr)->value;
+    return ((struct LiteralExpr *)expr_head)->value;
 }
 
-static int interpret_node(struct AstNodeHead *expr)
+static int interpret_node(struct Expr *expr)
 {
-    switch (expr->expr_type) {
+    switch (expr->type) {
         case EXPR_UNARY:
             interpret_unary((struct UnaryExpr *)expr);
             break;
@@ -139,11 +139,11 @@ static int interpret_node(struct AstNodeHead *expr)
     return 0;
 }
 
-int interpret(struct AstNodeHead *expr)
+int interpret(struct Expr *expr_head)
 {
 #ifdef DEBUG
     printf("\n--- interpreter start ---\n");
 #endif
-    interpret_node(expr);
+    interpret_node(expr_head);
     return 0;
 }

@@ -232,13 +232,13 @@ static void *and_if(void)
 
 static void *command(void)
 {
-    struct CommandExpr *stmt = expr_alloc(EXPR_COMMAND, NULL);
+    struct CommandExpr *expr = expr_alloc(EXPR_COMMAND, NULL);
     while (match(T_WORD, T_STRING)) {
         struct token_t *prev = previous();
-        struct LiteralExpr *expr = expr_alloc(EXPR_LITERAL, prev);
-        darr_append(stmt->exprs, expr);
+        struct LiteralExpr *expr_lit = expr_alloc(EXPR_LITERAL, prev);
+        darr_append(expr->exprs, expr_lit);
     }
-    return stmt;
+    return expr;
 }
 
 struct darr_t *parse(struct tokenlist_t *tl)

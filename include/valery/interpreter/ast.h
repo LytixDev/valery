@@ -25,7 +25,7 @@
 #include "lib/nicc/nicc.h"      // dynamic array (darr_t)
 
 /* types */
-enum AstExprType {
+enum ExprType {
     EXPR_UNARY,
     EXPR_BINARY,
     EXPR_LITERAL,
@@ -33,69 +33,71 @@ enum AstExprType {
     EXPR_ENUM_COUNT
 };
 
-enum AstStmtType {
+enum StmtType {
     STMT_IF,
     STMT_EXPRESSION,
     STMT_ENUM_COUNT
 };
 
-struct AstNodeHead {
-    union {
-        enum AstExprType expr_type;
-        enum AstStmtType stmt_type;
-    };
-    //struct token_t *token;
+/*
+ * evil trick to get some sort of polymorphism (I concede, my brain has been corrupted by OOP)
+ */
+struct Expr {
+    enum ExprType type;
 };
 
-/* 
- * expression types.
- * every expression starts with an struct AstNodeHead describing its type.
- */
+struct Stmt {
+    enum StmtType type;
+};
+
+/* expressions */
 struct UnaryExpr {
-    struct AstNodeHead head;
+    struct Expr head;
     struct token_t *operator_;
-    struct AstNodeHead *right;
+    struct Expr *right;
 };
 
 struct BinaryExpr {
-    struct AstNodeHead head;
-    struct AstNodeHead *left;
+    struct Expr head;
+    struct Expr *left;
     struct token_t *operator_;
-    struct AstNodeHead *right;
+    struct Expr *right;
 };
 
 struct LiteralExpr {
-    struct AstNodeHead head;
+    struct Expr head;
     void *value;
 };
 
 struct CommandExpr {
-    struct AstNodeHead head;
+    struct Expr head;
     struct darr_t *exprs;       /* dynamic array of ast nodes */
 };
 
 struct VariableExpr {
-    struct AstNodeHead head;
+    struct Expr head;
     struct token_t *name;
 };
 
+
+/* statements */
 struct ExpressionStmt {
-    struct AstNodeHead head;
-    struct AstNodeHead *expression;
+    struct Stmt head;
+    struct Expr *expression;
 };
 
 struct IfStmt {
-    struct AstNodeHead head;
-    struct AstNodeHead *condition;
-    struct AstNodeHead *then_branch;
-    struct AstNodeHead *else_branch;
+    struct Stmt head;
+    struct Expr *condition;
+    struct Stmt *then_branch;
+    struct Stmt *else_branch;
 
 };
 
 
 /* functions */
-void ast_free(struct AstNodeHead *starting_node);
+//void ast_free(struct AstNodeHead *starting_node);
 
-void ast_print(struct AstNodeHead *first);
+void ast_print(struct Stmt *first);
 
 #endif /* !VALERY_INTERPRETER_AST_H */

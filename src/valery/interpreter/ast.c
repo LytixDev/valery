@@ -21,59 +21,59 @@
 #include "valery/interpreter/ast.h"
 
 extern const char *tokentype_str[T_ENUM_COUNT];
-static void ast_print_node(struct AstNodeHead *expr);
-
-static void unary_print(struct UnaryExpr *expr)
-{
-    putchar('(');
-    //printf("%s=%s", tokentype_str[expr->head.token->type], expr->head.token->lexeme);
-    ast_print_node(expr->right);
-    putchar(')');
-}
-
-static void binary_print(struct BinaryExpr *expr)
-{
-    putchar('(');
-    ast_print_node(expr->left);
-    //printf("%s=%s", tokentype_str[expr->head.token->type], expr->head.token->lexeme);
-    //printf("%s", tokentype_str[expr->head.token->type]);
-    ast_print_node(expr->right);
-    putchar(')');
-}
-
-static void list_print(struct CommandExpr *expr)
-{
-    struct token_t *token;
-    putchar('(');
-    //printf("LIST: %s:", expr->head.token->lexeme);
-    //for (size_t i = 0; i < darr_get_size(expr->argv); i++) {
-    //    token = darr_get(expr->argv, i);
-    //    printf(" %s", token->lexeme);
-    //}
-    putchar(')');
-}
-
-static void ast_print_node(struct AstNodeHead *expr)
-{
-    if (expr == NULL)
-        return;
-
-    switch (expr->expr_type) {
-        case EXPR_UNARY:
-            unary_print((struct UnaryExpr *)expr);
-            break;
-        case EXPR_BINARY:
-            binary_print((struct BinaryExpr *)expr);
-            break;
-
-        default:
-            printf("AST TYPE NOT HANLDED, %d\n", expr->expr_type);
-    }
-}
-
-void ast_print(struct AstNodeHead *expr)
-{
-    printf("\n--- AST dump ---\n");
-    ast_print_node(expr);
-    putchar('\n');
-}
+//static void ast_print_node(struct AstNodeHead *expr);
+//
+//static void unary_print(struct UnaryExpr *expr)
+//{
+//    putchar('(');
+//    //printf("%s=%s", tokentype_str[expr->head.token->type], expr->head.token->lexeme);
+//    ast_print_node(expr->right);
+//    putchar(')');
+//}
+//
+//static void binary_print(struct BinaryExpr *expr)
+//{
+//    putchar('(');
+//    ast_print_node(expr->left);
+//    //printf("%s=%s", tokentype_str[expr->head.token->type], expr->head.token->lexeme);
+//    //printf("%s", tokentype_str[expr->head.token->type]);
+//    ast_print_node(expr->right);
+//    putchar(')');
+//}
+//
+//static void list_print(struct CommandExpr *expr)
+//{
+//    struct token_t *token;
+//    putchar('(');
+//    //printf("LIST: %s:", expr->head.token->lexeme);
+//    //for (size_t i = 0; i < darr_get_size(expr->argv); i++) {
+//    //    token = darr_get(expr->argv, i);
+//    //    printf(" %s", token->lexeme);
+//    //}
+//    putchar(')');
+//}
+//
+//static void ast_print_node(struct AstNodeHead *expr)
+//{
+//    if (expr == NULL)
+//        return;
+//
+//    switch (expr->expr_type) {
+//        case EXPR_UNARY:
+//            unary_print((struct UnaryExpr *)expr);
+//            break;
+//        case EXPR_BINARY:
+//            binary_print((struct BinaryExpr *)expr);
+//            break;
+//
+//        default:
+//            printf("AST TYPE NOT HANLDED, %d\n", expr->expr_type);
+//    }
+//}
+//
+//void ast_print(struct AstNodeHead *expr)
+//{
+//    printf("\n--- AST dump ---\n");
+//    ast_print_node(expr);
+//    putchar('\n');
+//}

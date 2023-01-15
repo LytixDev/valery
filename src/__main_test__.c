@@ -30,10 +30,11 @@ int main()
     tokenlist_dump(tl);
 
     struct darr_t *exprs = parse(tl);
-    //ast_print(expr);
-    for (int i = 0; i < darr_get_size(exprs); i++) {
-        int rc = interpret(darr_get(exprs, i));
-    }
+    int bound = darr_get_size(exprs);
+
+    ast_print(exprs);
+
+    int rc = interpret(exprs);
     //tokenlist_free(tl);
     ast_arena_release();
 }

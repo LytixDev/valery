@@ -93,7 +93,7 @@ void *consume(enum tokentype_t type, char *err_msg)
  * allocates space for the given expression type.
  * sets the newly allocated expression's type to the given type.
  */
-void *expr_alloc(enum ExprType type, struct token_t *token)
+struct Expr *expr_alloc(enum ExprType type, struct token_t *token)
 {
     struct Expr *expr;
     switch (type) {
@@ -108,6 +108,12 @@ void *expr_alloc(enum ExprType type, struct token_t *token)
         case EXPR_LITERAL:
             expr = m_arena_alloc(ast_arena, sizeof(struct LiteralExpr));
             ((struct LiteralExpr *)expr)->value = token->literal;
+            if (token->type == T_WORD || token->type == T_STRING)
+                ((struct LiteralExpr *)expr)->value_type = LIT_STRING;
+            if (token->type == T_WORD || token->type == T_STRING)
+                ((struct LiteralExpr *)expr)->value_type = LIT_STRING;
+            else
+                ((struct LiteralExpr *)expr)->value_type = LIT_INT;
             break;
 
         case EXPR_COMMAND:
@@ -119,6 +125,19 @@ void *expr_alloc(enum ExprType type, struct token_t *token)
     expr->type = type;
     return expr;
 }
+
+struct Stmt *stmt_alloc(enum StmtType type, struct token_t *token)
+{
+    struct Stmt *stmt;
+    switch (type) {
+        case STMT_EXPRESSION:
+            stmt = m_arena_alloc(ast_arena, sizeof(struct ExpressionStmt));
+            break;
+    }
+    stmt->type = type;
+    return stmt;
+}
+
 
 void ast_arena_init()
 {

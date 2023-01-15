@@ -25,15 +25,15 @@
 
 
 /* spec */
-static void *program(void);
+//static void *program(void);
 //static void *complete_commands(void);
-static void *complete_command(void);
-static void *list(void);
-static void *and_or(void);
-static void *and_if(void);
+//static void *complete_command(void);
+//static void *list(void);
+//static void *and_or(void);
+//static void *and_if(void);
 //static void *pipeline(void);
-static void *pipe_sequence(void);
-static void *command(void);
+//static void *pipe_sequence(void);
+//static void *command(void);
 //static void *compound_command(void);
 //static void *subshell(void);
 //static void *compound_list(void);
@@ -207,45 +207,51 @@ struct tokenlist_t *tokenlist;
 //    struct ast_node_t *head = program();
 //    return head;
 //}
+static struct Stmt *program(void);
+static struct Expr *and_if(void);
+static struct Expr *command(void);
 
-static void *program(void)
+static struct Stmt *program(void)
 {
-    void *expr = and_if();
+    struct ExpressionStmt *stmt = (struct ExpressionStmt *)stmt_alloc(STMT_EXPRESSION, NULL);
+    struct Expr *expr = and_if();
+    stmt->expression = expr;
     consume(T_NEWLINE, "newline expected");
-    return expr;
+    return (struct Stmt *)stmt;
 }
 
-static void *and_if(void)
+static struct Expr *and_if(void)
 {
-    struct BinaryExpr *expr = expr_alloc(EXPR_BINARY, NULL);
     void *condition = command();
-    expr->left = condition;
     if (match(T_AND_IF)) {
+        struct BinaryExpr *expr = (struct BinaryExpr *)expr_alloc(EXPR_BINARY, NULL);
         struct token_t *prev = previous();
-        expr->operator_ = prev;
         void *then = command();
+        expr->left = condition;
+        expr->operator_ = prev;
         expr->right = then;
+        return (struct Expr *)expr;
     }
 
-    return expr;
+    return condition;
 }
 
-static void *command(void)
+static struct Expr *command(void)
 {
-    struct CommandExpr *expr = expr_alloc(EXPR_COMMAND, NULL);
+    struct CommandExpr *expr = (struct CommandExpr *)expr_alloc(EXPR_COMMAND, NULL);
     while (match(T_WORD, T_STRING)) {
         struct token_t *prev = previous();
-        struct LiteralExpr *expr_lit = expr_alloc(EXPR_LITERAL, prev);
+        struct LiteralExpr *expr_lit = (struct LiteralExpr *)expr_alloc(EXPR_LITERAL, prev);
         darr_append(expr->exprs, expr_lit);
     }
-    return expr;
+    return (struct Expr *)expr;
 }
 
 struct darr_t *parse(struct tokenlist_t *tl)
 {
     tokenlist = tl;
-    struct darr_t *exprs = darr_malloc();
+    struct darr_t *statements = darr_malloc();
     while (!check(T_EOF))
-        darr_append(exprs, program());
-    return exprs;
+        darr_append(statements, program());
+    return statements;
 }

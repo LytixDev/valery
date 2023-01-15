@@ -25,8 +25,9 @@
 
 int glob_exit_code = 0;
 
-static int interpret_node(struct Expr *expr);
-static void *interpret_node_to_literal(struct Expr *expr);
+static void execute(struct Stmt *stmt);
+static void *evaluate(struct Expr *expr);
+
 
 static void simple_command(struct CommandExpr *expr)
 {
@@ -40,59 +41,35 @@ static void simple_command(struct CommandExpr *expr)
      */
     for (int i = 0; i < argc; i++) {
         struct Expr *e = darr_get(expr->exprs, i);
-        void *res = interpret_node_to_literal(e);
+        void *res = evaluate(e);
         darr_append(argv, res);
     }
 
     glob_exit_code = valery_exec_program(argc, (char **)darr_raw_ret(argv));
 }
 
-static void pipe_sequence(struct BinaryExpr *expr)
-{
-    /* 
-     * open pipe 
-     * exec left of pipe and redirect output to write end of pipe
-     * close write end of pipe
-     * exec right and redirect input to read end of pipe
-     * close read end of pipe
-     */
-}
-
 static void and_if(struct BinaryExpr *expr)
 {
-    interpret_node(expr->left);
+    evaluate(expr->left);
     if (glob_exit_code == 0)
-        interpret_node(expr->right);
+        evaluate(expr->right);
 }
 
-static void and_or(struct BinaryExpr *expr)
-{
-}
-
-/* main interpreter functions */
 static void interpret_unary(struct UnaryExpr *expr)
 {
-    /* FOR NOW: assume all unaries are simple commands */
-    //simple_command(expr);
 }
 
 static void interpret_binary(struct BinaryExpr *expr)
 {
     switch (expr->operator_->type) {
-        case T_PIPE:
-            pipe_sequence(expr);
-            break;
         case T_AND_IF:
             and_if(expr);
-            break;
-        case T_PIPE_PIPE:
-            and_or(expr);
             break;
 
         default:
             valery_exit_internal_error("goooo");
             break;
-    }
+        }
 }
 
 static void interpret_list(struct CommandExpr *expr)
@@ -104,16 +81,16 @@ static void interpret_list(struct CommandExpr *expr)
 
 }
 
-static void *interpret_node_to_literal(struct Expr *expr_head)
+static void execute(struct Stmt *stmt)
 {
-    /* NOTE: assuming all here are literals, BAD */
-    if (expr_head->type != EXPR_LITERAL)
-        valery_exit_internal_error("node should be lit!!!");
-
-    return ((struct LiteralExpr *)expr_head)->value;
+    switch (stmt->type) {
+        case STMT_EXPRESSION:
+            evaluate(((struct ExpressionStmt *)stmt)->expression);
+            break;
+    }
 }
 
-static int interpret_node(struct Expr *expr)
+static void *evaluate(struct Expr *expr)
 {
     switch (expr->type) {
         case EXPR_UNARY:
@@ -124,7 +101,7 @@ static int interpret_node(struct Expr *expr)
             break;
 
         case EXPR_LITERAL:
-            //simple_command((struct LiteralExpr *)expr);
+            return ((struct LiteralExpr *)expr)->value;
             break;
 
         case EXPR_COMMAND:
@@ -139,11 +116,14 @@ static int interpret_node(struct Expr *expr)
     return 0;
 }
 
-int interpret(struct Expr *expr_head)
+int interpret(struct darr_t *statements)
 {
 #ifdef DEBUG
     printf("\n--- interpreter start ---\n");
 #endif
-    interpret_node(expr_head);
+    int bound = darr_get_size(statements);
+    for (int i = 0; i < bound; i++)
+        execute((struct Stmt *)darr_get(statements, i));
+
     return 0;
 }

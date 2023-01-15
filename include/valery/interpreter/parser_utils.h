@@ -52,7 +52,9 @@ void *consume(enum tokentype_t type, char *err_msg);
  * allocates space for the given expression type.
  * sets the newly allocated expression's type to the given type.
  */
-void *expr_alloc(enum ExprType type, struct token_t *token);
+struct Expr *expr_alloc(enum ExprType type, struct token_t *token);
+
+struct Stmt *stmt_alloc(enum StmtType type, struct token_t *token);
 
 void ast_arena_init();
 void ast_arena_clear();

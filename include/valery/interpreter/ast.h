@@ -39,6 +39,13 @@ enum StmtType {
     STMT_ENUM_COUNT
 };
 
+enum LiteralType {
+    LIT_STRING,
+    LIT_INT,
+    LIT_FLOAT
+};
+
+
 /*
  * evil trick to get some sort of polymorphism (I concede, my brain has been corrupted by OOP)
  */
@@ -67,6 +74,7 @@ struct BinaryExpr {
 struct LiteralExpr {
     struct Expr head;
     void *value;
+    enum LiteralType value_type; //TODO: THIS UGLY!!!!!
 };
 
 struct CommandExpr {
@@ -96,8 +104,6 @@ struct IfStmt {
 
 
 /* functions */
-//void ast_free(struct AstNodeHead *starting_node);
-
-void ast_print(struct Stmt *first);
+void ast_print(struct darr_t *statements);
 
 #endif /* !VALERY_INTERPRETER_AST_H */

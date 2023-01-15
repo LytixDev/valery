@@ -18,6 +18,6 @@
 
 #include "parser.h"     // struct ast_node_t type
 
-int interpret(struct Expr *expr_head);
+int interpret(struct darr_t *statements);
 
 #endif /* VALERY_INTERPRETER_INTERPRETER_H */

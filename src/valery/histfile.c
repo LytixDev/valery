@@ -168,10 +168,13 @@ void hist_write(struct hist_t *hist)
     fseek(hist->fp, 0, SEEK_END);
 }
 
-void hist_save(struct hist_t *hist, char buf[MAX_COMMAND_LEN])
+void hist_save(struct hist_t *hist, char *buf, size_t buf_len)
 {
     if (hist->s_len == MAX_COMMANDS_BEFORE_WRITE)
         hist_write(hist);
+
+    /* remove '\n' before storing */
+    buf[buf_len - 1] = 0;
     strncpy(hist->stored_commands[hist->s_len++], buf, MAX_COMMAND_LEN);
 }
 

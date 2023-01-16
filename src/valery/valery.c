@@ -82,7 +82,6 @@ static int valery(char *source)
                 signal(SIGINT, catch_sigint);
                 continue;
             }
-            hist_save(hist, p->buf);
             if (strcmp(p->buf, "\n") == 0)
                 continue;
             else if (strcmp(p->buf, "exit\n") == 0)
@@ -90,6 +89,7 @@ static int valery(char *source)
 
             /* loop enters here means "ordinary" commands were typed in */
             valery_interpret(p->buf);
+            hist_save(hist, p->buf, p->buf_size);
         }
 
         /* free and write to file before exiting */

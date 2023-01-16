@@ -20,14 +20,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
-#include <termios.h>
 
-#include "valery/valery.h"
 #include "valery/env.h"
 #include "valery/prompt.h"
-#include "valery/interpreter/lex.h"
+#include "valery/interpreter/lexer.h"
 #include "valery/interpreter/parser.h"
 #include "valery/interpreter/interpreter.h"
+#include "valery/interpreter/parser_utils.h"
 #include "builtins/builtins.h"
 
 
@@ -40,21 +39,24 @@ static inline void catch_sigint(int signal)
         received_sigint = 1;
 }
 
-static int valery_interpret(char *input)
+static int valery_interpret(char *source)
 {
-    int rc;
-    struct tokenlist_t *tl = tokenize(input);
+    ast_arena_init();
+    struct tokenlist_t *tl = tokenize(source);
 #ifdef DEBUG_INTERPRETER
-    tokenlist_dump(tl);
+    tokenlist_print(tl);
 #endif
-    struct ast_node_t *expr = parse(tl);
-#ifdef DEBUG_INTERPRETER
-    ast_print(expr);
-#endif
-    rc = interpret(expr);
 
-    tokenlist_free(tl);
-    ast_free(expr);
+    struct darr_t *statements = parse(tl);
+    darr_get_size(statements);
+
+#ifdef DEBUG_INTERPRETER
+    ast_print(statements);
+
+#endif
+    int rc = interpret(statements);
+    //tokenlist_free(tl);
+    ast_arena_release();
     return rc;
 }
 
@@ -81,9 +83,9 @@ static int valery(char *source)
                 continue;
             }
             hist_save(hist, p->buf);
-            if (strcmp(p->buf, "") == 0)
+            if (strcmp(p->buf, "\n") == 0)
                 continue;
-            else if (strcmp(p->buf, "exit") == 0)
+            else if (strcmp(p->buf, "exit\n") == 0)
                 break;
 
             /* loop enters here means "ordinary" commands were typed in */

@@ -25,9 +25,6 @@
 #include "valery/interpreter/lexer.h"
 #include "valery/valery.h"
 
-#ifndef NICC_IMPLEMENTATION
-#       define NICC_IMPLEMENTATION
-#endif
 #include "lib/nicc/nicc.h"      // hashtable implementation
 
 

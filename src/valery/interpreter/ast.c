@@ -20,7 +20,7 @@
 #include "valery/interpreter/lexer.h"
 #include "valery/interpreter/ast.h"
 
-extern const char *tokentype_str[T_ENUM_COUNT];
+//extern const char *tokentype_str[T_ENUM_COUNT];
 static void ast_print_expr(struct Expr *expr_head);
 static void ast_print_stmt(struct Stmt *stmt_head);
 
@@ -50,7 +50,8 @@ static void binary_print(struct BinaryExpr *expr)
     ast_print_expr(expr->left);
     if (expr->operator_ == NULL)
         return;
-    printf(" %s ", tokentype_str[expr->operator_->type]);
+    //printf(" %s ", tokentype_str[expr->operator_->type]);
+    printf(" %d ", expr->operator_->type);
     ast_print_expr(expr->right);
     putchar(')');
 }

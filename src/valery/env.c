@@ -26,7 +26,7 @@
 #include "builtins/builtins.h"
 #include "lib/vstring.h"
 #include "valery/load_config.h"
-#define NICC_HT_IMPLEMENTATION
+#define NICC_IMPLEMENTATION 
 #define HT_KEY_LIST
 #include "lib/nicc/nicc.h"
 

@@ -26,7 +26,7 @@
 
 #ifdef DEBUG_VERBOSE
 //#       define DEBUG_ENV
-#       define DEBUG_INTERPRETER
+//#       define DEBUG_INTERPRETER
 //#       define DEBUG_PROMPT
 #endif
 

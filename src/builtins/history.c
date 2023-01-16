@@ -31,7 +31,7 @@ int history(struct hist_t *hist, bool print_all)
     if (hist->fp == NULL)
         return 1;
 
-    char buf[COMMAND_LEN];
+    char buf[MAX_COMMAND_LEN];
     long rc;
     size_t i;
     size_t len;

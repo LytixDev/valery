@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2022 Nicolai Brand 
+ *  Copyright (C) 2022-2023 Nicolai Brand 
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,50 +16,41 @@
 
 #ifndef VALERY_INTERPRETER_LEX_H
 #define VALERY_INTERPRETER_LEX_H
-#include <stddef.h>             // size_t type
+#include <stddef.h>     // size_t type
 
 
 /* types */
 
-#define KEYWORDS_LEN 17
+#define KEYWORDS_LEN 14
 enum tokentype_t {
     /* keywords */
+    T_IF,
+    T_THEN,
+    T_ELSE,
+    T_ELIF,
+    T_FI,
     T_DO,
     T_DONE,
     T_CASE,
     T_ESAC,
-    T_FUNCTION,
-    T_SELECT,
-    T_UNTIL,
-    T_IF,
-    T_ELIF,
-    T_FI,
-    T_THEN,
     T_WHILE,
-    T_ELSE,
+    T_UNTIL,
     T_FOR,
-    T_IN,
-    T_TIME,
     T_RETURN,
+    T_IN,
 
     /* single-character tokens */
     T_LPAREN,
     T_RPAREN,
     T_LBRACE,
     T_RBRACE,
-    T_COMMA,
-    T_MINUS,
-    T_PLUS,
-    T_COLON,
     T_SEMICOLON,
-    T_SLASH,
     T_STAR,
+    T_DOLLAR,
 
     /* one or two character tokens */
-    T_DOLLAR,
-    T_DOLLAR_LPAREN,
     T_ANP,
-    T_ANP_ANP,
+    T_AND_IF,
     T_BANG,
     T_BANG_BANG,
     T_BANG_EQUAL,
@@ -78,12 +69,16 @@ enum tokentype_t {
     T_PIPE,
     T_PIPE_PIPE,
 
-    /* literals */
+    /* symbols/identifiers */
     T_IDENTIFIER,
+    T_WORD,
+    T_ASSIGNMENT_WORD,
+    T_NAME,
+    T_NEWLINE,
+    IO_NUMBER,
     T_STRING,
     T_NUMBER,
 
-    T_NEWLINE,
     T_UNKNOWN,
     T_EOF,
     T_ENUM_COUNT        /* not an actual type */
@@ -91,16 +86,13 @@ enum tokentype_t {
 
 struct token_t {
     enum tokentype_t type;
-    //TODO: union mayhaps/perchance?
     char *lexeme;
     void *literal;
     size_t literal_size;
-    //size_t line;
-    //size_t lexeme_size;
-    //size_t offset;
 };
 
 struct tokenlist_t {
+    // TODO: use darr_t
     struct token_t **tokens;           /* list of the tokens */
     size_t pos;
     size_t size;              /* total tokens occupied */
@@ -108,13 +100,17 @@ struct tokenlist_t {
 };
 
 
-//const char *tokentype_str[T_ENUM_COUNT];
-
-
 /* functions */
+/*
+ * performs a lexical analysis on the given source code
+ * @returns a list of tokens
+ */
 struct tokenlist_t *tokenize(char *source);
 
-void tokenlist_dump(struct tokenlist_t *tokenlist);
+/*
+ * prints the tokens in sequential order as they appear in the list
+ */
+void tokenlist_print(struct tokenlist_t *tokenlist);
 
 void tokenlist_free(struct tokenlist_t *tokenlist);
 

@@ -119,12 +119,12 @@ long hist_traverse(struct hist_t *hist, enum histaction_t direction)
  * reads one line of the hist file and moves the file pointer back to the given offset.
  * if offset is -1, it uses ftell(hist->fp) to get the offset
  */
-static void hist_read_line_f(struct hist_t *hist, char buf[COMMAND_LEN], long offset)
+static void hist_read_line_f(struct hist_t *hist, char buf[MAX_COMMAND_LEN], long offset)
 {
     if (offset == -1)
         offset = ftell(hist->fp);
     /* read hist line into buffer */
-    fgets(buf, COMMAND_LEN, hist->fp);
+    fgets(buf, MAX_COMMAND_LEN, hist->fp);
     /* move file pointer back to last '\n' */
     fseek(hist->fp, offset, SEEK_SET);
 }
@@ -138,7 +138,7 @@ void hist_reset_pos(struct hist_t *hist)
     hist->pos = hist->f_len + hist->s_len;
 }
 
-enum readfrom_t hist_get_line(struct hist_t *hist, char buf[COMMAND_LEN], enum histaction_t action)
+enum readfrom_t hist_get_line(struct hist_t *hist, char buf[MAX_COMMAND_LEN], enum histaction_t action)
 {
     if (out_of_bounds(hist, action))
         return DID_NOT_READ;
@@ -146,7 +146,7 @@ enum readfrom_t hist_get_line(struct hist_t *hist, char buf[COMMAND_LEN], enum h
     long rc = hist_traverse(hist, action);
     if (rc == READ_FROM_MEMORY) {
         size_t index = hist->pos - hist->f_len;
-        strncpy(buf, hist->stored_commands[index], COMMAND_LEN);
+        strncpy(buf, hist->stored_commands[index], MAX_COMMAND_LEN);
         return READ_FROM_MEMORY;
     }
 
@@ -168,11 +168,11 @@ void hist_write(struct hist_t *hist)
     fseek(hist->fp, 0, SEEK_END);
 }
 
-void hist_save(struct hist_t *hist, char buf[COMMAND_LEN])
+void hist_save(struct hist_t *hist, char buf[MAX_COMMAND_LEN])
 {
     if (hist->s_len == MAX_COMMANDS_BEFORE_WRITE)
         hist_write(hist);
-    strncpy(hist->stored_commands[hist->s_len++], buf, COMMAND_LEN);
+    strncpy(hist->stored_commands[hist->s_len++], buf, MAX_COMMAND_LEN);
 }
 
 struct hist_t *hist_malloc(char *full_path_to_hist_file)
@@ -183,7 +183,7 @@ struct hist_t *hist_malloc(char *full_path_to_hist_file)
 
     /* allocate space for all strings */
     for (int i = 0; i < MAX_COMMANDS_BEFORE_WRITE; i++)
-        hist->stored_commands[i] = vmalloc(COMMAND_LEN * sizeof(char));
+        hist->stored_commands[i] = vmalloc(MAX_COMMAND_LEN * sizeof(char));
 
     int rc = hist_open(hist, full_path_to_hist_file);
     /* if no connection could be made to the hist file, set the pointer to null */

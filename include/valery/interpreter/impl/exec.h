@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2022-2023 Nicolai Brand
+ *  Copyright (C) 2022 Nicolai Brand 
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,15 +14,11 @@
  *  You should have received a copy of the GNU General Public License along with this program.
  *  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef VALERY_INTERPRETER_INTERPRETER_H
-#define VALERY_INTERPRETER_INTERPRETER_H
 
-#include "parser.h"
+#ifndef VALERY_INTERPRETER_IMPL_EXEC_H
+#define VALERY_INTERPRETER_IMPL_EXEC_H
 
-/*
- * interprets a list of statements
- * @returns exit code of the interpreter
- */
-int interpret(struct darr_t *statements);
 
-#endif /* VALERY_INTERPRETER_INTERPRETER_H */
+int valery_exec_program(int argc, char *argv[]);
+
+#endif /* !VALERY_INTERPRETER_IMPL_EXEC_H */

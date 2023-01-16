@@ -212,7 +212,12 @@ void prompt(struct prompt_t *prompt, struct hist_t *hist, char *ps1)
         prompt_update(prompt, ps1);
     }
 
-    /* add sentinel byte on demand */
+    //TODO: fix this
+    /* add newline and sentinel byte */
+    if (prompt->buf_size + 1 > prompt->buf_capacity)
+        increase_buf_capacity(prompt);
+
+    prompt->buf[prompt->buf_size++] = '\n';
     prompt->buf[prompt->buf_size] = 0;
     putchar('\n');
     prompt_term_end(prompt->termconf);
@@ -222,8 +227,8 @@ struct prompt_t *prompt_malloc(void)
 {
     struct prompt_t *prompt = vmalloc(sizeof(struct prompt_t));
     prompt->termconf = vmalloc(sizeof(struct termconf_t));
-    prompt->buf = vmalloc(sizeof(char) * COMMAND_LEN);
-    prompt->buf_capacity = COMMAND_LEN;
+    prompt->buf = vmalloc(sizeof(char) * MAX_COMMAND_LEN);
+    prompt->buf_capacity = MAX_COMMAND_LEN;
     prompt->buf_size = 0;
     prompt->cursor_position = 0;
 

@@ -73,7 +73,7 @@ void hist_free(struct hist_t *hist);
 void hist_reset_pos(struct hist_t *hist);
 
 /* stores the input buffer into memory */
-void hist_save(struct hist_t *hist, char buf[COMMAND_LEN]);
+void hist_save(struct hist_t *hist, char buf[MAX_COMMAND_LEN]);
 
 /* 
  * writes the stored commands to the hist file connection and clears
@@ -93,7 +93,7 @@ long hist_traverse(struct hist_t *hist, enum histaction_t direction);
  * returns where it got the hist line from (see definitions on the 
  * top of the file).
  */
-enum readfrom_t hist_get_line(struct hist_t *hist, char buf[COMMAND_LEN], enum histaction_t action);
+enum readfrom_t hist_get_line(struct hist_t *hist, char buf[MAX_COMMAND_LEN], enum histaction_t action);
 
 struct hist_t *hist_init(char *home_folder);
 

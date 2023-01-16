@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2022 Nicolai Brand 
+ *  Copyright (C) 2022-2023 Nicolai Brand 
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -11,57 +11,54 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  You should have received a copy of the GNU General Public License along with this program.
+ *  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <stdlib.h>             // free
-#include <string.h>             // strlen, strncpy, memcpy
-#include <stdio.h>              // debug: printf
-#include <stdbool.h>            // bool type
+//SPEC: https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_10
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#ifdef DEBUG_INTERPRETER
+#       include <stdio.h>
+#endif
 
-#include "valery/interpreter/lex.h"
-#include "lib/nicc/nicc.h"      // hashtable implementation
+#include "valery/interpreter/lexer.h"
 #include "valery/valery.h"
+
+#include "lib/nicc/nicc.h"      // hashtable implementation
 
 
 /* types */
+#ifdef DEBUG_INTERPRETER
 const char *tokentype_str[T_ENUM_COUNT] = {
     /* keywords */
+    "T_IF",
+    "T_THEN",
+    "T_ELSE",
+    "T_ELIF",
+    "T_FI",
     "T_DO",
     "T_DONE",
     "T_CASE",
     "T_ESAC",
-    "T_FUNCTION",
-    "T_SELECT",
-    "T_UNTIL",
-    "T_IF",
-    "T_ELIF",
-    "T_FI",
-    "T_THEN",
     "T_WHILE",
-    "T_ELSE",
+    "T_UNTIL",
     "T_FOR",
-    "T_IN",
-    "T_TIME",
     "T_RETURN",
+    "T_IN",
 
     /* single-character tokens */
     "T_LPAREN",
     "T_RPAREN",
     "T_LBRACE",
     "T_RBRACE",
-    "T_COMMA",
-    "T_MINUS",
-    "T_PLUS",
-    "T_COLON",
     "T_SEMICOLON",
-    "T_SLASH",
     "T_STAR",
+    "T_DOLLAR",
 
     /* one or two character tokens */
-    "T_DOLLAR",
-    "T_DOLLAR_LPAREN",
     "T_ANP",
-    "T_ANP_ANP",
+    "T_AND_IF",
     "T_BANG",
     "T_BANG_BANG",
     "T_BANG_EQUAL",
@@ -80,15 +77,20 @@ const char *tokentype_str[T_ENUM_COUNT] = {
     "T_PIPE",
     "T_PIPE_PIPE",
 
-    /* literals */
+    /* symbols/identifiers */
     "T_IDENTIFIER",
+    "T_WORD",
+    "T_ASSIGNMENT_WORD",
+    "T_NAME",
+    "T_NEWLINE",
+    "IO_NUMBER",
     "T_STRING",
     "T_NUMBER",
 
-    "T_NEWLINE",
     "T_UNKNOWN",
     "T_EOF",
 };
+#endif /* DEBUG_INTERPRETER */
 
 
 /* globals */
@@ -101,7 +103,7 @@ struct tokenlist_t *tl;
 /*
  * fills the global hashtable 'identifiers' with the supported identifiers
  */
-static void init_identifiers()
+static void init_identifiers(void)
 {
     if (identifiers != NULL)
         return;
@@ -109,49 +111,43 @@ static void init_identifiers()
     identifiers = ht_malloc(32);
 
     char *identifiers_str[] = {
+        "if",
+        "then",
+        "else",
+        "elif",
+        "fi",
         "do",
         "done",
         "case",
         "esac",
-        "function",
-        "select",
-        "until",
-        "if",
-        "elif",
-        "fi",
-        "then",
         "while",
-        "else",
+        "until",
         "for",
-        "in",
-        "time",
-        "return"
+        "return",
+        "in"
     };
 
     enum tokentype_t identifiers_name[] = {
+        T_IF,
+        T_THEN,
+        T_ELSE,
+        T_ELIF,
+        T_FI,
         T_DO,
         T_DONE,
         T_CASE,
         T_ESAC,
-        T_FUNCTION,
-        T_SELECT,
-        T_UNTIL,
-        T_IF,
-        T_ELIF,
-        T_FI,
-        T_THEN,
         T_WHILE,
-        T_ELSE,
+        T_UNTIL,
         T_FOR,
-        T_IN,
-        T_TIME,
         T_RETURN,
+        T_IN,
     };
 
     for (int i = 0; i < KEYWORDS_LEN; i++) {
         char *raw_str = identifiers_str[i];
-        ht_set(identifiers, raw_str, strlen(raw_str) + 1, &identifiers_name[i], sizeof(enum tokentype_t),
-               NULL);
+        ht_set(identifiers, raw_str, strlen(raw_str) + 1, &identifiers_name[i],
+               sizeof(enum tokentype_t), NULL);
     }
 }
 
@@ -185,9 +181,9 @@ static struct token_t *token_malloc(enum tokentype_t type, char *lexeme, size_t 
     token->type = type;
 
     if (lexeme != NULL) {
-        token->lexeme = vmalloc(lexeme_size + 1);
+        token->lexeme = vmalloc(lexeme_size);
         strncpy(token->lexeme, lexeme, lexeme_size);
-        token->lexeme[lexeme_size] = 0;
+        token->lexeme[lexeme_size - 1] = 0;
     }
 
     if (literal != NULL) {
@@ -225,9 +221,40 @@ static inline bool is_alpha(char c)
             c == '_';
 }
 
-static bool is_alpha_numeric(char c)
+/* returns true on terminal chars for identifiers, else false */
+static bool is_terminal(char c)
 {
-    return is_alpha(c) || is_digit(c);
+    switch (c) {
+        case '|':
+        case ')':
+        case ']':
+        case '}':
+        case '(':
+        case '[':
+        case '{':
+        case ';':
+        case '&':
+        case '<':
+        case '>':
+        case '\n':
+        case ' ':
+        case '"':
+        case 0:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
+/*
+ * 3.235
+ * In the shell command language, a word consisting solely of underscores, digits, and alphabetics
+ * from the portable character set. The first character of a name is not a digit. 
+ */
+static bool is_name(char c)
+{
+    return is_alpha(c) || is_digit(c) || c == '_';
 }
 
 /* returns true if current char of source_cpy == expected */
@@ -242,7 +269,7 @@ static bool match(char expected)
     return false;
 }
 
-static void number_literal()
+static void number_literal(void)
 {
     char *literal_start = source_cpy - 1;       // -1 because scan_token() incremented source_cpy
     while (is_digit(*source_cpy))
@@ -256,7 +283,7 @@ static void number_literal()
     add_token(T_NUMBER, NULL, 0, &literal, sizeof(literal));
 }
 
-static void string_literal()
+static void string_literal(void)
 {
     //TODO: this is rather ugly
     char c;
@@ -276,10 +303,10 @@ static void string_literal()
     add_token(T_STRING, NULL, 0, literal_start, literal_size);
 }
 
-static void identifier()
+static void word(void)
 {
     char *identifier_start = source_cpy - 1;    // -1 because scan_token() incremented source_cpy
-    while (is_alpha_numeric(*source_cpy))
+    while (!is_terminal(*source_cpy))
         source_cpy++;
 
     size_t len = source_cpy - identifier_start;
@@ -287,14 +314,19 @@ static void identifier()
     strncpy(identifier, identifier_start, len);
     identifier[len] = 0;
 
-    /* if not a reserved keyword, it is a user-defined identifier */
-    enum tokentype_t *type = ht_get(identifiers, identifier, len + 1);
-    add_token(type == NULL ? T_IDENTIFIER : *type, identifier, len + 1, NULL, 0);
+    /*
+     * 2.10.2
+     * When the TOKEN is exactly a reserved word, the token identifier for that reserved word shall
+     * result. Otherwise, the token WORD shall be returned. Also, if the parser is in any state
+     * where only a reserved word could be the next correct token, proceed as above. 
+     */
+    enum tokentype_t *is_reserved = ht_get(identifiers, identifier, len + 1);
+    //add_token(is_reserved == NULL ? T_WORD : *is_reserved, identifier, len + 1, NULL, 0);
+    add_token(is_reserved == NULL ? T_WORD : *is_reserved, identifier, len + 1, identifier, len + 1);
 }
 
-
 /* scans the source code until a non-ambigious token is determined */
-static void scan_token()
+static void scan_token(void)
 {
     char c = *source_cpy++;
     switch (c) {
@@ -314,26 +346,16 @@ static void scan_token()
         case ';':
             add_token_simple(T_SEMICOLON);
             break;
-        case ':':
-            add_token_simple(T_COLON);
-            break;
         case '*':
             add_token_simple(T_STAR);
             break;
-        case '+':
-            add_token_simple(T_PLUS);
+        case '$':
+            add_token_simple(T_DOLLAR);
             break;
-        case '-':
-            add_token_simple(T_MINUS);
-            break;
-
 
         /* two character lexems */
-        case '$':
-            add_token_simple(match('(') ? T_DOLLAR_LPAREN : T_DOLLAR);
-            break;
         case '&':
-            add_token_simple(match('&') ? T_ANP_ANP : T_ANP);
+            add_token_simple(match('&') ? T_AND_IF : T_ANP);
             break;
         case '=':
             add_token_simple(match('=') ? T_EQUAL_EQUAL : T_EQUAL);
@@ -343,6 +365,12 @@ static void scan_token()
             break;
         case '|':
             add_token_simple(match('|') ? T_PIPE_PIPE : T_PIPE);
+            break;
+        case '>':
+            add_token_simple(match('=') ? T_GREATER_EQUAL : T_GREATER);
+            break;
+        case '<':
+            add_token_simple(match('=') ? T_LESS_EQUAL : T_LESS);
             break;
         case '!':
             if (*source_cpy == 0) {
@@ -387,7 +415,6 @@ static void scan_token()
 
         case '\n':
             add_token_simple(T_NEWLINE);
-            source_cpy++;
             break;
 
 
@@ -398,19 +425,13 @@ static void scan_token()
 
         
         default:
-            if (is_digit(c))
-                number_literal();
-            else if (is_alpha(c))
-                identifier();
-            else
-                valery_exit_parse_error("sucks man");
-            break;
+            word();
     }
 }
 
 struct tokenlist_t *tokenize(char *source)
 {
-    tl = tokenlist_malloc();           // define global struct tokenlist_t type
+    tl = tokenlist_malloc();            // define global struct tokenlist_t type
     source_cpy = source;                // global pointer into the source code for simplicity 
     init_identifiers();
 
@@ -434,8 +455,9 @@ void tokenlist_free(struct tokenlist_t *tokenlist)
     free(tokenlist);
 }
 
-void tokenlist_dump(struct tokenlist_t *tokenlist)
+void tokenlist_print(struct tokenlist_t *tokenlist)
 {
+#ifdef DEBUG_INTERPRETER
     printf("--- lex dump ---\n");
     struct token_t *token;
     for (size_t i = 0; i < tokenlist->size; i++) {
@@ -454,4 +476,5 @@ void tokenlist_dump(struct tokenlist_t *tokenlist)
 
         putchar('\n');
     }
+#endif /* DEBUG_INTERPRETER */
 }

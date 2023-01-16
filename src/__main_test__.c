@@ -27,7 +27,7 @@ int main()
 
     ast_arena_init();
     struct tokenlist_t *tl = tokenize(source);
-    tokenlist_dump(tl);
+    tokenlist_print(tl);
 
     struct darr_t *exprs = parse(tl);
     int bound = darr_get_size(exprs);

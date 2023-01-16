@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2022 Nicolai Brand 
+ *  Copyright (C) 2022-2023 Nicolai Brand 
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,28 +23,6 @@
 extern const char *tokentype_str[T_ENUM_COUNT];
 static void ast_print_expr(struct Expr *expr_head);
 static void ast_print_stmt(struct Stmt *stmt_head);
-//static void ast_print_node(struct AstNodeHead *expr);
-//
-//static void unary_print(struct UnaryExpr *expr)
-//{
-//    putchar('(');
-//    //printf("%s=%s", tokentype_str[expr->head.token->type], expr->head.token->lexeme);
-//    ast_print_node(expr->right);
-//    putchar(')');
-//}
-//
-//
-//static void list_print(struct CommandExpr *expr)
-//{
-//    struct token_t *token;
-//    putchar('(');
-//    //printf("LIST: %s:", expr->head.token->lexeme);
-//    //for (size_t i = 0; i < darr_get_size(expr->argv); i++) {
-//    //    token = darr_get(expr->argv, i);
-//    //    printf(" %s", token->lexeme);
-//    //}
-//    putchar(')');
-//}
 
 static void literal_print(struct LiteralExpr *expr)
 {

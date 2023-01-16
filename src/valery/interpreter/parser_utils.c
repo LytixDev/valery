@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2022 Nicolai Brand 
+ *  Copyright (C) 2022-2023 Nicolai Brand 
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,9 +23,9 @@
 #include "lib/sac/sac.h"
 #include "lib/nicc/nicc.h"
 
-extern struct tokenlist_t *tokenlist;   // defined in parser.c
-struct m_arena *ast_arena = NULL;
-
+extern struct tokenlist_t *tokenlist;   // defined in parser.c, TODO: globals are le bad
+struct m_arena *ast_arena = NULL;       // the memory arena to alloc abstract syntax tree nodes onto
+                                        // ex: Stmt or Expr
 
 bool check_single(enum tokentype_t type)
 {
@@ -40,9 +40,6 @@ struct token_t *previous()
     return tokenlist->tokens[tokenlist->pos - 1];
 }
 
-/*
- * @returns true if next token is any of the given arguments, else false.
- */
 bool check_either(unsigned int n, ...)
 {
     enum tokentype_t type;
@@ -59,10 +56,6 @@ bool check_either(unsigned int n, ...)
     return false;
 }
 
-/*
- * consumes the next token if its type is one of the given arguments.
- * @returns true if successfully consumed a token, else false.
- */
 bool match_either(unsigned int n, ...)
 {
     enum tokentype_t type;
@@ -89,10 +82,6 @@ void *consume(enum tokentype_t type, char *err_msg)
     return tokenlist->tokens[tokenlist->pos++];
 }
 
-/*
- * allocates space for the given expression type.
- * sets the newly allocated expression's type to the given type.
- */
 struct Expr *expr_alloc(enum ExprType type, struct token_t *token)
 {
     struct Expr *expr;

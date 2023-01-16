@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2022 Nicolai Brand 
+ *  Copyright (C) 2022-2023 Nicolai Brand 
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,11 +18,8 @@
 #ifndef VALERY_INTERPRETER_AST_H
 #define VALERY_INTERPRETER_AST_H
 
-#include "lexer.h"              // struct tokenlist_t type
-//#ifndef NICC_IMPLEMENTATION
-//#       define NICC_IMPLEMENTATION
-//#endif
-#include "lib/nicc/nicc.h"      // dynamic array (darr_t)
+#include "lexer.h"
+#include "lib/nicc/nicc.h"
 
 /* types */
 enum ExprType {
@@ -39,11 +36,8 @@ enum StmtType {
     STMT_ENUM_COUNT
 };
 
-enum LiteralType {
-    LIT_STRING,
-    LIT_INT,
-    LIT_FLOAT
-};
+/* a literal is either a string, int or float */
+enum LiteralType { LIT_STRING, LIT_INT, LIT_FLOAT };
 
 
 /*
@@ -104,6 +98,9 @@ struct IfStmt {
 
 
 /* functions */
+/*
+ * recursively prints the abstract syntax tree
+ */
 void ast_print(struct darr_t *statements);
 
 #endif /* !VALERY_INTERPRETER_AST_H */

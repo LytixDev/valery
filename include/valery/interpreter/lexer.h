@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2022 Nicolai Brand 
+ *  Copyright (C) 2022-2023 Nicolai Brand 
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 
 #ifndef VALERY_INTERPRETER_LEX_H
 #define VALERY_INTERPRETER_LEX_H
-#include <stddef.h>             // size_t type
+#include <stddef.h>     // size_t type
 
 
 /* types */
@@ -86,16 +86,13 @@ enum tokentype_t {
 
 struct token_t {
     enum tokentype_t type;
-    //TODO: union mayhaps/perchance?
     char *lexeme;
     void *literal;
     size_t literal_size;
-    //size_t line;
-    //size_t lexeme_size;
-    //size_t offset;
 };
 
 struct tokenlist_t {
+    // TODO: use darr_t
     struct token_t **tokens;           /* list of the tokens */
     size_t pos;
     size_t size;              /* total tokens occupied */
@@ -103,13 +100,17 @@ struct tokenlist_t {
 };
 
 
-//const char *tokentype_str[T_ENUM_COUNT];
-
-
 /* functions */
+/*
+ * performs a lexical analysis on the given source code
+ * @returns a list of tokens
+ */
 struct tokenlist_t *tokenize(char *source);
 
-void tokenlist_dump(struct tokenlist_t *tokenlist);
+/*
+ * prints the tokens in sequential order as they appear in the list
+ */
+void tokenlist_print(struct tokenlist_t *tokenlist);
 
 void tokenlist_free(struct tokenlist_t *tokenlist);
 

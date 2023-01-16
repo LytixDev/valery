@@ -1,2 +1,4 @@
 fix how string is parsed
 add statements
+ast print
+literal type?

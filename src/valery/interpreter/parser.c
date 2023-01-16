@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2022 Nicolai Brand 
+ *  Copyright (C) 2022-2023 Nicolai Brand 
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -11,7 +11,8 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  You should have received a copy of the GNU General Public License along with this program.
+ *  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <stdlib.h>
@@ -77,136 +78,6 @@ static void *linebreak(void);
 /* globals */
 struct tokenlist_t *tokenlist;
 
-
-/* functions */
-
-///* 
-// * : complete_command EOF ;
-// */
-//static void *program(void)
-//{
-//    struct ast_node_t *expr = complete_command();
-//    consume(T_EOF, "eof err");
-//    return expr;
-//}
-//
-///*
-// * : list ;
-// */
-//static void *complete_command(void)
-//{
-//    return list();
-//}
-//
-///*
-// * : and_or 
-// * | linebreak
-// * | and_or and_or ;
-// */
-//static void *list(void)
-//{
-//    void *res = and_or();
-//
-//    if (check(T_NEWLINE))
-//        linebreak();
-//
-//    if (!check(T_EOF)) {
-//        and_or();
-//        if (check(T_NEWLINE))
-//            linebreak();
-//    }
-//
-//    return res;
-//}
-//
-///*
-// * : pipe_sequence
-// * | pipe_sequence ('&&' | '||) pipe_sequence ;
-// */
-//static void *and_or(void)
-//{
-//    struct ast_node_t *left = pipe_sequence();
-//
-//    if (!check(T_AND_IF, T_PIPE_PIPE))
-//        return left;
-//
-//    if (!match(T_AND_IF, T_PIPE_PIPE))
-//        valery_exit_internal_error("dafuq");
-//
-//    struct token_t *token = previous();
-//    struct ast_node_t *right = pipe_sequence();
-//
-//    struct BinaryStmt *expr = expr_alloc(BINARY, token);
-//    expr->left = left;
-//    expr->right = right;
-//    return expr;
-//}
-//
-///*
-// * : command '|' command
-// * | command ;
-// */
-//static void *pipe_sequence(void)
-//{
-//    struct ast_node_t *left = command();
-//
-//    if (!check(T_PIPE))
-//        return left;
-//
-//    struct token_t *token = consume(T_PIPE, "pipe err");
-//    struct ast_node_t *right = command();
-//
-//    struct BinaryStmt *expr = expr_alloc(BINARY, token);
-//    expr->left = left;
-//    expr->right = right;
-//    return expr;
-//}
-//
-///*
-// * : simple_command ;
-// */
-//static void *command(void)
-//{
-//    return simple_command();
-//}
-//
-///*
-// * : WORD 
-// * | WORD simple_command ;
-// */
-//static void *simple_command(void)
-//{
-//    //struct token_t *token = consume(T_WORD, "word err");
-//    //struct ast_unary_t *expr = expr_alloc(UNARY, token);
-//    //expr->right = NULL;
-//    //if (check(T_WORD))
-//    //    expr->right = simple_command();
-//    //return expr;
-//    struct token_t *token = consume(T_WORD, "word err");
-//    struct ProgStmt *expr = expr_alloc(PROG, token);
-//    darr_append(expr->argv, token);
-//    
-//    while (check(T_WORD)) {
-//        token = consume(T_WORD, "word err");
-//        darr_append(expr->argv, token);
-//    }
-//
-//    return expr;
-//}
-//
-//static void *linebreak(void)
-//{
-//    while (check(T_NEWLINE))
-//        consume(T_NEWLINE, "no newline :8");
-//    return NULL;
-//}
-
-//struct ast_node_t *parse(struct tokenlist_t *tl)
-//{
-//    tokenlist = tl;
-//    struct ast_node_t *head = program();
-//    return head;
-//}
 static struct Stmt *program(void);
 static struct Expr *and_if(void);
 static struct Expr *command(void);

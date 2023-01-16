@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2022 Nicolai Brand 
+ *  Copyright (C) 2022-2023 Nicolai Brand 
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -11,16 +11,20 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  You should have received a copy of the GNU General Public License along with this program.
+ *  If not, see <https://www.gnu.org/licenses/>.
  */
 //SPEC: https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_10
-#include <stdlib.h>             // free
-#include <string.h>             // strlen, strncpy, memcpy
-#include <stdio.h>              // debug: printf
-#include <stdbool.h>            // bool type
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#ifdef DEBUG_INTERPRETER
+#       include <stdio.h>
+#endif
 
 #include "valery/interpreter/lexer.h"
 #include "valery/valery.h"
+
 #ifndef NICC_IMPLEMENTATION
 #       define NICC_IMPLEMENTATION
 #endif
@@ -145,8 +149,8 @@ static void init_identifiers(void)
 
     for (int i = 0; i < KEYWORDS_LEN; i++) {
         char *raw_str = identifiers_str[i];
-        ht_set(identifiers, raw_str, strlen(raw_str) + 1, &identifiers_name[i], sizeof(enum tokentype_t),
-               NULL);
+        ht_set(identifiers, raw_str, strlen(raw_str) + 1, &identifiers_name[i],
+               sizeof(enum tokentype_t), NULL);
     }
 }
 
@@ -454,7 +458,7 @@ void tokenlist_free(struct tokenlist_t *tokenlist)
     free(tokenlist);
 }
 
-void tokenlist_dump(struct tokenlist_t *tokenlist)
+void tokenlist_print(struct tokenlist_t *tokenlist)
 {
 #ifdef DEBUG_INTERPRETER
     printf("--- lex dump ---\n");

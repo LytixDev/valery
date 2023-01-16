@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2022 Nicolai Brand 
+ *  Copyright (C) 2022-2023 Nicolai Brand 
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -11,7 +11,8 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  You should have received a copy of the GNU General Public License along with this program.
+ *  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef VALERY_INTERPRETER_PARSER_UTILS_H
@@ -20,12 +21,14 @@
 #include <stdbool.h>
 
 #include "valery/valery.h"              // VA_NUMBER_OF_ARGS
-#include "valery/interpreter/parser.h"  // tokentype_t
-#include "valery/interpreter/parser.h"  // expr_type_t
+#include "valery/interpreter/parser.h"
 
 /* functions */
 bool check_single(enum tokentype_t type);
 
+/*
+ * @returns the previously parsed token in the global tokenlist
+ */
 struct token_t *previous();
 
 /*
@@ -49,11 +52,10 @@ bool match_either(unsigned int n, ...);
 void *consume(enum tokentype_t type, char *err_msg);
 
 /*
- * allocates space for the given expression type.
- * sets the newly allocated expression's type to the given type.
+ * @returns an Expr/Stmt object based on the provided type.
+ * some Expr/Stmt types need the token to f.ex. grab the literal value
  */
 struct Expr *expr_alloc(enum ExprType type, struct token_t *token);
-
 struct Stmt *stmt_alloc(enum StmtType type, struct token_t *token);
 
 void ast_arena_init();

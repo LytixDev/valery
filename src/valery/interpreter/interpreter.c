@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2022 Nicolai Brand 
+ *  Copyright (C) 2022-2023 Nicolai Brand 
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,12 +33,6 @@ static void simple_command(struct CommandExpr *expr)
 {
     int argc = (int)darr_get_size(expr->exprs);
     struct darr_t *argv = darr_malloc();
-    /*
-     * NOTE:
-     * essentially we are resolving all the nodes in the list that will become argv
-     * right now later down the chain they are all assumed to be literals, but later on an argv can
-     * f.ex be a subshell or some other statement that needs to be resolved and return a literal
-     */
     for (int i = 0; i < argc; i++) {
         struct Expr *e = darr_get(expr->exprs, i);
         void *res = evaluate(e);

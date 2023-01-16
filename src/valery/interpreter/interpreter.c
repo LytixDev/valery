@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2022 Nicolai Brand 
+ *  Copyright (C) 2022-2023 Nicolai Brand
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -11,103 +11,98 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  You should have received a copy of the GNU General Public License along with this program.
+ *  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <stdio.h>
 
-#include "valery/interpreter/lex.h"
+#include "valery/interpreter/ast.h"
+#include "valery/interpreter/lexer.h"
 #include "valery/interpreter/parser.h"
-#include "valery/exec.h"
+#include "valery/interpreter/impl/exec.h"
+#include "lib/nicc/nicc.h"
+#include "valery/valery.h"
+
+int glob_exit_code = 0;
+
+static void execute(struct Stmt *stmt);
+static void *evaluate(struct Expr *expr);
 
 
-static void program_sequence(struct ast_program_sequence_t *expr);
-
-
-static void pipe(struct ast_binary_t *expr)
+static void simple_command(struct CommandExpr *expr)
 {
-    struct exec_ctx e_ctx = { .flags = SF_ADAM_VACANT | SF_SETH_VACANT, .read_stream = ST_NONE,
-        .write_stream = ST_NONE };
+    int argc = (int)darr_get_size(expr->exprs);
+    struct darr_t *argv = darr_malloc();
+    for (int i = 0; i < argc; i++) {
+        struct Expr *e = darr_get(expr->exprs, i);
+        void *res = evaluate(e);
+        darr_append(argv, res);
+    }
 
-    new_pipe(&e_ctx);
-
-    // update exec flags
-
-    //program_sequence((struct ast_program_sequence_t *)expr->left);
-    struct ast_program_sequence_t *left = expr->left;
-    struct ast_program_sequence_t *right = expr->right;
-    char *argv[left->argc];
-    #include "valery/env.h"
-    #include "valery/load_config.h"
-    struct env_t *env = env_malloc();
-    parse_config(env->env_vars, env->paths);
-    valery_exec_program(left->program_name->lexeme, argv, 0, env, &e_ctx);
-
-    // pipe close write end
-    e_ctx.read_stream = e_ctx.write_stream;
-    e_ctx.write_stream = ST_NONE;
-
-    if (e_ctx.read_stream == ST_ADAM)
-        e_ctx.flags |= SF_ADAM_CLOSE;
-    else
-        e_ctx.flags |= SF_SETH_CLOSE;
-
-    valery_exec_program(right->program_name->lexeme, argv, 0, env, &e_ctx);
-
-
-    terminate_pipe(&e_ctx);
+    glob_exit_code = valery_exec_program(argc, (char **)darr_raw_ret(argv));
 }
 
+static void and_if(struct BinaryExpr *expr)
+{
+    evaluate(expr->left);
+    if (glob_exit_code == 0)
+        evaluate(expr->right);
+}
 
-static void assignment(struct ast_assignment_t *expr)
+static void interpret_unary(struct UnaryExpr *expr)
 {
 }
 
-static void unary(struct ast_unary_t *expr)
+static void interpret_binary(struct BinaryExpr *expr)
 {
-}
-
-static void binary(struct ast_binary_t *expr)
-{
-    switch (expr->op->type) {
-        case T_PIPE:
-            pipe(expr);
+    switch (expr->operator_->type) {
+        case T_AND_IF:
+            and_if(expr);
             break;
 
         default:
-            fprintf(stderr, "binary type not supported");
+            valery_exit_internal_error("goooo");
+            break;
+        }
+}
+
+static void interpret_list(struct CommandExpr *expr)
+{
+    if (expr->head.type == EXPR_COMMAND)
+        simple_command(expr);
+    else
+        valery_exit_internal_error("oop");
+
+}
+
+static void execute(struct Stmt *stmt)
+{
+    switch (stmt->type) {
+        case STMT_EXPRESSION:
+            evaluate(((struct ExpressionStmt *)stmt)->expression);
             break;
     }
 }
 
-static void literal(struct ast_literal_t *expr)
-{
-}
-
-static void program_sequence(struct ast_program_sequence_t *expr)
-{
-}
-
-
-static int interpret_node(ASTNodeHead *expr)
+static void *evaluate(struct Expr *expr)
 {
     switch (expr->type) {
-        case ASSIGNMENT:
-            assignment((struct ast_assignment_t *)expr);
+        case EXPR_UNARY:
+            interpret_unary((struct UnaryExpr *)expr);
             break;
-        case UNARY:
-            unary((struct ast_unary_t *)expr);
-            break;
-        case BINARY:
-            binary((struct ast_binary_t *)expr);
-            break;
-        case LITERAL:
-            literal((struct ast_literal_t *)expr);
-            break;
-        case PROGRAM_SEQUENCE:
-            program_sequence((struct ast_program_sequence_t *)expr);
+        case EXPR_BINARY:
+            interpret_binary((struct BinaryExpr *)expr);
             break;
 
-        case ENUM_COUNT:
+        case EXPR_LITERAL:
+            return ((struct LiteralExpr *)expr)->value;
+            break;
+
+        case EXPR_COMMAND:
+            interpret_list((struct CommandExpr *)expr);
+            break;
+
+        case EXPR_ENUM_COUNT:
             // ignore
             break;
     }
@@ -115,8 +110,14 @@ static int interpret_node(ASTNodeHead *expr)
     return 0;
 }
 
-int interpret(ASTNodeHead *expr)
+int interpret(struct darr_t *statements)
 {
-    interpret_node(expr);
+#ifdef DEBUG
+    printf("\n--- interpreter start ---\n");
+#endif
+    int bound = darr_get_size(statements);
+    for (int i = 0; i < bound; i++)
+        execute((struct Stmt *)darr_get(statements, i));
+
     return 0;
 }

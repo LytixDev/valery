@@ -20,15 +20,16 @@
 #include <stdlib.h>
 
 /* variables */
-#define COMMAND_LEN 1024
+#define MAX_COMMAND_LEN 1024
 #define CONFIG_NAME ".valeryrc"
 #define HISTFILE_NAME ".valery_hist"
 
 #ifdef DEBUG_VERBOSE
-#       define DEBUG_ENV
+//#       define DEBUG_ENV
 #       define DEBUG_INTERPRETER
-#       define DEBUG_PROMPT
+//#       define DEBUG_PROMPT
 #endif
+
 
 /* macros */
 #ifdef DEBUG
@@ -38,6 +39,18 @@
 #else
 #       define print_debug(...) ((void) 0)
 #endif
+
+#define VA_NUMBER_OF_ARGS(...) (sizeof((int[]){__VA_ARGS__}) / sizeof(int))
+
+#define KB(x) ((x) << 10)
+#define MB(x) ((x) << 20)
+#define GB(x) ((x) << 30)
+#define TB(x) ((x) << 40)
+
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
+#define CLAMP(a,x,b) (((x)<(a))?(a):((b)<(x))?(b):(x))
+
 
 /* functions */
 void valery_exit(int exit_code);
@@ -57,6 +70,8 @@ void _valery_error(const char *msg, const char *file, const char *func, const in
 #       define VALLOC_IMPLEMENTATION
 #endif
 void *vmalloc(size_t size);
+void *vcalloc(size_t nitems, size_t size);
+void *vrealloc(void *ptr, size_t size);
 
 
 #endif /* VALERY_H */

@@ -1,3 +1,6 @@
-[submodule "nicc"]
+[submodule "include/lib/sac"]
+	path = include/lib/sac
+	url = git@github.com:LytixDev/sac.git
+[submodule "include/lib/nicc"]
 	path = include/lib/nicc
 	url = git@github.com:LytixDev/nicc.git

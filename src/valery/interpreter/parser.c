@@ -79,16 +79,35 @@ static void *linebreak(void);
 struct tokenlist_t *tokenlist;
 
 static struct Stmt *program(void);
+static struct Stmt *variable_declaration(void);
 static struct Expr *and_if(void);
 static struct Expr *command(void);
+static struct Expr *var(void);
 
 static struct Stmt *program(void)
 {
-    struct ExpressionStmt *stmt = (struct ExpressionStmt *)stmt_alloc(STMT_EXPRESSION, NULL);
-    struct Expr *expr = and_if();
-    stmt->expression = expr;
+    struct Stmt *stmt = variable_declaration();
     consume(T_NEWLINE, "newline expected");
+    return stmt;
+}
+
+static struct Stmt *variable_declaration(void)
+{
+    /* T_WORD T_EQUAL string (should be expr) */
+    if (!(check(T_WORD) && check_ahead(1, T_EQUAL), check_ahead(2, T_STRING))) {
+        struct ExpressionStmt *e_stmt = (struct ExpressionStmt *)stmt_alloc(STMT_EXPRESSION, NULL);
+        e_stmt->expression = and_if();
+        return (struct Stmt *)e_stmt;
+    }
+
+    struct token_t *name = consume(T_WORD, "expected word");
+    consume(T_EQUAL, "expected equal");
+    struct Expr *lit = expr_alloc(EXPR_LITERAL, consume(T_STRING, "expected string"));
+    struct VarStmt *stmt = (struct VarStmt *)stmt_alloc(STMT_VAR, NULL);
+    stmt->name = name;
+    stmt->initializer = lit;
     return (struct Stmt *)stmt;
+
 }
 
 static struct Expr *and_if(void)
@@ -110,11 +129,25 @@ static struct Expr *and_if(void)
 static struct Expr *command(void)
 {
     struct CommandExpr *expr = (struct CommandExpr *)expr_alloc(EXPR_COMMAND, NULL);
-    while (match(T_WORD, T_STRING)) {
-        struct token_t *prev = previous();
-        struct LiteralExpr *expr_lit = (struct LiteralExpr *)expr_alloc(EXPR_LITERAL, prev);
-        darr_append(expr->exprs, expr_lit);
+    while (1) {
+        if (check(T_DOLLAR)) {
+            darr_append(expr->exprs, var());
+        } else if (match(T_WORD, T_STRING)) {
+            struct token_t *prev = previous();
+            struct LiteralExpr *expr_lit = (struct LiteralExpr *)expr_alloc(EXPR_LITERAL, prev);
+            darr_append(expr->exprs, expr_lit);
+        } else {
+            break;
+        }
     }
+    return (struct Expr *)expr;
+}
+
+static struct Expr *var(void)
+{
+    match(T_DOLLAR);
+    struct token_t *name = consume(T_WORD, "err");
+    struct VariableExpr *expr = (struct VariableExpr *)expr_alloc(EXPR_VARIABLE, name);
     return (struct Expr *)expr;
 }
 

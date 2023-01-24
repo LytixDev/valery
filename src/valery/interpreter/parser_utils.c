@@ -27,20 +27,27 @@ extern struct tokenlist_t *tokenlist;   // defined in parser.c, TODO: globals ar
 struct m_arena *ast_arena = NULL;       // the memory arena to alloc abstract syntax tree nodes onto
                                         // ex: Stmt or Expr
 
-bool check_single(enum tokentype_t type)
+static bool check_single(enum tokentype_t type, int step)
 {
-    if (tokenlist->size >= tokenlist->capacity)
+    if (tokenlist->size + step >= tokenlist->capacity)
         return false;
 
-    return tokenlist->tokens[tokenlist->pos]->type == type;
+    return tokenlist->tokens[tokenlist->pos + step]->type == type;
 }
 
-struct token_t *previous()
+struct token_t *previous(void)
 {
     return tokenlist->tokens[tokenlist->pos - 1];
 }
 
-bool check_either(unsigned int n, ...)
+struct token_t *current(void)
+{
+    struct token_t *cur = tokenlist->tokens[tokenlist->pos];
+    tokenlist->pos++;
+    return cur;
+}
+
+bool check_either(int step, unsigned int n, ...)
 {
     enum tokentype_t type;
     va_list args;
@@ -48,7 +55,7 @@ bool check_either(unsigned int n, ...)
 
     for (unsigned int i = 0; i < n; i++) {
         type = va_arg(args, enum tokentype_t);
-        if (check_single(type))
+        if (check_single(type, step))
             return true;
     }
 
@@ -64,7 +71,7 @@ bool match_either(unsigned int n, ...)
 
     for (unsigned int i = 0; i < n; i++) {
         type = va_arg(args, enum tokentype_t);
-        if (check_single(type)) {
+        if (check_single(type, 0)) {
             tokenlist->pos++;
             return true;
         }
@@ -76,7 +83,7 @@ bool match_either(unsigned int n, ...)
 
 void *consume(enum tokentype_t type, char *err_msg)
 {
-    if (!check_single(type))
+    if (!check_single(type, 0))
         valery_exit_parse_error(err_msg);
 
     return tokenlist->tokens[tokenlist->pos++];
@@ -99,8 +106,6 @@ struct Expr *expr_alloc(enum ExprType type, struct token_t *token)
             ((struct LiteralExpr *)expr)->value = token->literal;
             if (token->type == T_WORD || token->type == T_STRING)
                 ((struct LiteralExpr *)expr)->value_type = LIT_STRING;
-            if (token->type == T_WORD || token->type == T_STRING)
-                ((struct LiteralExpr *)expr)->value_type = LIT_STRING;
             else
                 ((struct LiteralExpr *)expr)->value_type = LIT_INT;
             break;
@@ -108,6 +113,11 @@ struct Expr *expr_alloc(enum ExprType type, struct token_t *token)
         case EXPR_COMMAND:
             expr = m_arena_alloc(ast_arena, sizeof(struct CommandExpr));
             ((struct CommandExpr *)expr)->exprs = darr_malloc();   /* TODO: put on arena */
+            break;
+
+        case EXPR_VARIABLE:
+            expr = m_arena_alloc(ast_arena, sizeof(struct VariableExpr));
+            ((struct VariableExpr *)expr)->name = token;
             break;
     }
 
@@ -121,6 +131,9 @@ struct Stmt *stmt_alloc(enum StmtType type, struct token_t *token)
     switch (type) {
         case STMT_EXPRESSION:
             stmt = m_arena_alloc(ast_arena, sizeof(struct ExpressionStmt));
+            break;
+        case STMT_VAR:
+            stmt = m_arena_alloc(ast_arena, sizeof(struct VarStmt));
             break;
     }
     stmt->type = type;

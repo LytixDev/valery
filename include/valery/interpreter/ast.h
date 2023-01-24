@@ -27,12 +27,14 @@ enum ExprType {
     EXPR_BINARY,
     EXPR_LITERAL,
     EXPR_COMMAND,
+    EXPR_VARIABLE,
     EXPR_ENUM_COUNT
 };
 
 enum StmtType {
     STMT_IF,
     STMT_EXPRESSION,
+    STMT_VAR,
     STMT_ENUM_COUNT
 };
 
@@ -94,6 +96,12 @@ struct IfStmt {
     struct Stmt *then_branch;
     struct Stmt *else_branch;
 
+};
+
+struct VarStmt {
+    struct Stmt head;
+    struct token_t *name;
+    struct Expr *initializer;
 };
 
 

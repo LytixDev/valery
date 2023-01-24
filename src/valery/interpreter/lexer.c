@@ -100,6 +100,7 @@ const char *tokentype_str[T_ENUM_COUNT] = {
 static struct ht_t *identifiers = NULL;
 char *source_cpy;
 struct tokenlist_t *tl;
+bool first_word;
 
 /* functions */
 
@@ -111,7 +112,7 @@ static void init_identifiers(void)
     if (identifiers != NULL)
         return;
 
-    identifiers = ht_malloc(32);
+    identifiers = ht_alloc(32);
 
     char *identifiers_str[] = {
         "if",
@@ -149,8 +150,7 @@ static void init_identifiers(void)
 
     for (int i = 0; i < KEYWORDS_LEN; i++) {
         char *raw_str = identifiers_str[i];
-        ht_set(identifiers, raw_str, strlen(raw_str) + 1, &identifiers_name[i],
-               sizeof(enum tokentype_t), NULL);
+        ht_sset_alloc_T(identifiers, raw_str, &identifiers_name[i], enum tokentype_t);
     }
 }
 
@@ -227,22 +227,30 @@ static inline bool is_alpha(char c)
 /* returns true on terminal chars for identifiers, else false */
 static bool is_terminal(char c)
 {
+    if (first_word) {
+        switch (c) {
+            case '=':
+                return true;
+        }
+    }
+
+    /* 2.2 */
     switch (c) {
         case '|':
-        case ')':
-        case ']':
-        case '}':
-        case '(':
-        case '[':
-        case '{':
-        case ';':
         case '&':
+        case ';':
         case '<':
         case '>':
-        case '\n':
-        case ' ':
+        case '(':
+        case ')':
+        case '$':
+        case '`':
+        case '\\':
         case '"':
-        case 0:
+        case '\'':
+        case ' ':
+        case '\t':
+        case '\n':
             return true;
 
         default:
@@ -286,8 +294,9 @@ static void number_literal(void)
     add_token(T_NUMBER, NULL, 0, &literal, sizeof(literal));
 }
 
-static void string_literal(void)
+static void single_qoute(void)
 {
+    /* 2.2.2 */
     //TODO: this is rather ugly
     char c;
     char *literal_start = source_cpy;           // not -1 because we ignore the first qoute 
@@ -304,6 +313,12 @@ static void string_literal(void)
     /* close the string by moving past the last qoute */
     source_cpy++;
     add_token(T_STRING, NULL, 0, literal_start, literal_size);
+}
+
+static void double_qoute(void)
+{
+    /* 2.2.3 */
+
 }
 
 static void word(void)
@@ -328,7 +343,12 @@ static void word(void)
     add_token(is_reserved == NULL ? T_WORD : *is_reserved, identifier, len + 1, identifier, len + 1);
 }
 
-/* scans the source code until a non-ambigious token is determined */
+/* 
+ * scans the source code until a non-ambigious token is determined 
+ * if the determined token shall set the first_word variable to false,
+ * it breaks out of the switch statement, if not, the function simply returns
+ * after determining the token.
+ */
 static void scan_token(void)
 {
     char c = *source_cpy++;
@@ -348,7 +368,8 @@ static void scan_token(void)
             break;
         case ';':
             add_token_simple(T_SEMICOLON);
-            break;
+            first_word = true;
+            return;
         case '*':
             add_token_simple(T_STAR);
             break;
@@ -404,38 +425,46 @@ static void scan_token(void)
                 source_cpy++;
 
             source_cpy++;       // go past newline
-            break;
+            first_word = true;
+            return;
 
 
         /* ignore all whitespace */
         case ' ':
-            break;
         case '\r':
-            break;
         case '\t':
             break;
 
 
         case '\n':
             add_token_simple(T_NEWLINE);
-            break;
+            first_word = true;
+            return;
 
 
         /* string literal */
+        case '\'':
+            single_qoute();
+
         case '"':
-            string_literal();
+            single_qoute();
+            //double_qoute();
             break;
 
         
         default:
             word();
     }
+
+    if (first_word)
+        first_word = false;
 }
 
 struct tokenlist_t *tokenize(char *source)
 {
     tl = tokenlist_malloc();            // define global struct tokenlist_t type
     source_cpy = source;                // global pointer into the source code for simplicity 
+    first_word = true;
     init_identifiers();
 
     /* main lexical analysis loop */

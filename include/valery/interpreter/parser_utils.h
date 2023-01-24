@@ -24,18 +24,22 @@
 #include "valery/interpreter/parser.h"
 
 /* functions */
-bool check_single(enum tokentype_t type);
-
 /*
  * @returns the previously parsed token in the global tokenlist
  */
-struct token_t *previous();
+struct token_t *previous(void);
+
+/*
+ * @returns the current token in the global tokenlist and increments the tokenlist position
+ */
+struct token_t *current(void);
 
 /*
  * @returns true if next token is any of the given arguments, else false.
  */
-bool check_either(unsigned int n, ...);
-#define check(...) check_either(VA_NUMBER_OF_ARGS(__VA_ARGS__), __VA_ARGS__)
+bool check_either(int step, unsigned int n, ...);
+#define check(...) check_either(0, VA_NUMBER_OF_ARGS(__VA_ARGS__), __VA_ARGS__)
+#define check_ahead(a, ...) check_either(a, VA_NUMBER_OF_ARGS(__VA_ARGS__), __VA_ARGS__)
 
 /*
  * consumes the next token if its type is one of the given arguments.

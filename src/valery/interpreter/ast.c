@@ -24,7 +24,7 @@ extern const char *tokentype_str[T_ENUM_COUNT];
 static void ast_print_expr(struct Expr *expr_head);
 static void ast_print_stmt(struct Stmt *stmt_head);
 
-static void literal_print(struct LiteralExpr *expr)
+static void literal(struct LiteralExpr *expr)
 {
     if (expr->value_type == LIT_STRING)
         printf("%s", (char *)expr->value);
@@ -34,7 +34,7 @@ static void literal_print(struct LiteralExpr *expr)
         printf("%f", *(float *)expr->value);
 }
 
-static void command_print(struct CommandExpr *expr)
+static void command(struct CommandExpr *expr)
 {
     int bound = darr_get_size(expr->exprs);
     for (int i = 0; i < bound; i++) {
@@ -44,7 +44,7 @@ static void command_print(struct CommandExpr *expr)
     }
 }
 
-static void binary_print(struct BinaryExpr *expr)
+static void binary(struct BinaryExpr *expr)
 {
     putchar('(');
     ast_print_expr(expr->left);
@@ -55,6 +55,17 @@ static void binary_print(struct BinaryExpr *expr)
     putchar(')');
 }
 
+static void variable(struct VariableExpr *expr)
+{
+    printf("$%s", expr->name->lexeme);
+}
+
+static void var_stmt(struct VarStmt *stmt)
+{
+    printf("%s = ", stmt->name->lexeme);
+    ast_print_expr(stmt->initializer);
+}
+
 static void ast_print_expr(struct Expr *expr_head)
 {
     if (expr_head == NULL)
@@ -62,13 +73,16 @@ static void ast_print_expr(struct Expr *expr_head)
 
     switch (expr_head->type) {
         case EXPR_BINARY:
-            binary_print((struct BinaryExpr *)expr_head);
+            binary((struct BinaryExpr *)expr_head);
             break;
         case EXPR_COMMAND:
-            command_print((struct CommandExpr *)expr_head);
+            command((struct CommandExpr *)expr_head);
             break;
         case EXPR_LITERAL:
-            literal_print((struct LiteralExpr *)expr_head);
+            literal((struct LiteralExpr *)expr_head);
+            break;
+        case EXPR_VARIABLE:
+            variable((struct VariableExpr *)expr_head);
             break;
 
         default:
@@ -87,6 +101,9 @@ static void ast_print_stmt(struct Stmt *stmt_head)
         case STMT_EXPRESSION:
             ast_print_expr(((struct ExpressionStmt *)stmt_head)->expression);
             break;
+        case STMT_VAR:
+            var_stmt((struct VarStmt *)stmt_head);
+            break;
         default:
             printf("AST TYPE NOT HANLDED, %d\n", stmt_head->type);
     }
@@ -97,7 +114,7 @@ static void ast_print_stmt(struct Stmt *stmt_head)
 void ast_print(struct darr_t *statements)
 {
     printf("\n--- AST dump ---\n");
-    for (int i = 0; i < darr_get_size(statements); i++) {
+    for (size_t i = 0; i < darr_get_size(statements); i++) {
         ast_print_stmt(darr_get(statements, i));
         putchar('\n');
     }

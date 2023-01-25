@@ -225,7 +225,7 @@ static inline bool is_alpha(char c)
 }
 
 /* returns true on terminal chars for identifiers, else false */
-static bool is_terminal(char c)
+static bool is_special_char(char c)
 {
     if (first_word) {
         switch (c) {
@@ -234,7 +234,7 @@ static bool is_terminal(char c)
         }
     }
 
-    /* 2.2 */
+    /* 2.2, without $ (handled elsewhere) */
     switch (c) {
         case '|':
         case '&':
@@ -243,7 +243,6 @@ static bool is_terminal(char c)
         case '>':
         case '(':
         case ')':
-        case '$':
         case '`':
         case '\\':
         case '"':
@@ -301,31 +300,46 @@ static void single_qoute(void)
     char c;
     char *literal_start = source_cpy;           // not -1 because we ignore the first qoute 
     while ((c = *source_cpy) != 0) {
+        source_cpy++;
         if (c == '"')
             break;
-        source_cpy++;
     }
 
     if (*source_cpy == 0)
         valery_exit_parse_error("string not terminated");
 
-    size_t literal_size = source_cpy - literal_start;
-    /* close the string by moving past the last qoute */
-    source_cpy++;
+    size_t literal_size = source_cpy - literal_start - 1;
     add_token(T_STRING, NULL, 0, literal_start, literal_size);
 }
 
 static void double_qoute(void)
 {
-    /* 2.2.3 */
+    char *identifier_start = source_cpy - 1;    // -1 because scan_token() incremented source_cpy
+    while (*source_cpy != '"') {
+        source_cpy++;
+    }
+
+    size_t len = source_cpy - identifier_start;
+    char identifier[len];
+    strncpy(identifier, identifier_start, len);
+    identifier[len] = 0;
+
+    add_token(T_STRING, identifier, len + 1, identifier, len + 1);
 
 }
 
 static void word(void)
 {
+    /* store where we need to perform expansion */
+    int expansions[32];
+    int expansions_i = 0;
+
     char *identifier_start = source_cpy - 1;    // -1 because scan_token() incremented source_cpy
-    while (!is_terminal(*source_cpy))
+    while (!is_special_char(*source_cpy)) {
+        if (*source_cpy == '$')
+            expansions[expansions_i++] = identifier_start - source_cpy;
         source_cpy++;
+    }
 
     size_t len = source_cpy - identifier_start;
     char identifier[len];
@@ -338,7 +352,9 @@ static void word(void)
      * result. Otherwise, the token WORD shall be returned. Also, if the parser is in any state
      * where only a reserved word could be the next correct token, proceed as above. 
      */
-    enum tokentype_t *is_reserved = ht_get(identifiers, identifier, len + 1);
+    enum tokentype_t *is_reserved = NULL;
+    if (first_word)
+        is_reserved = ht_get(identifiers, identifier, len + 1);
     //add_token(is_reserved == NULL ? T_WORD : *is_reserved, identifier, len + 1, NULL, 0);
     add_token(is_reserved == NULL ? T_WORD : *is_reserved, identifier, len + 1, identifier, len + 1);
 }
@@ -373,9 +389,9 @@ static void scan_token(void)
         case '*':
             add_token_simple(T_STAR);
             break;
-        case '$':
-            add_token_simple(T_DOLLAR);
-            break;
+        //case '$':
+        //    add_token_simple(T_DOLLAR);
+        //    break;
 
         /* two character lexems */
         case '&':
@@ -397,25 +413,28 @@ static void scan_token(void)
             add_token_simple(match('=') ? T_LESS_EQUAL : T_LESS);
             break;
         case '!':
-            if (*source_cpy == 0) {
-                /* '!' was last char in source file */
-                add_token_simple(T_BANG);
-                break;
-            }
-
-            char next = *source_cpy;
-            if (next == '!') {
+            //if (*source_cpy == 0) {
+            //    /* '!' was last char in source file */
+            //    add_token_simple(T_BANG);
+            //    break;
+            //}
+            if (*source_cpy == '!') {
                 source_cpy++;
                 add_token_simple(T_BANG_BANG);
                 break;
-            } else if (next == '=') {
-                source_cpy++;
-                add_token_simple(T_BANG_EQUAL);
+            } else {
+                word();
                 break;
             }
 
+            //else if (next == '=') {
+            //    source_cpy++;
+            //    add_token_simple(T_BANG_EQUAL);
+            //    break;
+            //}
+
             /* no other match found */
-            add_token_simple(T_BANG);
+            //add_token_simple(T_BANG);
             break;
 
 

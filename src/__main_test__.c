@@ -26,15 +26,16 @@ int main()
     source[--i] = 0;
 
     ast_arena_init();
+    printf("%s\n", source);
     struct tokenlist_t *tl = tokenize(source);
     tokenlist_print(tl);
 
-    struct darr_t *exprs = parse(tl);
-    int bound = darr_get_size(exprs);
+    //struct darr_t *exprs = parse(tl);
+    //int bound = darr_get_size(exprs);
 
-    ast_print(exprs);
+    //ast_print(exprs);
 
-    int rc = interpret(exprs);
+    //int rc = interpret(exprs);
     //tokenlist_free(tl);
     ast_arena_release();
 }

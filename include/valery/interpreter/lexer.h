@@ -86,9 +86,12 @@ enum tokentype_t {
 
 struct token_t {
     enum tokentype_t type;
-    char *lexeme;
     void *literal;
     size_t literal_size;
+    union {
+        char *lexeme;
+        struct expansionlist *e;
+    };
 };
 
 struct tokenlist_t {
@@ -97,6 +100,44 @@ struct tokenlist_t {
     size_t pos;
     size_t size;              /* total tokens occupied */
     size_t capacity;          /* total tokens allocated */
+};
+
+/*
+ * words and strings may be parameter expanded by the '$' symbol.
+ * in the example:
+ *
+ *      a=hello
+ *      echo "$a world!"
+ *
+ * "$a world!" needs to be expanded into "hello world!"
+ * the internal lexical representation for the string looks like:
+ * expansionlist
+ *      1. type: ET_EXPAND, str -> 'a'
+ *      2. type: ET_LITERAL, str -> ' word!'
+ *
+ *
+ * similarly:
+ *
+ *      echo "$(ls -la | wc -l) files present"
+ *
+ * $(ls -la | wc -l) needs to be expanded into the result of the subshell
+ * the internal lexical representation for the string looks like:
+ * expansionlist
+ *      1. type: ET_TOKENLIST, tl -> T_WORD (ls) T_WORD (-la) T_PIPE T_WORD (wc) T_WORD (-l)
+ *      2. type: ET_LITERAL, str -> ' files present'
+ */
+enum expansion_type { ET_LITERAL, ET_EXPAND, ET_TOKENLIST };
+
+struct expansion {
+    enum expansion_type type;
+    union {
+        char *str;
+        struct tokenlist_t *tl;
+    };
+};
+
+struct expansionlist {
+    struct darr_t *expansions;  /* dynamic array that holds `struct expansion` */
 };
 
 

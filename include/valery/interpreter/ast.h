@@ -70,7 +70,7 @@ struct BinaryExpr {
 struct LiteralExpr {
     struct Expr head;
     void *value;
-    enum LiteralType value_type; //TODO: THIS UGLY!!!!!
+    enum LiteralType value_type; //TODO: ugly? could use a tagged union
 };
 
 struct CommandExpr {

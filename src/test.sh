@@ -1,4 +1,4 @@
 #!/bin/sh
-a="world"
-echo "hello" $a
-echo a=$a
+a="hello"
+b="$a world!"
+echo $b

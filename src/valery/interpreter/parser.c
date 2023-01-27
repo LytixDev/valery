@@ -76,7 +76,7 @@ static void *linebreak(void);
 //static void *sequential_sep(void);
 
 /* globals */
-struct tokenlist_t *tokenlist;
+struct darr_t *tokens;
 
 static struct Stmt *program(void);
 static struct Stmt *variable_declaration(void);
@@ -151,9 +151,9 @@ static struct Expr *var(void)
     return (struct Expr *)expr;
 }
 
-struct darr_t *parse(struct tokenlist_t *tl)
+struct darr_t *parse(struct darr_t *t)
 {
-    tokenlist = tl;
+    tokens = t;
     struct darr_t *statements = darr_malloc();
     while (!check(T_EOF))
         darr_append(statements, program());

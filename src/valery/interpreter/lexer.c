@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <assert.h>
 #ifdef DEBUG_INTERPRETER
 #       include <stdio.h>
 #endif
@@ -99,7 +100,7 @@ const char *tokentype_str[T_ENUM_COUNT] = {
 /* globals */
 static struct ht_t *identifiers = NULL;
 char *source_cpy;
-struct tokenlist_t *tl;
+struct darr_t *ptokens;
 bool first_word;
 
 /* functions */
@@ -159,25 +160,26 @@ static inline void destroy_identifiers(void)
     ht_free(identifiers);
 }
 
-//TODO use global properly
-static struct tokenlist_t *tokenlist_malloc(void)
+#define expansion_tokens_alloc(p, s) expansion_alloc(ET_TOKENLIST, p, s)
+struct expansion_t *expansion_alloc(enum expansion_type type, void *p, size_t size)
 {
-    struct tokenlist_t *tokenlist = vmalloc(sizeof(struct tokenlist_t));
-    tokenlist->pos = 0;
-    tokenlist->size = 0;
-    tokenlist->capacity = 32;
-    tokenlist->tokens = vmalloc(32 * sizeof(enum tokentype_t *));
-    return tokenlist;
+    struct expansion_t *expansion = vmalloc(sizeof(struct expansion_t));
+    expansion->type = type;
+
+    if (type == ET_TOKENLIST) {
+        expansion->tokens = p;
+    } else {
+        /* make copy of string from source code and add null byte */
+        char *cpy = vmalloc(sizeof(char) * (size + 1));
+        strncpy(cpy, (char *)p, size);
+        cpy[size] = 0;
+        expansion->str = cpy;
+    }
+
+    return expansion;
 }
 
-static void tokenlist_increase(void)
-{
-    size_t new_capacity = tl->capacity * 2;
-    tl->tokens = vrealloc(tl->tokens, new_capacity * sizeof(struct token_t *));
-    tl->capacity = new_capacity;
-}
-
-static struct token_t *token_malloc(enum tokentype_t type, char *lexeme, size_t lexeme_size,
+static struct token_t *token_alloc(enum tokentype_t type, char *lexeme, size_t lexeme_size,
                                     void *literal, size_t literal_size)
 {
     struct token_t *token = vmalloc(sizeof(struct token_t));
@@ -200,10 +202,7 @@ static struct token_t *token_malloc(enum tokentype_t type, char *lexeme, size_t 
 static void add_token(enum tokentype_t type, char *lexeme, size_t lexeme_size, void *literal,
                       size_t literal_size)
 {
-    if (tl->size >= tl->capacity)
-        tokenlist_increase();
-
-    tl->tokens[tl->size++] = token_malloc(type, lexeme, lexeme_size, literal, literal_size);
+    darr_append(ptokens, token_alloc(type, lexeme, lexeme_size, literal, literal_size));
 }
 
 static inline void add_token_simple(enum tokentype_t type)
@@ -312,19 +311,67 @@ static void single_qoute(void)
     add_token(T_STRING, NULL, 0, literal_start, literal_size);
 }
 
+static bool expansion_finished(enum expansion_type et)
+{
+    if (et == ET_EXPAND && is_special_char(*source_cpy))
+        return true;
+
+    if (*source_cpy == '$')
+        return true;
+
+    return false;
+}
+
+static enum expansion_type expansion_determine_type()
+{
+    if (*source_cpy == '$') {
+        if (*source_cpy + 1 == '(') {
+            /* consume the paren */
+            source_cpy++;
+            return ET_TOKENLIST;
+        } else {
+            return ET_EXPAND;
+        }
+    }
+    return ET_LITERAL;
+}
+
 static void double_qoute(void)
 {
-    char *identifier_start = source_cpy - 1;    // -1 because scan_token() incremented source_cpy
+    struct darr_t *expansions = darr_malloc();
+    enum expansion_type et;
+    char *expansion_start, *expansion_end;
+
+    expansion_start = source_cpy - 1;    // -1 because scan_token() incremented source_cpy
+    et = expansion_determine_type();
+
     while (*source_cpy != '"') {
-        source_cpy++;
+        if (expansion_finished(et)) {
+            /* store previous expansion */
+            expansion_end = source_cpy - 1;     // don't want to keep the '$'
+            assert(expansion_start > expansion_end);
+            darr_append(expansions, expansion_alloc(et, expansion_start,
+                                                    expansion_end - expansion_start));
+
+            expansion_start = ++source_cpy;
+            et = expansion_determine_type();
+        } else {
+            source_cpy++;
+        }
     }
 
-    size_t len = source_cpy - identifier_start;
-    char identifier[len];
-    strncpy(identifier, identifier_start, len);
-    identifier[len] = 0;
+    /* append last expansion */
+    expansion_end = source_cpy - 1;     // don't want to keep the final '"'
+    assert(expansion_start > expansion_end);
+    darr_append(expansions, expansion_alloc(et, expansion_start,
+                                            expansion_end - expansion_start));
 
-    add_token(T_STRING, identifier, len + 1, identifier, len + 1);
+    //size_t len = source_cpy - identifier_start;
+    //char identifier[len];
+    //strncpy(identifier, identifier_start, len);
+    //identifier[len] = 0;
+
+    //add_token(T_STRING, identifier, len + 1, identifier, len + 1);
 
 }
 
@@ -479,9 +526,9 @@ static void scan_token(void)
         first_word = false;
 }
 
-struct tokenlist_t *tokenize(char *source)
+struct darr_t *tokenize(char *source)
 {
-    tl = tokenlist_malloc();            // define global struct tokenlist_t type
+    ptokens = darr_malloc();
     source_cpy = source;                // global pointer into the source code for simplicity 
     first_word = true;
     init_identifiers();
@@ -493,26 +540,19 @@ struct tokenlist_t *tokenize(char *source)
 
     /* add sentinel token */
     add_token(T_EOF, NULL, 0, NULL, 0);
+
     //destroy_identifiers();
-    return tl;
+    return ptokens;
 }
 
-void tokenlist_free(struct tokenlist_t *tokenlist)
-{
-    for (size_t i = 0; i < tokenlist->size; i++)
-        free(tokenlist->tokens[i]);
-
-    free(tokenlist->tokens);
-    free(tokenlist);
-}
-
-void tokenlist_print(struct tokenlist_t *tokenlist)
+void tokenlist_print(struct darr_t *tokens)
 {
 #ifdef DEBUG_INTERPRETER
     printf("--- lex dump ---\n");
     struct token_t *token;
-    for (size_t i = 0; i < tokenlist->size; i++) {
-        token = tokenlist->tokens[i];
+    size_t upper = darr_get_size(tokens);
+    for (size_t i = 0; i < upper; i++) {
+        token = darr_get(tokens, i);
         printf("type: %-16s|", tokentype_str[token->type]);
 
         if (token->literal != NULL) {

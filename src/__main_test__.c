@@ -27,10 +27,10 @@ int main()
 
     ast_arena_init();
     printf("%s\n", source);
-    struct tokenlist_t *tl = tokenize(source);
-    tokenlist_print(tl);
+    struct darr_t *tokens = tokenize(source);
+    tokenlist_print(tokens);
 
-    //struct darr_t *exprs = parse(tl);
+    //struct darr_t *exprs = parse(tokens);
     //int bound = darr_get_size(exprs);
 
     //ast_print(exprs);

@@ -11,12 +11,13 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  You should have received a copy of the GNU General Public License along with this program.
+ *  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef VALERY_INTERPRETER_LEX_H
 #define VALERY_INTERPRETER_LEX_H
-#include <stddef.h>     // size_t type
+#include <stddef.h>
 
 
 /* types */
@@ -90,20 +91,16 @@ struct token_t {
     size_t literal_size;
     union {
         char *lexeme;
-        struct expansionlist *e;
+        /* 
+         * used by T_WORD and T_STRING
+         * dynamic array that holds `struct expansion` 
+         * */
+        struct darr_t *expansions; 
     };
 };
 
-struct tokenlist_t {
-    // TODO: use darr_t
-    struct token_t **tokens;           /* list of the tokens */
-    size_t pos;
-    size_t size;              /* total tokens occupied */
-    size_t capacity;          /* total tokens allocated */
-};
-
 /*
- * words and strings may be parameter expanded by the '$' symbol.
+ * words and strings may be parameter expanded by the $, ~, or . symbol.
  * in the example:
  *
  *      a=hello
@@ -128,32 +125,25 @@ struct tokenlist_t {
  */
 enum expansion_type { ET_LITERAL, ET_EXPAND, ET_TOKENLIST };
 
-struct expansion {
+struct expansion_t {
     enum expansion_type type;
     union {
         char *str;
-        struct tokenlist_t *tl;
+        struct darr_t *tokens;
     };
 };
-
-struct expansionlist {
-    struct darr_t *expansions;  /* dynamic array that holds `struct expansion` */
-};
-
 
 /* functions */
 /*
  * performs a lexical analysis on the given source code
  * @returns a list of tokens
  */
-struct tokenlist_t *tokenize(char *source);
+struct darr_t *tokenize(char *source);
 
 /*
  * prints the tokens in sequential order as they appear in the list
  */
-void tokenlist_print(struct tokenlist_t *tokenlist);
-
-void tokenlist_free(struct tokenlist_t *tokenlist);
+void tokenlist_print(struct darr_t *tokens);
 
 
 #endif /* !VALERY_INTERPRETER_LEX_H */

@@ -77,7 +77,7 @@ enum tokentype_t {
     T_NAME,
     T_NEWLINE,
     IO_NUMBER,
-    T_STRING,
+    T_EXPANSION,
     T_NUMBER,
 
     T_UNKNOWN,
@@ -87,16 +87,9 @@ enum tokentype_t {
 
 struct token_t {
     enum tokentype_t type;
-    void *literal;
-    size_t literal_size;
-    union {
-        char *lexeme;
-        /* 
-         * used by T_WORD and T_STRING
-         * dynamic array that holds `struct expansion` 
-         * */
-        struct darr_t *expansions; 
-    };
+    //TODO: union between lexeme and expansion?
+    char *lexeme;
+    struct darr_t *expansions;
 };
 
 /*
@@ -123,14 +116,15 @@ struct token_t {
  *      1. type: ET_TOKENLIST, tl -> T_WORD (ls) T_WORD (-la) T_PIPE T_WORD (wc) T_WORD (-l)
  *      2. type: ET_LITERAL, str -> ' files present'
  */
-enum expansion_type { ET_LITERAL, ET_EXPAND, ET_TOKENLIST };
+enum expansion_type { ET_LITERAL, ET_VAR_EXPAND, ET_SUBSHELL };
 
 struct expansion_t {
     enum expansion_type type;
-    union {
-        char *str;
-        struct darr_t *tokens;
-    };
+    void *value;
+    //union {
+    //    char *str;
+    //    struct darr_t *tokens;
+    //};
 };
 
 /* functions */

@@ -94,7 +94,7 @@ static struct Stmt *program(void)
 static struct Stmt *variable_declaration(void)
 {
     /* T_WORD T_EQUAL string (should be expr) */
-    if (!(check(T_WORD) && check_ahead(1, T_EQUAL), check_ahead(2, T_STRING))) {
+    if (!(check(T_WORD) && check_ahead(1, T_EQUAL), check_ahead(2, T_EXPANSION))) {
         struct ExpressionStmt *e_stmt = (struct ExpressionStmt *)stmt_alloc(STMT_EXPRESSION, NULL);
         e_stmt->expression = and_if();
         return (struct Stmt *)e_stmt;
@@ -102,7 +102,7 @@ static struct Stmt *variable_declaration(void)
 
     struct token_t *name = consume(T_WORD, "expected word");
     consume(T_EQUAL, "expected equal");
-    struct Expr *lit = expr_alloc(EXPR_LITERAL, consume(T_STRING, "expected string"));
+    struct Expr *lit = expr_alloc(EXPR_LITERAL, consume(T_EXPANSION, "expected string"));
     struct VarStmt *stmt = (struct VarStmt *)stmt_alloc(STMT_VAR, NULL);
     stmt->name = name;
     stmt->initializer = lit;
@@ -132,7 +132,7 @@ static struct Expr *command(void)
     while (1) {
         if (check(T_DOLLAR)) {
             darr_append(expr->exprs, var());
-        } else if (match(T_WORD, T_STRING)) {
+        } else if (match(T_WORD, T_EXPANSION)) {
             struct token_t *prev = previous();
             struct LiteralExpr *expr_lit = (struct LiteralExpr *)expr_alloc(EXPR_LITERAL, prev);
             darr_append(expr->exprs, expr_lit);

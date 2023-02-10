@@ -88,7 +88,7 @@ const char *tokentype_str[T_ENUM_COUNT] = {
     "T_NAME",
     "T_NEWLINE",
     "IO_NUMBER",
-    "T_STRING",
+    "T_EXPANSION",
     "T_NUMBER",
 
     "T_UNKNOWN",
@@ -160,61 +160,49 @@ static inline void destroy_identifiers(void)
     ht_free(identifiers);
 }
 
-#define expansion_tokens_alloc(p, s) expansion_alloc(ET_TOKENLIST, p, s)
-struct expansion_t *expansion_alloc(enum expansion_type type, void *p, size_t size)
+struct expansion_t *expansion_alloc(enum expansion_type type, void *value, size_t literal_size)
 {
     struct expansion_t *expansion = vmalloc(sizeof(struct expansion_t));
     expansion->type = type;
-
-    if (type == ET_TOKENLIST) {
-        expansion->tokens = p;
+    if (expansion->type != ET_SUBSHELL) {
+        expansion->value = vmalloc(literal_size);
+        strncpy(expansion->value, value, literal_size);
+        ((char *)expansion->value)[literal_size - 1] = 0;
     } else {
-        /* make copy of string from source code and add null byte */
-        char *cpy = vmalloc(sizeof(char) * (size + 1));
-        strncpy(cpy, (char *)p, size);
-        cpy[size] = 0;
-        expansion->str = cpy;
+        //TODO fix
+        expansion->value = value;
     }
-
     return expansion;
 }
 
-static struct token_t *token_alloc(enum tokentype_t type, void *p, size_t lexeme_size,
-                                    void *literal, size_t literal_size)
+static struct token_t *token_alloc(enum tokentype_t type, char *lexeme, size_t lexeme_size,
+                                   struct darr_t *expansions)
 {
     struct token_t *token = vmalloc(sizeof(struct token_t));
     token->type = type;
 
-    /* expansions store a dynamic array of expansions, not the token lexeme */
-    if (type == T_WORD || type == T_STRING) {
-        token->expansions = p;
-        return token;
-    }
-
-    if (p != NULL) {
+    if (lexeme != NULL) {
         token->lexeme = vmalloc(lexeme_size);
-        strncpy(token->lexeme, p, lexeme_size);
+        strncpy(token->lexeme, lexeme, lexeme_size);
         token->lexeme[lexeme_size - 1] = 0;
+    } else {
+        token->lexeme = NULL;
     }
-
-    if (literal != NULL) {
-        token->literal = vmalloc(literal_size);
-        memcpy(token->literal, literal, literal_size);
-    }
+    token->expansions = expansions;
 
     return token;
 }
 
-#define add_expansion(t, p) add_token(t, p, 0, NULL, 0)
-static void add_token(enum tokentype_t type, void *p, size_t lexeme_size, void *literal,
-                      size_t literal_size)
+#define add_expansion_token(type, expansion) add_token(type, NULL, 0, expansions)
+static void add_token(enum tokentype_t type, char *lexeme, size_t lexeme_size,
+                      struct darr_t *expansions)
 {
-    darr_append(ptokens, token_alloc(type, p, lexeme_size, literal, literal_size));
+    darr_append(ptokens, token_alloc(type, lexeme, lexeme_size, expansions));
 }
 
 static inline void add_token_simple(enum tokentype_t type)
 {
-    add_token(type, NULL, 0, NULL, 0);
+    add_token(type, NULL, 0, NULL);
 }
 
 /* helper functions */
@@ -296,7 +284,7 @@ static void number_literal(void)
 
     char *literal_end = source_cpy - 1;         // -1 because we have gone one past the last digit
     int64_t literal = strtol(literal_start, &literal_end, 10);
-    add_token(T_NUMBER, NULL, 0, &literal, sizeof(literal));
+    //add_token(T_NUMBER, NULL, 0, &literal, sizeof(literal));
 }
 
 static void single_qoute(void)
@@ -315,17 +303,20 @@ static void single_qoute(void)
         valery_exit_parse_error("string not terminated");
 
     size_t literal_size = source_cpy - literal_start - 1;
-    add_token(T_STRING, NULL, 0, literal_start, literal_size);
+    //add_token(T_STRING, NULL, 0, literal_start, literal_size);
 }
 
 static bool expansion_finished(enum expansion_type et)
 {
-    if (first_word && et == ET_LITERAL && *source_cpy == '=') {
-        first_word = false;
-        return true;
-    }
+    //if (first_word && et == ET_LITERAL && *source_cpy == '=') {
+    //    first_word = false;
+    //    return true;
+    //}
 
-    if (et == ET_EXPAND && is_special_char(*source_cpy))
+    if (et == ET_VAR_EXPAND && is_special_char(*source_cpy))
+        return true;
+
+    if (et == ET_SUBSHELL && *source_cpy == ')')
         return true;
 
     if (*source_cpy == '$')
@@ -337,12 +328,13 @@ static bool expansion_finished(enum expansion_type et)
 static enum expansion_type expansion_determine_type(void)
 {
     if (*source_cpy == '$') {
+        //TODO only check ahead if there is space
         if (*source_cpy + 1 == '(') {
             /* consume the paren */
             source_cpy++;
-            return ET_TOKENLIST;
+            return ET_SUBSHELL;
         } else {
-            return ET_EXPAND;
+            return ET_VAR_EXPAND;
         }
     }
     return ET_LITERAL;
@@ -350,66 +342,78 @@ static enum expansion_type expansion_determine_type(void)
 
 static void double_qoute(void)
 {
+    char *expansion_start = source_cpy;
     struct darr_t *expansions = darr_malloc();
-    enum expansion_type et;
-    char *expansion_start, *expansion_end;
+    enum expansion_type current_type = expansion_determine_type();
 
-    expansion_start = source_cpy - 1;    // -1 because scan_token() incremented source_cpy
-    et = expansion_determine_type();
-
-    while (*source_cpy != '"') {
-        if (expansion_finished(et)) {
+    do {
+        source_cpy++;
+        if (expansion_finished(current_type)) {
             /* store previous expansion */
-            expansion_end = source_cpy - 1;
-            assert(expansion_start <= expansion_end);
-            darr_append(expansions, expansion_alloc(et, expansion_start,
-                                                    expansion_end - expansion_start + 1));
+            darr_append(expansions, expansion_alloc(current_type, expansion_start,
+                                                    source_cpy - expansion_start + 1));
 
-            expansion_start = ++source_cpy;
-            et = expansion_determine_type();
-        } else {
-            source_cpy++;
+            expansion_start = source_cpy;
+            current_type = expansion_determine_type();
         }
-    }
+    } while (*source_cpy != '"');
 
     /* append last expansion */
-    expansion_end = source_cpy - 1;     // don't want to keep the final '"'
-    assert(expansion_start <= expansion_end);
-    darr_append(expansions, expansion_alloc(et, expansion_start,
-                                            expansion_end - expansion_start + 1));
-    add_expansion(T_STRING, expansions);
+    darr_append(expansions, expansion_alloc(current_type, expansion_start,
+                                            source_cpy - expansion_start + 1));
+    add_expansion_token(T_EXPANSION, expansions);
+    /* move past final double qoute */
+    source_cpy++;
 }
 
 static void word(void)
 {
-    struct darr_t *expansions = darr_malloc();
-    enum expansion_type et;
-    char *expansion_start, *expansion_end;
+    char *identifier_start = source_cpy - 1;    // -1 because scan_token() incremented source_cpy
+    while (!is_special_char(*source_cpy))
+        source_cpy++;
 
-    expansion_start = source_cpy - 1;    // -1 because scan_token() incremented source_cpy
-    et = expansion_determine_type();
+    size_t len = source_cpy - identifier_start;
+    char identifier[len];
+    strncpy(identifier, identifier_start, len);
+    identifier[len] = 0;
 
-    while (*source_cpy != ' ') {
-        if (expansion_finished(et)) {
-            /* store previous expansion */
-            expansion_end = source_cpy - 1;     // don't want to keep the '$'
-            assert(expansion_start <= expansion_end);
-            darr_append(expansions, expansion_alloc(et, expansion_start,
-                                                    expansion_end - expansion_start + 1));
+    /*
+     * 2.10.2
+     * When the TOKEN is exactly a reserved word, the token identifier for that reserved word shall
+     * result. Otherwise, the token WORD shall be returned. Also, if the parser is in any state
+     * where only a reserved word could be the next correct token, proceed as above. 
+     */
+    enum tokentype_t *is_reserved = ht_get(identifiers, identifier, len + 1);
+    //add_token(is_reserved == NULL ? T_WORD : *is_reserved, identifier, len + 1, NULL, 0);
+    add_token(is_reserved == NULL ? T_WORD : *is_reserved, identifier, len + 1, NULL);
 
-            expansion_start = ++source_cpy;
-            et = expansion_determine_type();
-        } else {
-            source_cpy++;
-        }
-    }
+    //struct darr_t *expansions = darr_malloc();
+    //enum expansion_type et;
+    //char *expansion_start, *expansion_end;
 
-    /* append last expansion */
-    expansion_end = source_cpy - 1;     // don't want to keep the final '"'
-    assert(expansion_start <= expansion_end);
-    darr_append(expansions, expansion_alloc(et, expansion_start,
-                                            expansion_end - expansion_start + 1));
-    add_expansion(T_WORD, expansions);
+    //expansion_start = source_cpy - 1;    // -1 because scan_token() incremented source_cpy
+    //et = expansion_determine_type();
+
+    //while (*source_cpy != ' ' || *source_cpy != '\n') {
+    //    if (expansion_finished(et)) {
+    //        /* store previous expansion */
+    //        expansion_end = source_cpy - 1;
+    //        assert(expansion_start <= expansion_end);
+    //        darr_append(expansions, expansion_alloc(et, expansion_start,
+    //                                                expansion_end - expansion_start + 1));
+
+    //        expansion_start = source_cpy + 1;
+    //        et = expansion_determine_type();
+    //    }
+    //    source_cpy++;
+    //}
+
+    ///* append last expansion */
+    //expansion_end = source_cpy - 1;     // don't want to keep the final '"'
+    //assert(expansion_start <= expansion_end);
+    //darr_append(expansions, expansion_alloc(et, expansion_start,
+    //                                        expansion_end - expansion_start + 1));
+    //add_expansion(T_WORD, expansions);
 }
 
 /* 
@@ -519,8 +523,8 @@ static void scan_token(void)
             single_qoute();
 
         case '"':
-            single_qoute();
-            //double_qoute();
+            //single_qoute();
+            double_qoute();
             break;
 
         
@@ -545,7 +549,7 @@ struct darr_t *tokenize(char *source)
         scan_token();                   // this function increments the source_cpy as needed
 
     /* add sentinel token */
-    add_token(T_EOF, NULL, 0, NULL, 0);
+    add_token(T_EOF, NULL, 0, NULL);
 
     //destroy_identifiers();
     return ptokens;
@@ -559,17 +563,31 @@ void tokenlist_print(struct darr_t *tokens)
     size_t upper = darr_get_size(tokens);
     for (size_t i = 0; i < upper; i++) {
         token = darr_get(tokens, i);
-        printf("type: %-16s|", tokentype_str[token->type]);
+        printf("type: %-16s| ", tokentype_str[token->type]);
 
-        if (token->literal != NULL) {
-            if (token->type == T_NUMBER)
-                printf(" literal: '%ld'", *(int64_t *)token->literal);
-            else if (token->type == T_STRING)
-                printf(" literal: '%s'", (char *)token->literal);
+        //if (token->literal != NULL) {
+        //    if (token->type == T_NUMBER)
+        //        printf(" literal: '%ld'", *(int64_t *)token->literal);
+        //    else if (token->type == T_STRING)
+        //        printf(" literal: '%s'", (char *)token->literal);
+        //}
+        if (token->lexeme != NULL) {
+            printf("'%s'", token->lexeme);
+        } else if (token->expansions != NULL) {
+            size_t len = darr_get_size(token->expansions);
+            putchar('\"');
+            for (size_t j = 0; j < len; j++) {
+                struct expansion_t *e = darr_get(token->expansions, j);
+                if (e->type == ET_LITERAL) {
+                    printf("%s", (char *)e->value);
+                } else if (e->type == ET_VAR_EXPAND) {
+                    printf("[%s]", (char *)e->value);
+                } else if (e->type == ET_SUBSHELL) {
+                    printf("lol");
+                }
+            }
+            putchar('\"');
         }
-
-        if (token->lexeme != NULL)
-            printf(" lexeme: '%s'", token->lexeme);
 
         putchar('\n');
     }

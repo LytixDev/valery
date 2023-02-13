@@ -26,12 +26,26 @@ static void ast_print_stmt(struct Stmt *stmt_head);
 
 static void literal(struct LiteralExpr *expr)
 {
-    if (expr->value_type == LIT_STRING)
+    if (expr->value_type == LIT_STRING) {
         printf("%s", (char *)expr->value);
-    else if (expr->value_type == LIT_INT)
+    } else if (expr->value_type == LIT_INT) {
         printf("%d", *(int *)expr->value);
-    else
-        printf("%f", *(float *)expr->value);
+    } else if (expr->value_type == LIT_DOUBLE) {
+        printf("%lf", *(double *)expr->value);
+    } else {
+        struct darr_t *expansion = expr->value;
+
+        size_t len = darr_get_size(expansion);
+        for (size_t i = 0; i < len; i++) {
+            struct expansion_t *e = darr_get(expansion, i);
+            if (e->type == ET_LITERAL)
+                printf("%s", (char *)e->value);
+            else if (e->type == ET_PARAMETER)
+                printf("[%s]", (char *)e->value);
+            else
+                printf("literal type not supported in AST print");
+        }
+    }
 }
 
 static void command(struct CommandExpr *expr)
@@ -95,7 +109,7 @@ static void ast_print_stmt(struct Stmt *stmt_head)
     if (stmt_head == NULL)
         return;
 
-    putchar('[');
+    putchar('{');
 
     switch (stmt_head->type) {
         case STMT_EXPRESSION:
@@ -108,7 +122,7 @@ static void ast_print_stmt(struct Stmt *stmt_head)
             printf("AST TYPE NOT HANLDED, %d\n", stmt_head->type);
     }
 
-    putchar(']');
+    putchar('}');
 }
 
 void ast_print(struct darr_t *statements)

@@ -45,9 +45,12 @@ enum tokentype_t {
     T_RPAREN,
     T_LBRACE,
     T_RBRACE,
+    T_LBRACKET,
+    T_RBRACKET,
     T_SEMICOLON,
     T_STAR,
     T_DOLLAR,
+    T_ESCAPE,
 
     /* one or two character tokens */
     T_ANP,
@@ -61,10 +64,6 @@ enum tokentype_t {
     T_GREATER_EQUAL,
     T_LESS,
     T_LESS_EQUAL,
-    T_LBRACKET,
-    T_LBRACKET_LBRACKET,
-    T_RBRACKET,
-    T_RBRACKET_RBRACKET,
     T_DOT,
     T_DOT_DOT,
     T_PIPE,
@@ -77,6 +76,7 @@ enum tokentype_t {
     T_NAME,
     T_NEWLINE,
     IO_NUMBER,
+    T_LITERAL,
     T_EXPANSION,
     T_NUMBER,
 
@@ -116,15 +116,11 @@ struct token_t {
  *      1. type: ET_TOKENLIST, tl -> T_WORD (ls) T_WORD (-la) T_PIPE T_WORD (wc) T_WORD (-l)
  *      2. type: ET_LITERAL, str -> ' files present'
  */
-enum expansion_type { ET_LITERAL, ET_VAR_EXPAND, ET_SUBSHELL };
+enum expansion_type { ET_LITERAL, ET_PARAMETER, ET_CMD, ET_ARITH };
 
 struct expansion_t {
     enum expansion_type type;
     void *value;
-    //union {
-    //    char *str;
-    //    struct darr_t *tokens;
-    //};
 };
 
 /* functions */

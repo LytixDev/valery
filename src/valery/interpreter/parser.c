@@ -78,16 +78,16 @@ static void *linebreak(void);
 /* globals */
 struct darr_t *tokens;
 
-static struct Stmt *program(void);
+static struct Stmt *line(void);
 static struct Stmt *variable_declaration(void);
 static struct Expr *and_if(void);
 static struct Expr *command(void);
 static struct Expr *var(void);
 
-static struct Stmt *program(void)
+static struct Stmt *line(void)
 {
-    struct Stmt *stmt = variable_declaration();
     consume(T_NEWLINE, "newline expected");
+    struct Stmt *stmt = variable_declaration();
     return stmt;
 }
 
@@ -156,6 +156,6 @@ struct darr_t *parse(struct darr_t *t)
     tokens = t;
     struct darr_t *statements = darr_malloc();
     while (!check(T_EOF))
-        darr_append(statements, program());
+        darr_append(statements, line());
     return statements;
 }

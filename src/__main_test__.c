@@ -30,10 +30,8 @@ int main()
     struct darr_t *tokens = tokenize(source);
     tokenlist_print(tokens);
 
-    //struct darr_t *exprs = parse(tokens);
-    //int bound = darr_get_size(exprs);
-
-    //ast_print(exprs);
+    struct darr_t *exprs = parse(tokens);
+    ast_print(exprs);
 
     //int rc = interpret(exprs);
     //tokenlist_free(tl);

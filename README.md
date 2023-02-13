@@ -6,4 +6,3 @@ Oof that's a mouthful. The current hacked-together ad hoc solution does not scal
 - [x] rudimentary scanner
 - [ ] rudimentary parser
 - [ ] rudimentary interpreter
-- [ ] POSIX compliant interpreter (long-term)

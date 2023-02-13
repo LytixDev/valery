@@ -104,11 +104,13 @@ struct Expr *expr_alloc(enum ExprType type, struct token_t *token)
 
         case EXPR_LITERAL:
             expr = m_arena_alloc(ast_arena, sizeof(struct LiteralExpr));
-            //((struct LiteralExpr *)expr)->value = token->literal;
-            if (token->type == T_WORD || token->type == T_EXPANSION)
+            if (token->type == T_EXPANSION) {
+                ((struct LiteralExpr *)expr)->value = token->expansions;
+                ((struct LiteralExpr *)expr)->value_type = LIT_EXPANSION;
+            } else {
+                ((struct LiteralExpr *)expr)->value = token->lexeme;
                 ((struct LiteralExpr *)expr)->value_type = LIT_STRING;
-            else
-                ((struct LiteralExpr *)expr)->value_type = LIT_INT;
+            }
             break;
 
         case EXPR_COMMAND:

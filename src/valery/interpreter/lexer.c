@@ -34,65 +34,65 @@
 
 /* types */
 #ifdef DEBUG_INTERPRETER
-const char *tokentype_str[T_ENUM_COUNT] = {
+const char *tokentype_str[T_ENUM_COUNT][2] = {
     /* keywords */
-    "T_IF",
-    "T_THEN",
-    "T_ELSE",
-    "T_ELIF",
-    "T_FI",
-    "T_DO",
-    "T_DONE",
-    "T_CASE",
-    "T_ESAC",
-    "T_WHILE",
-    "T_UNTIL",
-    "T_FOR",
-    "T_RETURN",
-    "T_IN",
+    {"T_IF", "if"},
+    {"T_THEN", "then"},
+    {"T_ELSE", "else"},
+    {"T_ELIF", "elif"},
+    {"T_FI", "fi"},
+    {"T_DO", "do"},
+    {"T_DONE", "done"},
+    {"T_CASE", "case"},
+    {"T_ESAC", "esac"},
+    {"T_WHILE", "while"},
+    {"T_UNTIL", "until"},
+    {"T_FOR", "for"},
+    {"T_RETURN", "return"},
+    {"T_IN", "in"},
 
     /* single-character tokens */
-    "T_LPAREN",
-    "T_RPAREN",
-    "T_LBRACE",
-    "T_RBRACE",
-    "T_SEMICOLON",
-    "T_STAR",
-    "T_DOLLAR",
+    {"T_LPAREN", "("},
+    {"T_RPAREN", ")"},
+    {"T_LBRACE", "{"},
+    {"T_RBRACE", "}"},
+    {"T_LBRACKET", "["},
+    {"T_RBRACKET", "]"},
+    {"T_SEMICOLON", ";"},
+    {"T_STAR", "*"},
+    {"T_DOLLAR", "$"},
+    {"T_ESCAPE", "\\"},
 
     /* one or two character tokens */
-    "T_ANP",
-    "T_AND_IF",
-    "T_BANG",
-    "T_BANG_BANG",
-    "T_BANG_EQUAL",
-    "T_EQUAL",
-    "T_EQUAL_EQUAL",
-    "T_GREATER",
-    "T_GREATER_EQUAL",
-    "T_LESS",
-    "T_LESS_EQUAL",
-    "T_LBRACKET",
-    "T_LBRACKET_LBRACKET",
-    "T_RBRACKET",
-    "T_RBRACKET_RBRACKET",
-    "T_DOT",
-    "T_DOT_DOT",
-    "T_PIPE",
-    "T_PIPE_PIPE",
+    {"T_ANP", "&"},
+    {"T_AND_IF", "&&"},
+    {"T_BANG", "!"},
+    {"T_BANG_BANG", "!!"},
+    {"T_BANG_EQUAL", "!="},
+    {"T_EQUAL", "="},
+    {"T_EQUAL_EQUAL", "=="},
+    {"T_GREATER", ">"},
+    {"T_GREATER_EQUAL", ">="},
+    {"T_LESS", "<"},
+    {"T_LESS_EQUAL", "<="},
+    {"T_DOT", "."},
+    {"T_DOT_DOT", ".."},
+    {"T_PIPE", "|"},
+    {"T_PIPE_PIPE", "||"},
 
     /* symbols/identifiers */
-    "T_IDENTIFIER",
-    "T_WORD",
-    "T_ASSIGNMENT_WORD",
-    "T_NAME",
-    "T_NEWLINE",
-    "IO_NUMBER",
-    "T_EXPANSION",
-    "T_NUMBER",
+    {"T_IDENTIFIER", NULL},
+    {"T_WORD", NULL},
+    {"T_ASSIGNMENT_WORD", NULL},
+    {"T_NAME", NULL},
+    {"T_NEWLINE", NULL},
+    {"IO_NUMBER", NULL},
+    {"T_LITERAL", NULL},
+    {"T_EXPANSION", NULL},
+    {"T_NUMBER", NULL},
 
-    "T_UNKNOWN",
-    "T_EOF",
+    {"T_UNKNOWN", NULL},
+    {"T_EOF", NULL}
 };
 #endif /* DEBUG_INTERPRETER */
 
@@ -164,7 +164,7 @@ struct expansion_t *expansion_alloc(enum expansion_type type, void *value, size_
 {
     struct expansion_t *expansion = vmalloc(sizeof(struct expansion_t));
     expansion->type = type;
-    if (expansion->type != ET_SUBSHELL) {
+    if (expansion->type != ET_CMD) {
         expansion->value = vmalloc(literal_size);
         strncpy(expansion->value, value, literal_size);
         ((char *)expansion->value)[literal_size - 1] = 0;
@@ -211,6 +211,17 @@ static inline bool is_digit(char c)
     return c >= '0' && c <= '9';
 }
 
+static bool str_is_digit(char *str)
+{
+    char *cpy = str;
+    while (*cpy != 0) {
+        if (!is_digit(*cpy))
+            return false;
+        cpy++;
+    }
+    return true;
+}
+
 static inline bool is_alpha(char c)
 {
     return (c >= 'a' && c <= 'z') ||
@@ -228,8 +239,11 @@ static bool is_special_char(char c)
         }
     }
 
-    /* 2.2, without $ (handled elsewhere) */
+    /* 2.2 and 2.4 (without '$' handled elsewhere) */
     switch (c) {
+        case '!':
+        case '{':
+        case '}':
         case '|':
         case '&':
         case ';':
@@ -251,14 +265,21 @@ static bool is_special_char(char c)
     }
 }
 
-/*
- * 3.235
- * In the shell command language, a word consisting solely of underscores, digits, and alphabetics
- * from the portable character set. The first character of a name is not a digit. 
- */
-static bool is_name(char c)
+static bool is_parameter(char c)
 {
     return is_alpha(c) || is_digit(c) || c == '_';
+}
+
+/* 2.5 */
+static bool str_is_parameter(char *str)
+{
+    char *cpy = str;
+    while (*cpy != 0) {
+        if (!is_parameter(*cpy))
+            return false;
+        cpy++;
+    }
+    return true;
 }
 
 /* returns true if current char of source_cpy == expected */
@@ -289,34 +310,27 @@ static void number_literal(void)
 
 static void single_qoute(void)
 {
-    /* 2.2.2 */
-    //TODO: this is rather ugly
     char c;
-    char *literal_start = source_cpy;           // not -1 because we ignore the first qoute 
+    char *literal_start = source_cpy;
     while ((c = *source_cpy) != 0) {
         source_cpy++;
-        if (c == '"')
+        if (c == '\'')
             break;
     }
 
     if (*source_cpy == 0)
-        valery_exit_parse_error("string not terminated");
+        valery_exit_lex_error("string not terminated");
 
     size_t literal_size = source_cpy - literal_start - 1;
-    //add_token(T_STRING, NULL, 0, literal_start, literal_size);
+    add_token(T_LITERAL, literal_start, literal_size, NULL);
 }
 
 static bool expansion_finished(enum expansion_type et)
 {
-    //if (first_word && et == ET_LITERAL && *source_cpy == '=') {
-    //    first_word = false;
-    //    return true;
-    //}
-
-    if (et == ET_VAR_EXPAND && is_special_char(*source_cpy))
+    if (et == ET_PARAMETER && is_special_char(*source_cpy))
         return true;
 
-    if (et == ET_SUBSHELL && *source_cpy == ')')
+    if (et == ET_CMD && *source_cpy == ')')
         return true;
 
     if (*source_cpy == '$')
@@ -332,9 +346,9 @@ static enum expansion_type expansion_determine_type(void)
         if (*source_cpy + 1 == '(') {
             /* consume the paren */
             source_cpy++;
-            return ET_SUBSHELL;
+            return ET_CMD;
         } else {
-            return ET_VAR_EXPAND;
+            return ET_PARAMETER;
         }
     }
     return ET_LITERAL;
@@ -368,52 +382,23 @@ static void double_qoute(void)
 
 static void word(void)
 {
-    char *identifier_start = source_cpy - 1;    // -1 because scan_token() incremented source_cpy
-    while (!is_special_char(*source_cpy))
+    char *word_start = source_cpy - 1;    // -1 because scan_token() incremented source_cpy
+    while (*source_cpy != 0 && !is_special_char(*source_cpy))
         source_cpy++;
 
-    size_t len = source_cpy - identifier_start;
-    char identifier[len];
-    strncpy(identifier, identifier_start, len);
-    identifier[len] = 0;
+    size_t len = source_cpy - word_start;
+    char word[len];
+    strncpy(word, word_start, len);
+    word[len] = 0;
 
-    /*
-     * 2.10.2
-     * When the TOKEN is exactly a reserved word, the token identifier for that reserved word shall
-     * result. Otherwise, the token WORD shall be returned. Also, if the parser is in any state
-     * where only a reserved word could be the next correct token, proceed as above. 
-     */
-    enum tokentype_t *is_reserved = ht_get(identifiers, identifier, len + 1);
-    //add_token(is_reserved == NULL ? T_WORD : *is_reserved, identifier, len + 1, NULL, 0);
-    add_token(is_reserved == NULL ? T_WORD : *is_reserved, identifier, len + 1, NULL);
-
-    //struct darr_t *expansions = darr_malloc();
-    //enum expansion_type et;
-    //char *expansion_start, *expansion_end;
-
-    //expansion_start = source_cpy - 1;    // -1 because scan_token() incremented source_cpy
-    //et = expansion_determine_type();
-
-    //while (*source_cpy != ' ' || *source_cpy != '\n') {
-    //    if (expansion_finished(et)) {
-    //        /* store previous expansion */
-    //        expansion_end = source_cpy - 1;
-    //        assert(expansion_start <= expansion_end);
-    //        darr_append(expansions, expansion_alloc(et, expansion_start,
-    //                                                expansion_end - expansion_start + 1));
-
-    //        expansion_start = source_cpy + 1;
-    //        et = expansion_determine_type();
-    //    }
-    //    source_cpy++;
-    //}
-
-    ///* append last expansion */
-    //expansion_end = source_cpy - 1;     // don't want to keep the final '"'
-    //assert(expansion_start <= expansion_end);
-    //darr_append(expansions, expansion_alloc(et, expansion_start,
-    //                                        expansion_end - expansion_start + 1));
-    //add_expansion(T_WORD, expansions);
+    if (*source_cpy == '<' || *source_cpy == '>') {
+        if (str_is_digit(word)) {
+            add_token(IO_NUMBER, word, len + 1, NULL);
+            return;
+        }
+    }
+    enum tokentype_t *is_reserved = ht_get(identifiers, word, len + 1);
+    add_token(is_reserved == NULL ? T_WORD : *is_reserved, word, len + 1, NULL);
 }
 
 /* 
@@ -446,9 +431,12 @@ static void scan_token(void)
         case '*':
             add_token_simple(T_STAR);
             break;
-        //case '$':
-        //    add_token_simple(T_DOLLAR);
-        //    break;
+        case '[':
+            add_token_simple(T_LBRACKET);
+            break;
+        case ']':
+            add_token_simple(T_RBRACKET);
+            break;
 
         /* two character lexems */
         case '&':
@@ -470,39 +458,22 @@ static void scan_token(void)
             add_token_simple(match('=') ? T_LESS_EQUAL : T_LESS);
             break;
         case '!':
-            //if (*source_cpy == 0) {
-            //    /* '!' was last char in source file */
-            //    add_token_simple(T_BANG);
-            //    break;
-            //}
             if (*source_cpy == '!') {
                 source_cpy++;
                 add_token_simple(T_BANG_BANG);
-                break;
             } else {
                 word();
-                break;
             }
-
-            //else if (next == '=') {
-            //    source_cpy++;
-            //    add_token_simple(T_BANG_EQUAL);
-            //    break;
-            //}
-
-            /* no other match found */
-            //add_token_simple(T_BANG);
             break;
 
+        case '\\':
+            add_token_simple(T_ESCAPE);
 
         /* ignore comments */
         case '#':
             while (*source_cpy != 0 && *source_cpy != '\n')
                 source_cpy++;
-
-            source_cpy++;       // go past newline
-            first_word = true;
-            return;
+            break;
 
 
         /* ignore all whitespace */
@@ -563,14 +534,8 @@ void tokenlist_print(struct darr_t *tokens)
     size_t upper = darr_get_size(tokens);
     for (size_t i = 0; i < upper; i++) {
         token = darr_get(tokens, i);
-        printf("type: %-16s| ", tokentype_str[token->type]);
+        printf("type: %-16s| ", tokentype_str[token->type][0]);
 
-        //if (token->literal != NULL) {
-        //    if (token->type == T_NUMBER)
-        //        printf(" literal: '%ld'", *(int64_t *)token->literal);
-        //    else if (token->type == T_STRING)
-        //        printf(" literal: '%s'", (char *)token->literal);
-        //}
         if (token->lexeme != NULL) {
             printf("'%s'", token->lexeme);
         } else if (token->expansions != NULL) {
@@ -580,13 +545,16 @@ void tokenlist_print(struct darr_t *tokens)
                 struct expansion_t *e = darr_get(token->expansions, j);
                 if (e->type == ET_LITERAL) {
                     printf("%s", (char *)e->value);
-                } else if (e->type == ET_VAR_EXPAND) {
+                } else if (e->type == ET_PARAMETER) {
                     printf("[%s]", (char *)e->value);
-                } else if (e->type == ET_SUBSHELL) {
+                } else if (e->type == ET_CMD) {
                     printf("lol");
                 }
             }
             putchar('\"');
+        } else {
+            if (tokentype_str[token->type][1] != NULL)
+                printf("%s", tokentype_str[token->type][1]);
         }
 
         putchar('\n');

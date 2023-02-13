@@ -31,6 +31,12 @@ void valery_exit_parse_error(const char *msg)
     exit(1);
 }
 
+void valery_exit_lex_error(const char *msg)
+{
+    fprintf(stderr, "valery: parse error: %s \n", msg);
+    exit(1);
+}
+
 void _valery_exit_internal_error(char *msg, const char *file, const char *func, const int line)
 {
     fprintf(stderr, "valery: internal error %s caused by line '%d' in function '%s' in file '%s'.\n",

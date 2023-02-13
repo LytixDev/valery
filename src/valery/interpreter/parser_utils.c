@@ -23,27 +23,28 @@
 #include "lib/sac/sac.h"
 #include "lib/nicc/nicc.h"
 
-extern struct tokenlist_t *tokenlist;   // defined in parser.c, TODO: globals are le bad
+extern struct darr_t *tokens;           // defined in parser.c, TODO: globals are le bad
+size_t pos = 0;
 struct m_arena *ast_arena = NULL;       // the memory arena to alloc abstract syntax tree nodes onto
                                         // ex: Stmt or Expr
 
 static bool check_single(enum tokentype_t type, int step)
 {
-    if (tokenlist->size + step >= tokenlist->capacity)
+    struct token_t *token = darr_get(tokens, pos + step);
+    if (token == NULL)
         return false;
-
-    return tokenlist->tokens[tokenlist->pos + step]->type == type;
+    return token->type == type;
 }
 
 struct token_t *previous(void)
 {
-    return tokenlist->tokens[tokenlist->pos - 1];
+    return darr_get(tokens, pos - 1);
 }
 
 struct token_t *current(void)
 {
-    struct token_t *cur = tokenlist->tokens[tokenlist->pos];
-    tokenlist->pos++;
+    struct token_t *cur = darr_get(tokens, pos);
+    pos++;
     return cur;
 }
 
@@ -72,7 +73,7 @@ bool match_either(unsigned int n, ...)
     for (unsigned int i = 0; i < n; i++) {
         type = va_arg(args, enum tokentype_t);
         if (check_single(type, 0)) {
-            tokenlist->pos++;
+            pos++;
             return true;
         }
     }
@@ -86,7 +87,7 @@ void *consume(enum tokentype_t type, char *err_msg)
     if (!check_single(type, 0))
         valery_exit_parse_error(err_msg);
 
-    return tokenlist->tokens[tokenlist->pos++];
+    return darr_get(tokens, pos++);
 }
 
 struct Expr *expr_alloc(enum ExprType type, struct token_t *token)
@@ -103,11 +104,13 @@ struct Expr *expr_alloc(enum ExprType type, struct token_t *token)
 
         case EXPR_LITERAL:
             expr = m_arena_alloc(ast_arena, sizeof(struct LiteralExpr));
-            ((struct LiteralExpr *)expr)->value = token->literal;
-            if (token->type == T_WORD || token->type == T_STRING)
+            if (token->type == T_EXPANSION) {
+                ((struct LiteralExpr *)expr)->value = token->expansions;
+                ((struct LiteralExpr *)expr)->value_type = LIT_EXPANSION;
+            } else {
+                ((struct LiteralExpr *)expr)->value = token->lexeme;
                 ((struct LiteralExpr *)expr)->value_type = LIT_STRING;
-            else
-                ((struct LiteralExpr *)expr)->value_type = LIT_INT;
+            }
             break;
 
         case EXPR_COMMAND:

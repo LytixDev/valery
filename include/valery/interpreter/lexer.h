@@ -11,12 +11,13 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  You should have received a copy of the GNU General Public License along with this program.
+ *  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef VALERY_INTERPRETER_LEX_H
 #define VALERY_INTERPRETER_LEX_H
-#include <stddef.h>     // size_t type
+#include <stddef.h>
 
 
 /* types */
@@ -44,9 +45,12 @@ enum tokentype_t {
     T_RPAREN,
     T_LBRACE,
     T_RBRACE,
+    T_LBRACKET,
+    T_RBRACKET,
     T_SEMICOLON,
     T_STAR,
     T_DOLLAR,
+    T_ESCAPE,
 
     /* one or two character tokens */
     T_ANP,
@@ -60,10 +64,6 @@ enum tokentype_t {
     T_GREATER_EQUAL,
     T_LESS,
     T_LESS_EQUAL,
-    T_LBRACKET,
-    T_LBRACKET_LBRACKET,
-    T_RBRACKET,
-    T_RBRACKET_RBRACKET,
     T_DOT,
     T_DOT_DOT,
     T_PIPE,
@@ -76,7 +76,8 @@ enum tokentype_t {
     T_NAME,
     T_NEWLINE,
     IO_NUMBER,
-    T_STRING,
+    T_LITERAL,
+    T_EXPANSION,
     T_NUMBER,
 
     T_UNKNOWN,
@@ -86,33 +87,53 @@ enum tokentype_t {
 
 struct token_t {
     enum tokentype_t type;
+    //TODO: union between lexeme and expansion?
     char *lexeme;
-    void *literal;
-    size_t literal_size;
+    struct darr_t *expansions;
 };
 
-struct tokenlist_t {
-    // TODO: use darr_t
-    struct token_t **tokens;           /* list of the tokens */
-    size_t pos;
-    size_t size;              /* total tokens occupied */
-    size_t capacity;          /* total tokens allocated */
-};
+/*
+ * words and strings may be parameter expanded by the $, ~, or . symbol.
+ * in the example:
+ *
+ *      a=hello
+ *      echo "$a world!"
+ *
+ * "$a world!" needs to be expanded into "hello world!"
+ * the internal lexical representation for the string looks like:
+ * expansionlist
+ *      1. type: ET_EXPAND, str -> 'a'
+ *      2. type: ET_LITERAL, str -> ' word!'
+ *
+ *
+ * similarly:
+ *
+ *      echo "$(ls -la | wc -l) files present"
+ *
+ * $(ls -la | wc -l) needs to be expanded into the result of the subshell
+ * the internal lexical representation for the string looks like:
+ * expansionlist
+ *      1. type: ET_TOKENLIST, tl -> T_WORD (ls) T_WORD (-la) T_PIPE T_WORD (wc) T_WORD (-l)
+ *      2. type: ET_LITERAL, str -> ' files present'
+ */
+enum expansion_type { ET_LITERAL, ET_PARAMETER, ET_CMD, ET_ARITH };
 
+struct expansion_t {
+    enum expansion_type type;
+    void *value;
+};
 
 /* functions */
 /*
  * performs a lexical analysis on the given source code
  * @returns a list of tokens
  */
-struct tokenlist_t *tokenize(char *source);
+struct darr_t *tokenize(char *source);
 
 /*
  * prints the tokens in sequential order as they appear in the list
  */
-void tokenlist_print(struct tokenlist_t *tokenlist);
-
-void tokenlist_free(struct tokenlist_t *tokenlist);
+void tokenlist_print(struct darr_t *tokens);
 
 
 #endif /* !VALERY_INTERPRETER_LEX_H */

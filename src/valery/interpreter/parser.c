@@ -76,25 +76,25 @@ static void *linebreak(void);
 //static void *sequential_sep(void);
 
 /* globals */
-struct tokenlist_t *tokenlist;
+struct darr_t *tokens;
 
-static struct Stmt *program(void);
+static struct Stmt *line(void);
 static struct Stmt *variable_declaration(void);
 static struct Expr *and_if(void);
 static struct Expr *command(void);
 static struct Expr *var(void);
 
-static struct Stmt *program(void)
+static struct Stmt *line(void)
 {
-    struct Stmt *stmt = variable_declaration();
     consume(T_NEWLINE, "newline expected");
+    struct Stmt *stmt = variable_declaration();
     return stmt;
 }
 
 static struct Stmt *variable_declaration(void)
 {
     /* T_WORD T_EQUAL string (should be expr) */
-    if (!(check(T_WORD) && check_ahead(1, T_EQUAL), check_ahead(2, T_STRING))) {
+    if (!(check(T_WORD) && check_ahead(1, T_EQUAL), check_ahead(2, T_EXPANSION))) {
         struct ExpressionStmt *e_stmt = (struct ExpressionStmt *)stmt_alloc(STMT_EXPRESSION, NULL);
         e_stmt->expression = and_if();
         return (struct Stmt *)e_stmt;
@@ -102,7 +102,7 @@ static struct Stmt *variable_declaration(void)
 
     struct token_t *name = consume(T_WORD, "expected word");
     consume(T_EQUAL, "expected equal");
-    struct Expr *lit = expr_alloc(EXPR_LITERAL, consume(T_STRING, "expected string"));
+    struct Expr *lit = expr_alloc(EXPR_LITERAL, consume(T_EXPANSION, "expected string"));
     struct VarStmt *stmt = (struct VarStmt *)stmt_alloc(STMT_VAR, NULL);
     stmt->name = name;
     stmt->initializer = lit;
@@ -132,7 +132,7 @@ static struct Expr *command(void)
     while (1) {
         if (check(T_DOLLAR)) {
             darr_append(expr->exprs, var());
-        } else if (match(T_WORD, T_STRING)) {
+        } else if (match(T_WORD, T_EXPANSION)) {
             struct token_t *prev = previous();
             struct LiteralExpr *expr_lit = (struct LiteralExpr *)expr_alloc(EXPR_LITERAL, prev);
             darr_append(expr->exprs, expr_lit);
@@ -151,11 +151,11 @@ static struct Expr *var(void)
     return (struct Expr *)expr;
 }
 
-struct darr_t *parse(struct tokenlist_t *tl)
+struct darr_t *parse(struct darr_t *t)
 {
-    tokenlist = tl;
+    tokens = t;
     struct darr_t *statements = darr_malloc();
     while (!check(T_EOF))
-        darr_append(statements, program());
+        darr_append(statements, line());
     return statements;
 }

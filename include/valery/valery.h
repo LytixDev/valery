@@ -57,6 +57,8 @@ void valery_exit(int exit_code);
 
 void valery_exit_parse_error(const char *msg);
 
+void valery_exit_lex_error(const char *msg);
+
 void _valery_exit_internal_error(char *msg, const char *file, const char *func, const int line);
 #define valery_exit_internal_error(m) _valery_exit_internal_error(m, __FILE__, __func__, __LINE__)
 

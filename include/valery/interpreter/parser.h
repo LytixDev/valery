@@ -27,6 +27,6 @@
  * the statements are the first nodes in an abstract syntax tree representation of the semantics
  * @returns a dynamic list of struct Stmt
  */
-struct darr_t *parse(struct tokenlist_t *tl);
+struct darr_t *parse(struct darr_t *tokens);
 
 #endif /* !VALERY_INTERPRETER_PARSER_H */

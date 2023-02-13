@@ -38,8 +38,6 @@ enum StmtType {
     STMT_ENUM_COUNT
 };
 
-/* a literal is either a string, int or float */
-enum LiteralType { LIT_STRING, LIT_INT, LIT_FLOAT };
 
 
 /*
@@ -67,10 +65,13 @@ struct BinaryExpr {
     struct Expr *right;
 };
 
+/* a literal is either a string, int or float */
+enum LiteralType { LIT_EXPANSION, LIT_STRING, LIT_INT, LIT_DOUBLE };
+
 struct LiteralExpr {
     struct Expr head;
     void *value;
-    enum LiteralType value_type; //TODO: THIS UGLY!!!!!
+    enum LiteralType value_type;
 };
 
 struct CommandExpr {

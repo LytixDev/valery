@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <assert.h>
 #ifdef DEBUG_INTERPRETER
 #       include <stdio.h>
 #endif
@@ -33,65 +34,65 @@
 
 /* types */
 #ifdef DEBUG_INTERPRETER
-const char *tokentype_str[T_ENUM_COUNT] = {
+const char *tokentype_str[T_ENUM_COUNT][2] = {
     /* keywords */
-    "T_IF",
-    "T_THEN",
-    "T_ELSE",
-    "T_ELIF",
-    "T_FI",
-    "T_DO",
-    "T_DONE",
-    "T_CASE",
-    "T_ESAC",
-    "T_WHILE",
-    "T_UNTIL",
-    "T_FOR",
-    "T_RETURN",
-    "T_IN",
+    {"T_IF", "if"},
+    {"T_THEN", "then"},
+    {"T_ELSE", "else"},
+    {"T_ELIF", "elif"},
+    {"T_FI", "fi"},
+    {"T_DO", "do"},
+    {"T_DONE", "done"},
+    {"T_CASE", "case"},
+    {"T_ESAC", "esac"},
+    {"T_WHILE", "while"},
+    {"T_UNTIL", "until"},
+    {"T_FOR", "for"},
+    {"T_RETURN", "return"},
+    {"T_IN", "in"},
 
     /* single-character tokens */
-    "T_LPAREN",
-    "T_RPAREN",
-    "T_LBRACE",
-    "T_RBRACE",
-    "T_SEMICOLON",
-    "T_STAR",
-    "T_DOLLAR",
+    {"T_LPAREN", "("},
+    {"T_RPAREN", ")"},
+    {"T_LBRACE", "{"},
+    {"T_RBRACE", "}"},
+    {"T_LBRACKET", "["},
+    {"T_RBRACKET", "]"},
+    {"T_SEMICOLON", ";"},
+    {"T_STAR", "*"},
+    {"T_DOLLAR", "$"},
+    {"T_ESCAPE", "\\"},
 
     /* one or two character tokens */
-    "T_ANP",
-    "T_AND_IF",
-    "T_BANG",
-    "T_BANG_BANG",
-    "T_BANG_EQUAL",
-    "T_EQUAL",
-    "T_EQUAL_EQUAL",
-    "T_GREATER",
-    "T_GREATER_EQUAL",
-    "T_LESS",
-    "T_LESS_EQUAL",
-    "T_LBRACKET",
-    "T_LBRACKET_LBRACKET",
-    "T_RBRACKET",
-    "T_RBRACKET_RBRACKET",
-    "T_DOT",
-    "T_DOT_DOT",
-    "T_PIPE",
-    "T_PIPE_PIPE",
+    {"T_ANP", "&"},
+    {"T_AND_IF", "&&"},
+    {"T_BANG", "!"},
+    {"T_BANG_BANG", "!!"},
+    {"T_BANG_EQUAL", "!="},
+    {"T_EQUAL", "="},
+    {"T_EQUAL_EQUAL", "=="},
+    {"T_GREATER", ">"},
+    {"T_GREATER_EQUAL", ">="},
+    {"T_LESS", "<"},
+    {"T_LESS_EQUAL", "<="},
+    {"T_DOT", "."},
+    {"T_DOT_DOT", ".."},
+    {"T_PIPE", "|"},
+    {"T_PIPE_PIPE", "||"},
 
     /* symbols/identifiers */
-    "T_IDENTIFIER",
-    "T_WORD",
-    "T_ASSIGNMENT_WORD",
-    "T_NAME",
-    "T_NEWLINE",
-    "IO_NUMBER",
-    "T_STRING",
-    "T_NUMBER",
+    {"T_IDENTIFIER", NULL},
+    {"T_WORD", NULL},
+    {"T_ASSIGNMENT_WORD", NULL},
+    {"T_NAME", NULL},
+    {"T_NEWLINE", NULL},
+    {"IO_NUMBER", NULL},
+    {"T_LITERAL", NULL},
+    {"T_EXPANSION", NULL},
+    {"T_NUMBER", NULL},
 
-    "T_UNKNOWN",
-    "T_EOF",
+    {"T_UNKNOWN", NULL},
+    {"T_EOF", NULL}
 };
 #endif /* DEBUG_INTERPRETER */
 
@@ -99,7 +100,7 @@ const char *tokentype_str[T_ENUM_COUNT] = {
 /* globals */
 static struct ht_t *identifiers = NULL;
 char *source_cpy;
-struct tokenlist_t *tl;
+struct darr_t *ptokens;
 bool first_word;
 
 /* functions */
@@ -159,26 +160,23 @@ static inline void destroy_identifiers(void)
     ht_free(identifiers);
 }
 
-//TODO use global properly
-static struct tokenlist_t *tokenlist_malloc(void)
+struct expansion_t *expansion_alloc(enum expansion_type type, void *value, size_t literal_size)
 {
-    struct tokenlist_t *tokenlist = vmalloc(sizeof(struct tokenlist_t));
-    tokenlist->pos = 0;
-    tokenlist->size = 0;
-    tokenlist->capacity = 32;
-    tokenlist->tokens = vmalloc(32 * sizeof(enum tokentype_t *));
-    return tokenlist;
+    struct expansion_t *expansion = vmalloc(sizeof(struct expansion_t));
+    expansion->type = type;
+    if (expansion->type != ET_CMD) {
+        expansion->value = vmalloc(literal_size);
+        strncpy(expansion->value, value, literal_size);
+        ((char *)expansion->value)[literal_size - 1] = 0;
+    } else {
+        //TODO fix
+        expansion->value = value;
+    }
+    return expansion;
 }
 
-static void tokenlist_increase(void)
-{
-    size_t new_capacity = tl->capacity * 2;
-    tl->tokens = vrealloc(tl->tokens, new_capacity * sizeof(struct token_t *));
-    tl->capacity = new_capacity;
-}
-
-static struct token_t *token_malloc(enum tokentype_t type, char *lexeme, size_t lexeme_size,
-                                    void *literal, size_t literal_size)
+static struct token_t *token_alloc(enum tokentype_t type, char *lexeme, size_t lexeme_size,
+                                   struct darr_t *expansions)
 {
     struct token_t *token = vmalloc(sizeof(struct token_t));
     token->type = type;
@@ -187,34 +185,41 @@ static struct token_t *token_malloc(enum tokentype_t type, char *lexeme, size_t 
         token->lexeme = vmalloc(lexeme_size);
         strncpy(token->lexeme, lexeme, lexeme_size);
         token->lexeme[lexeme_size - 1] = 0;
+    } else {
+        token->lexeme = NULL;
     }
-
-    if (literal != NULL) {
-        token->literal = vmalloc(literal_size);
-        memcpy(token->literal, literal, literal_size);
-    }
+    token->expansions = expansions;
 
     return token;
 }
 
-static void add_token(enum tokentype_t type, char *lexeme, size_t lexeme_size, void *literal,
-                      size_t literal_size)
+#define add_expansion_token(type, expansion) add_token(type, NULL, 0, expansions)
+static void add_token(enum tokentype_t type, char *lexeme, size_t lexeme_size,
+                      struct darr_t *expansions)
 {
-    if (tl->size >= tl->capacity)
-        tokenlist_increase();
-
-    tl->tokens[tl->size++] = token_malloc(type, lexeme, lexeme_size, literal, literal_size);
+    darr_append(ptokens, token_alloc(type, lexeme, lexeme_size, expansions));
 }
 
 static inline void add_token_simple(enum tokentype_t type)
 {
-    add_token(type, NULL, 0, NULL, 0);
+    add_token(type, NULL, 0, NULL);
 }
 
 /* helper functions */
 static inline bool is_digit(char c)
 {
     return c >= '0' && c <= '9';
+}
+
+static bool str_is_digit(char *str)
+{
+    char *cpy = str;
+    while (*cpy != 0) {
+        if (!is_digit(*cpy))
+            return false;
+        cpy++;
+    }
+    return true;
 }
 
 static inline bool is_alpha(char c)
@@ -225,7 +230,7 @@ static inline bool is_alpha(char c)
 }
 
 /* returns true on terminal chars for identifiers, else false */
-static bool is_terminal(char c)
+static bool is_special_char(char c)
 {
     if (first_word) {
         switch (c) {
@@ -234,8 +239,11 @@ static bool is_terminal(char c)
         }
     }
 
-    /* 2.2 */
+    /* 2.2 and 2.4 (without '$' handled elsewhere) */
     switch (c) {
+        case '!':
+        case '{':
+        case '}':
         case '|':
         case '&':
         case ';':
@@ -243,7 +251,6 @@ static bool is_terminal(char c)
         case '>':
         case '(':
         case ')':
-        case '$':
         case '`':
         case '\\':
         case '"':
@@ -258,14 +265,21 @@ static bool is_terminal(char c)
     }
 }
 
-/*
- * 3.235
- * In the shell command language, a word consisting solely of underscores, digits, and alphabetics
- * from the portable character set. The first character of a name is not a digit. 
- */
-static bool is_name(char c)
+static bool is_parameter(char c)
 {
     return is_alpha(c) || is_digit(c) || c == '_';
+}
+
+/* 2.5 */
+static bool str_is_parameter(char *str)
+{
+    char *cpy = str;
+    while (*cpy != 0) {
+        if (!is_parameter(*cpy))
+            return false;
+        cpy++;
+    }
+    return true;
 }
 
 /* returns true if current char of source_cpy == expected */
@@ -291,56 +305,100 @@ static void number_literal(void)
 
     char *literal_end = source_cpy - 1;         // -1 because we have gone one past the last digit
     int64_t literal = strtol(literal_start, &literal_end, 10);
-    add_token(T_NUMBER, NULL, 0, &literal, sizeof(literal));
+    //add_token(T_NUMBER, NULL, 0, &literal, sizeof(literal));
 }
 
 static void single_qoute(void)
 {
-    /* 2.2.2 */
-    //TODO: this is rather ugly
     char c;
-    char *literal_start = source_cpy;           // not -1 because we ignore the first qoute 
+    char *literal_start = source_cpy;
     while ((c = *source_cpy) != 0) {
-        if (c == '"')
-            break;
         source_cpy++;
+        if (c == '\'')
+            break;
     }
 
     if (*source_cpy == 0)
-        valery_exit_parse_error("string not terminated");
+        valery_exit_lex_error("string not terminated");
 
-    size_t literal_size = source_cpy - literal_start;
-    /* close the string by moving past the last qoute */
-    source_cpy++;
-    add_token(T_STRING, NULL, 0, literal_start, literal_size);
+    size_t literal_size = source_cpy - literal_start - 1;
+    add_token(T_LITERAL, literal_start, literal_size, NULL);
+}
+
+static bool expansion_finished(enum expansion_type et)
+{
+    if (et == ET_PARAMETER && is_special_char(*source_cpy))
+        return true;
+
+    if (et == ET_CMD && *source_cpy == ')')
+        return true;
+
+    if (*source_cpy == '$')
+        return true;
+
+    return false;
+}
+
+static enum expansion_type expansion_determine_type(void)
+{
+    if (*source_cpy == '$') {
+        //TODO only check ahead if there is space
+        if (*source_cpy + 1 == '(') {
+            /* consume the paren */
+            source_cpy++;
+            return ET_CMD;
+        } else {
+            return ET_PARAMETER;
+        }
+    }
+    return ET_LITERAL;
 }
 
 static void double_qoute(void)
 {
-    /* 2.2.3 */
+    char *expansion_start = source_cpy;
+    struct darr_t *expansions = darr_malloc();
+    enum expansion_type current_type = expansion_determine_type();
 
+    do {
+        source_cpy++;
+        if (expansion_finished(current_type)) {
+            /* store previous expansion */
+            darr_append(expansions, expansion_alloc(current_type, expansion_start,
+                                                    source_cpy - expansion_start + 1));
+
+            expansion_start = source_cpy;
+            current_type = expansion_determine_type();
+        }
+    } while (*source_cpy != '"');
+
+    /* append last expansion */
+    darr_append(expansions, expansion_alloc(current_type, expansion_start,
+                                            source_cpy - expansion_start + 1));
+    add_expansion_token(T_EXPANSION, expansions);
+    /* move past final double qoute */
+    source_cpy++;
 }
 
 static void word(void)
 {
-    char *identifier_start = source_cpy - 1;    // -1 because scan_token() incremented source_cpy
-    while (!is_terminal(*source_cpy))
+    char *word_start = source_cpy - 1;    // -1 because scan_token() incremented source_cpy
+    while (*source_cpy != 0 && !is_special_char(*source_cpy))
         source_cpy++;
 
-    size_t len = source_cpy - identifier_start;
-    char identifier[len];
-    strncpy(identifier, identifier_start, len);
-    identifier[len] = 0;
+    size_t len = source_cpy - word_start;
+    char word[len];
+    strncpy(word, word_start, len);
+    word[len] = 0;
 
-    /*
-     * 2.10.2
-     * When the TOKEN is exactly a reserved word, the token identifier for that reserved word shall
-     * result. Otherwise, the token WORD shall be returned. Also, if the parser is in any state
-     * where only a reserved word could be the next correct token, proceed as above. 
-     */
-    enum tokentype_t *is_reserved = ht_get(identifiers, identifier, len + 1);
-    //add_token(is_reserved == NULL ? T_WORD : *is_reserved, identifier, len + 1, NULL, 0);
-    add_token(is_reserved == NULL ? T_WORD : *is_reserved, identifier, len + 1, identifier, len + 1);
+    if (*source_cpy == '<' || *source_cpy == '>') {
+        if (str_is_digit(word)) {
+            add_token(IO_NUMBER, word, len + 1, NULL);
+            return;
+        }
+    }
+    enum tokentype_t *is_reserved = ht_get(identifiers, word, len + 1);
+    add_token(is_reserved == NULL ? T_WORD : *is_reserved, word, len + 1, NULL);
 }
 
 /* 
@@ -373,8 +431,11 @@ static void scan_token(void)
         case '*':
             add_token_simple(T_STAR);
             break;
-        case '$':
-            add_token_simple(T_DOLLAR);
+        case '[':
+            add_token_simple(T_LBRACKET);
+            break;
+        case ']':
+            add_token_simple(T_RBRACKET);
             break;
 
         /* two character lexems */
@@ -397,36 +458,22 @@ static void scan_token(void)
             add_token_simple(match('=') ? T_LESS_EQUAL : T_LESS);
             break;
         case '!':
-            if (*source_cpy == 0) {
-                /* '!' was last char in source file */
-                add_token_simple(T_BANG);
-                break;
-            }
-
-            char next = *source_cpy;
-            if (next == '!') {
+            if (*source_cpy == '!') {
                 source_cpy++;
                 add_token_simple(T_BANG_BANG);
-                break;
-            } else if (next == '=') {
-                source_cpy++;
-                add_token_simple(T_BANG_EQUAL);
-                break;
+            } else {
+                word();
             }
-
-            /* no other match found */
-            add_token_simple(T_BANG);
             break;
 
+        case '\\':
+            add_token_simple(T_ESCAPE);
 
         /* ignore comments */
         case '#':
             while (*source_cpy != 0 && *source_cpy != '\n')
                 source_cpy++;
-
-            source_cpy++;       // go past newline
-            first_word = true;
-            return;
+            break;
 
 
         /* ignore all whitespace */
@@ -447,8 +494,8 @@ static void scan_token(void)
             single_qoute();
 
         case '"':
-            single_qoute();
-            //double_qoute();
+            //single_qoute();
+            double_qoute();
             break;
 
         
@@ -460,9 +507,9 @@ static void scan_token(void)
         first_word = false;
 }
 
-struct tokenlist_t *tokenize(char *source)
+struct darr_t *tokenize(char *source)
 {
-    tl = tokenlist_malloc();            // define global struct tokenlist_t type
+    ptokens = darr_malloc();
     source_cpy = source;                // global pointer into the source code for simplicity 
     first_word = true;
     init_identifiers();
@@ -473,38 +520,42 @@ struct tokenlist_t *tokenize(char *source)
         scan_token();                   // this function increments the source_cpy as needed
 
     /* add sentinel token */
-    add_token(T_EOF, NULL, 0, NULL, 0);
+    add_token(T_EOF, NULL, 0, NULL);
+
     //destroy_identifiers();
-    return tl;
+    return ptokens;
 }
 
-void tokenlist_free(struct tokenlist_t *tokenlist)
-{
-    for (size_t i = 0; i < tokenlist->size; i++)
-        free(tokenlist->tokens[i]);
-
-    free(tokenlist->tokens);
-    free(tokenlist);
-}
-
-void tokenlist_print(struct tokenlist_t *tokenlist)
+void tokenlist_print(struct darr_t *tokens)
 {
 #ifdef DEBUG_INTERPRETER
     printf("--- lex dump ---\n");
     struct token_t *token;
-    for (size_t i = 0; i < tokenlist->size; i++) {
-        token = tokenlist->tokens[i];
-        printf("type: %-16s|", tokentype_str[token->type]);
+    size_t upper = darr_get_size(tokens);
+    for (size_t i = 0; i < upper; i++) {
+        token = darr_get(tokens, i);
+        printf("type: %-16s| ", tokentype_str[token->type][0]);
 
-        if (token->literal != NULL) {
-            if (token->type == T_NUMBER)
-                printf(" literal: '%ld'", *(int64_t *)token->literal);
-            else if (token->type == T_STRING)
-                printf(" literal: '%s'", (char *)token->literal);
+        if (token->lexeme != NULL) {
+            printf("'%s'", token->lexeme);
+        } else if (token->expansions != NULL) {
+            size_t len = darr_get_size(token->expansions);
+            putchar('\"');
+            for (size_t j = 0; j < len; j++) {
+                struct expansion_t *e = darr_get(token->expansions, j);
+                if (e->type == ET_LITERAL) {
+                    printf("%s", (char *)e->value);
+                } else if (e->type == ET_PARAMETER) {
+                    printf("[%s]", (char *)e->value);
+                } else if (e->type == ET_CMD) {
+                    printf("lol");
+                }
+            }
+            putchar('\"');
+        } else {
+            if (tokentype_str[token->type][1] != NULL)
+                printf("%s", tokentype_str[token->type][1]);
         }
-
-        if (token->lexeme != NULL)
-            printf(" lexeme: '%s'", token->lexeme);
 
         putchar('\n');
     }

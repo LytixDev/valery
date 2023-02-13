@@ -37,8 +37,8 @@ static void simple_command(struct CommandExpr *expr)
     struct darr_t *argv = darr_malloc();
     for (int i = 0; i < argc; i++) {
         struct Expr *e = darr_get(expr->exprs, i);
-        void *res = evaluate(e);
-        darr_append(argv, res);
+        void *literal = evaluate(e);
+        darr_append(argv, literal);
     }
 
     glob_exit_code = valery_exec_program(argc, (char **)darr_raw_ret(argv));
@@ -98,6 +98,10 @@ static void variable_declaration(struct VarStmt *stmt)
 
 static void execute(struct Stmt *stmt)
 {
+    /* empty */
+    //if (stmt == NULL)
+    //    return;
+
     switch (stmt->type) {
         case STMT_EXPRESSION:
             evaluate(((struct ExpressionStmt *)stmt)->expression);
@@ -111,6 +115,34 @@ static void execute(struct Stmt *stmt)
     }
 }
 
+static void *expand(struct darr_t *expansions)
+{
+    //TODO: add dynamic str type in nicc
+    char *final = malloc(1024);
+    size_t bound = darr_get_size(expansions);
+
+    for (size_t i = 0; i < bound; i++) {
+        struct expansion_t *e = darr_get(expansions, i);
+        if (e->type == ET_LITERAL) {
+            strcat(final, e->value);
+        } else if (e->type == ET_PARAMETER) {
+            void *var_value = ht_sget(global_vars, (char *)e->value + 1);
+            if (var_value != NULL)
+                strcat(final, var_value);
+        }
+    }
+    return final;
+}
+
+//lol
+static void *literal_to_literal(struct LiteralExpr *expr)
+{
+    if (expr->value_type != LIT_EXPANSION)
+        return expr->value;
+
+    return expand(expr->value);
+}
+
 static void *evaluate(struct Expr *expr)
 {
     switch (expr->type) {
@@ -122,7 +154,7 @@ static void *evaluate(struct Expr *expr)
             break;
 
         case EXPR_LITERAL:
-            return ((struct LiteralExpr *)expr)->value;
+            return literal_to_literal(((struct LiteralExpr *)expr));
             break;
 
         case EXPR_COMMAND:

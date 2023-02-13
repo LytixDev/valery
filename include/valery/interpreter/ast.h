@@ -38,8 +38,6 @@ enum StmtType {
     STMT_ENUM_COUNT
 };
 
-
-
 /*
  * evil trick to get some sort of polymorphism (I concede, my brain has been corrupted by OOP)
  */

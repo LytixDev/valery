@@ -1,41 +1,44 @@
 test:
 ---------------------------------------------------------------------------------------------------
-program                 : (and_if "\n")* EOF ;
+program                 : line* EOF ;
 
-and_if                  : command
-                        | command T_AND_IF command ;
+line                    : T_NEWLINE* stmt ;
+
+stmt                    : if_stmt
+                        : variable_declaration
+                        : and_if ;
+
+if_stmt                 : T_IF expr T_THEN stmt T_FI ;
+
+variable_declaration    : T_WORD T_EQUAL (T_WORD | T_EXPANSION) ;
+
+and_if                  : expr
+                        | expr T_AND_IF expr ;
+
+expr                    : command
+                        : primary ;
 
 command                 : WORD*;
 
+primary                 : (true | false ) ;
+
 
 
 ---------------------------------------------------------------------------------------------------
 
-simplified:
----------------------------------------------------------------------------------------------------
+static struct Stmt *line(void);
+static struct Stmt *variable_declaration(void);
+static struct Expr *and_if(void);
+static struct Expr *command(void);
+static struct Stmt *if(void);
 
-program                 : complete_command* EOF ;
+if_clause        : T_IF expr T_THEN stmt else_part T_FI
+                 | T_IF expr T_THEN stmt           T_FI
+                 ;
 
-complete_command        : list ;
-
-list                    : and_or 
-                        | linebreak
-                        | and_or linebreak ;
-
-and_or                  : pipe_sequence
-                        | pipe_sequence AND_IF pipe_sequence ;
-
-pipe_sequence           : command
-                        | pipe_sequence '|' command ;
-
-command                 : simple_command ;
-
-simple_command          : WORD 
-                        | WORD simple_command ;
-
-linebreak               : NEWLINE
-                        | NEWLINE newline ;
-
+else_part        : T_ELIF compound_list T_THEN compound_list
+                 | T_ELSE compound_list
+                 ;
 
 
 SPEC:

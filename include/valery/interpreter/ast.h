@@ -64,7 +64,7 @@ struct BinaryExpr {
 };
 
 /* a literal is either a string, int or float */
-enum LiteralType { LIT_EXPANSION, LIT_STRING, LIT_INT, LIT_DOUBLE };
+enum LiteralType { LIT_EXPANSION, LIT_STRING, LIT_INT, LIT_DOUBLE, LIT_BOOL };
 
 struct LiteralExpr {
     struct Expr head;
@@ -94,7 +94,6 @@ struct IfStmt {
     struct Expr *condition;
     struct Stmt *then_branch;
     struct Stmt *else_branch;
-
 };
 
 struct VarStmt {

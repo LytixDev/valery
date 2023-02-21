@@ -22,7 +22,7 @@
 
 /* types */
 
-#define KEYWORDS_LEN 14
+#define KEYWORDS_LEN 16
 enum tokentype_t {
     /* keywords */
     T_IF,
@@ -39,6 +39,8 @@ enum tokentype_t {
     T_FOR,
     T_RETURN,
     T_IN,
+    T_TRUE,
+    T_FALSE,
 
     /* single-character tokens */
     T_LPAREN,

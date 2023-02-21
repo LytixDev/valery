@@ -18,6 +18,7 @@
 #include <stdarg.h>                     // va_start, va_arg, va_end 
 
 #include "valery/interpreter/ast.h"
+#include "valery/interpreter/lexer.h"
 #include "valery/interpreter/parser_utils.h"
 #define SAC_IMPLEMENTATION
 #include "lib/sac/sac.h"
@@ -84,8 +85,13 @@ bool match_either(unsigned int n, ...)
 
 void *consume(enum tokentype_t type, char *err_msg)
 {
-    if (!check_single(type, 0))
+    if (!check_single(type, 0)) {
+#ifdef DEBUG
+        struct token_t *token = darr_get(tokens, pos);
+        printf("\ntoken was %s\n", token->lexeme);
+#endif
         valery_exit_parse_error(err_msg);
+    }
 
     return darr_get(tokens, pos++);
 }
@@ -107,6 +113,14 @@ struct Expr *expr_alloc(enum ExprType type, struct token_t *token)
             if (token->type == T_EXPANSION) {
                 ((struct LiteralExpr *)expr)->value = token->expansions;
                 ((struct LiteralExpr *)expr)->value_type = LIT_EXPANSION;
+            } else if (token->type == T_TRUE || token->type == T_FALSE) {
+                ((struct LiteralExpr *)expr)->value = malloc(sizeof(bool));
+                if (token->type == T_TRUE)
+                    *(bool *)((struct LiteralExpr *)expr)->value = true;
+                else
+                    *(bool *)((struct LiteralExpr *)expr)->value = false;
+
+                ((struct LiteralExpr *)expr)->value_type = LIT_BOOL;
             } else {
                 ((struct LiteralExpr *)expr)->value = token->lexeme;
                 ((struct LiteralExpr *)expr)->value_type = LIT_STRING;
@@ -137,6 +151,9 @@ struct Stmt *stmt_alloc(enum StmtType type, struct token_t *token)
             break;
         case STMT_VAR:
             stmt = m_arena_alloc(ast_arena, sizeof(struct VarStmt));
+            break;
+        case STMT_IF:
+            stmt = m_arena_alloc(ast_arena, sizeof(struct IfStmt));
             break;
     }
     stmt->type = type;

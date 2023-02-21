@@ -1,4 +1,6 @@
 #!/bin/sh
-a="hello"
-b="$a world!"
-ls -la && echo "$b"
+
+if true
+then
+    echo "a is true"
+fi

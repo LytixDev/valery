@@ -431,7 +431,8 @@ static void scan_token(void)
             add_token_simple(T_RBRACE);
             break;
         case ';':
-            add_token_simple(T_SEMICOLON);
+            /* semicolons are treated as newlines for simplicity :-) */
+            add_token_simple(T_NEWLINE);
             first_word = true;
             return;
         case '*':

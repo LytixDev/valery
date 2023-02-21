@@ -108,11 +108,17 @@ static struct Stmt *if_stmt(void)
 {
     consume(T_IF, "expected if token");
     struct Expr *condition = expr_func();
+
     consume(T_NEWLINE, "expected newline token");
+    while (match(T_NEWLINE));
     consume(T_THEN, "expected then token");
+
     consume(T_NEWLINE, "expected newline token");
+    while (match(T_NEWLINE));
     struct Stmt *then_branch = stmt_func(); 
+
     consume(T_NEWLINE, "expected newline token");
+    while (match(T_NEWLINE));
     consume(T_FI, "expected fi token");
 
     struct IfStmt *stmt = (struct IfStmt *)stmt_alloc(STMT_IF, NULL);

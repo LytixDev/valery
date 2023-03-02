@@ -20,7 +20,7 @@
 #include "parser.h"
 
 /* evaluated expression */
-enum ValueType { VAL_STRING, VAL_INT };
+enum ValueType { VAL_STRING, VAL_INT, VAL_BOOL };
 struct Value {
     void *value;
     enum ValueType type;

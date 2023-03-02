@@ -19,6 +19,13 @@
 
 #include "parser.h"
 
+/* evaluated expression */
+enum ValueType { VAL_STRING, VAL_INT };
+struct Value {
+    void *value;
+    enum ValueType type;
+};
+
 /*
  * interprets a list of statements
  * @returns exit code of the interpreter

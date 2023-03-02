@@ -124,6 +124,7 @@ static struct Stmt *if_stmt(void)
     struct IfStmt *stmt = (struct IfStmt *)stmt_alloc(STMT_IF, NULL);
     stmt->condition = condition;
     stmt->then_branch = then_branch;
+
     stmt->else_branch = NULL;
     return (struct Stmt *)stmt;
 }

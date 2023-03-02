@@ -33,7 +33,7 @@ int main()
     struct darr_t *stmts = parse(tokens);
     ast_print(stmts);
 
-    //int rc = interpret(stmts);
+    int rc = interpret(stmts);
     //tokenlist_free(tokens);
     ast_arena_release();
 }

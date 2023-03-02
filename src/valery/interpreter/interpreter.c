@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include "valery/interpreter/ast.h"
+#include "valery/interpreter/interpreter.h"
 #include "valery/interpreter/lexer.h"
 #include "valery/interpreter/parser.h"
 #include "valery/interpreter/impl/exec.h"
@@ -53,12 +54,12 @@ static void *and_if(struct BinaryExpr *expr)
     return NULL;
 }
 
-static void *interpret_unary(struct UnaryExpr *expr)
+static void *eval_unary(struct UnaryExpr *expr)
 {
     return NULL;
 }
 
-static void *interpret_binary(struct BinaryExpr *expr)
+static void *eval_binary(struct BinaryExpr *expr)
 {
     switch (expr->operator_->type) {
         case T_AND_IF:
@@ -81,7 +82,7 @@ static void interpret_list(struct CommandExpr *expr)
         valery_exit_internal_error("oop");
 }
 
-static void *interpret_variable(struct VariableExpr *expr)
+static void *eval_var(struct VariableExpr *expr)
 {
     void *value = ht_sget(global_vars, expr->name->lexeme);
     if (value == NULL)
@@ -90,29 +91,21 @@ static void *interpret_variable(struct VariableExpr *expr)
     return value;
 }
 
-static void variable_declaration(struct VarStmt *stmt)
+static bool is_truthy(struct Expr *expr)
+{
+}
+
+static void exec_var(struct VarStmt *stmt)
 {
     void *value = evaluate(stmt->initializer);
     ht_sset(global_vars, stmt->name->lexeme, value);
 }
 
-static void execute(struct Stmt *stmt)
+static void exec_if(struct IfStmt *stmt)
 {
-    /* empty */
-    //if (stmt == NULL)
-    //    return;
-
-    switch (stmt->type) {
-        case STMT_EXPRESSION:
-            evaluate(((struct ExpressionStmt *)stmt)->expression);
-            break;
-        case STMT_VAR:
-            variable_declaration((struct VarStmt *)stmt);
-            break;
-
-        default:
-            valery_exit_internal_error("tq");
-    }
+    void *e = evaluate(stmt->condition);
+    // check if e is truthy
+    execute(stmt->then_branch);
 }
 
 static void *expand(struct darr_t *expansions)
@@ -135,26 +128,66 @@ static void *expand(struct darr_t *expansions)
 }
 
 //lol
-static void *literal_to_literal(struct LiteralExpr *expr)
+static void *eval_literal(struct LiteralExpr *expr)
 {
     if (expr->value_type != LIT_EXPANSION)
         return expr->value;
 
     return expand(expr->value);
+    //struct Value *value = malloc(sizeof(struct Value));
+
+    //if (expr->value_type != LIT_EXPANSION) {
+    //    value->value = expr->value;
+    //    if (expr->value_type == LIT_INT)
+    //        value->type = VAL_INT;
+    //    else
+    //        value->type = VAL_STRING;
+
+    //    return value;
+    //}
+
+    //char *expanded_str = expand(expr->value);
+    //value->value = expanded_str;
+    //value->type = VAL_STRING;
+    //return value;
 }
+
+static void execute(struct Stmt *stmt)
+{
+    /* empty */
+    //if (stmt == NULL)
+    //    return;
+
+    switch (stmt->type) {
+        case STMT_EXPRESSION:
+            evaluate(((struct ExpressionStmt *)stmt)->expression);
+            break;
+        case STMT_VAR:
+            exec_var((struct VarStmt *)stmt);
+            break;
+
+        case STMT_IF:
+            exec_if((struct IfStmt *)stmt);
+            break;
+
+        default:
+            valery_exit_internal_error("tq");
+    }
+}
+
 
 static void *evaluate(struct Expr *expr)
 {
     switch (expr->type) {
         case EXPR_UNARY:
-            return interpret_unary((struct UnaryExpr *)expr);
+            return eval_unary((struct UnaryExpr *)expr);
             break;
         case EXPR_BINARY:
-            return interpret_binary((struct BinaryExpr *)expr);
+            return eval_binary((struct BinaryExpr *)expr);
             break;
 
         case EXPR_LITERAL:
-            return literal_to_literal(((struct LiteralExpr *)expr));
+            return eval_literal(((struct LiteralExpr *)expr));
             break;
 
         case EXPR_COMMAND:
@@ -163,7 +196,7 @@ static void *evaluate(struct Expr *expr)
             break;
 
         case EXPR_VARIABLE:
-            return interpret_variable((struct VariableExpr *)expr);
+            return eval_var((struct VariableExpr *)expr);
             break;
 
         case EXPR_ENUM_COUNT:

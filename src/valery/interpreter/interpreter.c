@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include "valery/interpreter/ast.h"
+#include "valery/interpreter/interpreter.h"
 #include "valery/interpreter/lexer.h"
 #include "valery/interpreter/parser.h"
 #include "valery/interpreter/impl/exec.h"
@@ -28,7 +29,7 @@ int glob_exit_code = 0;
 struct ht_t *global_vars = NULL;
 
 static void execute(struct Stmt *stmt);
-static void *evaluate(struct Expr *expr);
+static struct Value *evaluate(struct Expr *expr);
 
 
 static void simple_command(struct CommandExpr *expr)
@@ -37,8 +38,8 @@ static void simple_command(struct CommandExpr *expr)
     struct darr_t *argv = darr_malloc();
     for (int i = 0; i < argc; i++) {
         struct Expr *e = darr_get(expr->exprs, i);
-        void *res = evaluate(e);
-        darr_append(argv, res);
+        struct Value *literal = evaluate(e);
+        darr_append(argv, literal->value);
     }
 
     glob_exit_code = valery_exec_program(argc, (char **)darr_raw_ret(argv));
@@ -53,12 +54,12 @@ static void *and_if(struct BinaryExpr *expr)
     return NULL;
 }
 
-static void *interpret_unary(struct UnaryExpr *expr)
+static void *eval_unary(struct UnaryExpr *expr)
 {
     return NULL;
 }
 
-static void *interpret_binary(struct BinaryExpr *expr)
+static void *eval_binary(struct BinaryExpr *expr)
 {
     switch (expr->operator_->type) {
         case T_AND_IF:
@@ -81,29 +82,107 @@ static void interpret_list(struct CommandExpr *expr)
         valery_exit_internal_error("oop");
 }
 
-static void *interpret_variable(struct VariableExpr *expr)
+static void *eval_var(struct VariableExpr *expr)
 {
-    void *value = ht_sget(global_vars, expr->name->lexeme);
-    if (value == NULL)
-        return "";
-
-    return value;
+    struct Value *v = malloc(sizeof(struct Value));
+    v->value = ht_sget(global_vars, expr->name->lexeme);
+    v->type = VAL_STRING;
+    return v;
 }
 
-static void variable_declaration(struct VarStmt *stmt)
+static bool is_truthy(struct Value *v)
+{
+    if (v == NULL || v->value == NULL)
+        return false;
+
+    if (v->type == VAL_STRING && (strcmp(v->value, "") == 0))
+        return false;
+
+    if (v->type == VAL_INT && *(int *)v->value == 0)
+        return false;
+
+    if (v->type == VAL_BOOL && *(bool *)v->value == false)
+        return false;
+
+    return true;
+}
+
+static void exec_var(struct VarStmt *stmt)
 {
     void *value = evaluate(stmt->initializer);
     ht_sset(global_vars, stmt->name->lexeme, value);
 }
 
+static void exec_if(struct IfStmt *stmt)
+{
+    struct Value *v = evaluate(stmt->condition);
+    if (is_truthy(v))
+        execute(stmt->then_branch);
+    else if (stmt->else_branch != NULL)
+        execute(stmt->else_branch);
+}
+
+static void *expand(struct darr_t *expansions)
+{
+    //TODO: add dynamic str type in nicc
+    char *final = malloc(1024);
+    size_t bound = darr_get_size(expansions);
+
+    for (size_t i = 0; i < bound; i++) {
+        struct expansion_t *e = darr_get(expansions, i);
+        if (e->type == ET_LITERAL) {
+            strcat(final, e->value);
+        } else if (e->type == ET_PARAMETER) {
+            void *var_value = ht_sget(global_vars, (char *)e->value + 1);
+            if (var_value != NULL)
+                strcat(final, var_value);
+        }
+    }
+    return final;
+}
+
+static void *eval_literal(struct LiteralExpr *expr)
+{
+    struct Value *value = malloc(sizeof(struct Value));
+
+    if (expr->value_type != LIT_EXPANSION) {
+        value->value = expr->value;
+        if (expr->value_type == LIT_INT)
+            value->type = VAL_INT;
+        else if (expr->value_type == LIT_STRING)
+            value->type = VAL_STRING;
+        else if (expr->value_type == LIT_BOOL)
+            value->type = VAL_BOOL;
+        else {
+            // panic
+            printf("PANIC!!!!\n");
+        }
+
+        return value;
+    }
+
+    char *expanded_str = expand(expr->value);
+    value->value = expanded_str;
+    value->type = VAL_STRING;
+    return value;
+}
+
 static void execute(struct Stmt *stmt)
 {
+    /* empty */
+    //if (stmt == NULL)
+    //    return;
+
     switch (stmt->type) {
         case STMT_EXPRESSION:
             evaluate(((struct ExpressionStmt *)stmt)->expression);
             break;
         case STMT_VAR:
-            variable_declaration((struct VarStmt *)stmt);
+            exec_var((struct VarStmt *)stmt);
+            break;
+
+        case STMT_IF:
+            exec_if((struct IfStmt *)stmt);
             break;
 
         default:
@@ -111,18 +190,19 @@ static void execute(struct Stmt *stmt)
     }
 }
 
-static void *evaluate(struct Expr *expr)
+
+static struct Value *evaluate(struct Expr *expr)
 {
     switch (expr->type) {
         case EXPR_UNARY:
-            return interpret_unary((struct UnaryExpr *)expr);
+            return eval_unary((struct UnaryExpr *)expr);
             break;
         case EXPR_BINARY:
-            return interpret_binary((struct BinaryExpr *)expr);
+            return eval_binary((struct BinaryExpr *)expr);
             break;
 
         case EXPR_LITERAL:
-            return ((struct LiteralExpr *)expr)->value;
+            return eval_literal(((struct LiteralExpr *)expr));
             break;
 
         case EXPR_COMMAND:
@@ -131,7 +211,7 @@ static void *evaluate(struct Expr *expr)
             break;
 
         case EXPR_VARIABLE:
-            return interpret_variable((struct VariableExpr *)expr);
+            return eval_var((struct VariableExpr *)expr);
             break;
 
         case EXPR_ENUM_COUNT:
@@ -139,7 +219,7 @@ static void *evaluate(struct Expr *expr)
             break;
     }
 
-    return 0;
+    return NULL;
 }
 
 int interpret(struct darr_t *statements)

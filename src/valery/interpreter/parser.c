@@ -79,22 +79,62 @@ static void *linebreak(void);
 struct darr_t *tokens;
 
 static struct Stmt *line(void);
+static struct Stmt *stmt_func(void);
+static struct Stmt *if_stmt(void);
 static struct Stmt *variable_declaration(void);
 static struct Expr *and_if(void);
+static struct Expr *expr_func(void);
 static struct Expr *command(void);
-static struct Expr *var(void);
+static struct Expr *primary(void);
 
 static struct Stmt *line(void)
 {
     consume(T_NEWLINE, "newline expected");
-    struct Stmt *stmt = variable_declaration();
+    /* match the next newlines if present */
+    while (match(T_NEWLINE));
+
+    struct Stmt *stmt = stmt_func();
     return stmt;
+}
+
+static struct Stmt *stmt_func(void)
+{
+    if (check(T_IF))
+        return if_stmt();
+    return variable_declaration();
+}
+
+static struct Stmt *if_stmt(void)
+{
+    consume(T_IF, "expected if token");
+    struct Expr *condition = expr_func();
+
+    consume(T_NEWLINE, "expected newline token");
+    while (match(T_NEWLINE));
+    consume(T_THEN, "expected then token");
+
+    consume(T_NEWLINE, "expected newline token");
+    while (match(T_NEWLINE));
+    struct Stmt *then_branch = stmt_func(); 
+
+    consume(T_NEWLINE, "expected newline token");
+    while (match(T_NEWLINE));
+    consume(T_FI, "expected fi token");
+
+    struct IfStmt *stmt = (struct IfStmt *)stmt_alloc(STMT_IF, NULL);
+    stmt->condition = condition;
+    stmt->then_branch = then_branch;
+
+    stmt->else_branch = NULL;
+    return (struct Stmt *)stmt;
 }
 
 static struct Stmt *variable_declaration(void)
 {
     /* T_WORD T_EQUAL string (should be expr) */
-    if (!(check(T_WORD) && check_ahead(1, T_EQUAL), check_ahead(2, T_EXPANSION))) {
+    if (!(check(T_WORD) && check_ahead(1, T_EQUAL) && (check_ahead(2, T_EXPANSION) ||
+        check_ahead(2, T_WORD)))) {
+
         struct ExpressionStmt *e_stmt = (struct ExpressionStmt *)stmt_alloc(STMT_EXPRESSION, NULL);
         e_stmt->expression = and_if();
         return (struct Stmt *)e_stmt;
@@ -102,21 +142,25 @@ static struct Stmt *variable_declaration(void)
 
     struct token_t *name = consume(T_WORD, "expected word");
     consume(T_EQUAL, "expected equal");
-    struct Expr *lit = expr_alloc(EXPR_LITERAL, consume(T_EXPANSION, "expected string"));
+    struct Expr *lit;
+    if (check(T_EXPANSION))
+        lit = expr_alloc(EXPR_LITERAL, consume(T_EXPANSION, "expected expansion"));
+    else
+        lit = expr_alloc(EXPR_LITERAL, consume(T_WORD, "expected word"));
+
     struct VarStmt *stmt = (struct VarStmt *)stmt_alloc(STMT_VAR, NULL);
     stmt->name = name;
     stmt->initializer = lit;
     return (struct Stmt *)stmt;
-
 }
 
 static struct Expr *and_if(void)
 {
-    void *condition = command();
+    void *condition = expr_func();
     if (match(T_AND_IF)) {
         struct BinaryExpr *expr = (struct BinaryExpr *)expr_alloc(EXPR_BINARY, NULL);
         struct token_t *prev = previous();
-        void *then = command();
+        void *then = expr_func();
         expr->left = condition;
         expr->operator_ = prev;
         expr->right = then;
@@ -126,28 +170,33 @@ static struct Expr *and_if(void)
     return condition;
 }
 
+static struct Expr *expr_func(void)
+{
+    if (check(T_TRUE, T_FALSE))
+        return primary();
+    return command();
+}
+
 static struct Expr *command(void)
 {
     struct CommandExpr *expr = (struct CommandExpr *)expr_alloc(EXPR_COMMAND, NULL);
-    while (1) {
-        if (check(T_DOLLAR)) {
-            darr_append(expr->exprs, var());
-        } else if (match(T_WORD, T_EXPANSION)) {
-            struct token_t *prev = previous();
-            struct LiteralExpr *expr_lit = (struct LiteralExpr *)expr_alloc(EXPR_LITERAL, prev);
-            darr_append(expr->exprs, expr_lit);
-        } else {
-            break;
-        }
+    while (match(T_WORD, T_EXPANSION)) {
+        struct token_t *prev = previous();
+        struct LiteralExpr *expr_lit = (struct LiteralExpr *)expr_alloc(EXPR_LITERAL, prev);
+        darr_append(expr->exprs, expr_lit);
     }
     return (struct Expr *)expr;
 }
 
-static struct Expr *var(void)
+static struct Expr *primary(void)
 {
-    match(T_DOLLAR);
-    struct token_t *name = consume(T_WORD, "err");
-    struct VariableExpr *expr = (struct VariableExpr *)expr_alloc(EXPR_VARIABLE, name);
+    if (match(T_TRUE)) {
+    } else {
+        consume(T_FALSE, "expected either true or false");
+    }
+
+    struct token_t *prev = previous();
+    struct LiteralExpr *expr = (struct LiteralExpr *)expr_alloc(EXPR_LITERAL, prev);
     return (struct Expr *)expr;
 }
 

@@ -20,7 +20,7 @@
 #include "valery/interpreter/lexer.h"
 #include "valery/interpreter/ast.h"
 
-extern const char *tokentype_str[T_ENUM_COUNT];
+extern const char *tokentype_str[T_ENUM_COUNT][2];
 static void ast_print_expr(struct Expr *expr_head);
 static void ast_print_stmt(struct Stmt *stmt_head);
 
@@ -32,6 +32,11 @@ static void literal(struct LiteralExpr *expr)
         printf("%d", *(int *)expr->value);
     } else if (expr->value_type == LIT_DOUBLE) {
         printf("%lf", *(double *)expr->value);
+    } else if (expr->value_type == LIT_BOOL) {
+        if (*(bool *)expr->value)
+            printf("TRUE");
+        else
+            printf("FALSE");
     } else {
         struct darr_t *expansion = expr->value;
 
@@ -60,13 +65,11 @@ static void command(struct CommandExpr *expr)
 
 static void binary(struct BinaryExpr *expr)
 {
-    putchar('(');
     ast_print_expr(expr->left);
     if (expr->operator_ == NULL)
         return;
-    printf(" %s ", tokentype_str[expr->operator_->type]);
+    printf(" %s ", tokentype_str[expr->operator_->type][0]);
     ast_print_expr(expr->right);
-    putchar(')');
 }
 
 static void variable(struct VariableExpr *expr)
@@ -78,6 +81,18 @@ static void var_stmt(struct VarStmt *stmt)
 {
     printf("%s = ", stmt->name->lexeme);
     ast_print_expr(stmt->initializer);
+}
+
+static void if_stmt(struct IfStmt *stmt)
+{
+    printf("IF ");
+    ast_print_expr(stmt->condition);
+    printf(" THEN ");
+    ast_print_stmt(stmt->then_branch);
+    if (stmt->else_branch) {
+        printf(" ELSE ");
+        ast_print_stmt(stmt->else_branch);
+    }
 }
 
 static void ast_print_expr(struct Expr *expr_head)
@@ -117,6 +132,9 @@ static void ast_print_stmt(struct Stmt *stmt_head)
             break;
         case STMT_VAR:
             var_stmt((struct VarStmt *)stmt_head);
+            break;
+        case STMT_IF:
+            if_stmt((struct IfStmt *)stmt_head);
             break;
         default:
             printf("AST TYPE NOT HANLDED, %d\n", stmt_head->type);

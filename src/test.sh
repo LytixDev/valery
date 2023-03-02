@@ -1,4 +1,11 @@
 #!/bin/sh
-a="hello"
-b="$a world!"
-echo "$a" "$b"
+
+if true
+then
+    echo "a is true"
+fi
+
+
+if false; then
+    echo "a is false"
+fi

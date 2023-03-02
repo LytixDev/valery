@@ -50,6 +50,8 @@ const char *tokentype_str[T_ENUM_COUNT][2] = {
     {"T_FOR", "for"},
     {"T_RETURN", "return"},
     {"T_IN", "in"},
+    {"T_TRUE", "true"},
+    {"T_FALSE", "false"},
 
     /* single-character tokens */
     {"T_LPAREN", "("},
@@ -129,7 +131,9 @@ static void init_identifiers(void)
         "until",
         "for",
         "return",
-        "in"
+        "in",
+        "true",
+        "false"
     };
 
     enum tokentype_t identifiers_name[] = {
@@ -147,6 +151,8 @@ static void init_identifiers(void)
         T_FOR,
         T_RETURN,
         T_IN,
+        T_TRUE,
+        T_FALSE
     };
 
     for (int i = 0; i < KEYWORDS_LEN; i++) {
@@ -425,7 +431,8 @@ static void scan_token(void)
             add_token_simple(T_RBRACE);
             break;
         case ';':
-            add_token_simple(T_SEMICOLON);
+            /* semicolons are treated as newlines for simplicity :-) */
+            add_token_simple(T_NEWLINE);
             first_word = true;
             return;
         case '*':
